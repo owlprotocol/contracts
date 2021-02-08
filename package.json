@@ -1,0 +1,46 @@
+{
+    "name": "typescript-starter",
+    "version": "0.1.0",
+    "private": false,
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/leovigna/typescript-starter.git"
+    },
+    "homepage": "https://leovigna.github.io/typescript-starter",
+    "copyright": "Copyright 2020 Leo Vigna",
+    "license": "MIT",
+    "scripts": {
+        "clean": "rimraf lib",
+        "test": "mocha lib/**/*.test.js",
+        "start": "node lib/index.js",
+        "build": "npm -s run clean && tsc",
+        "lint": "eslint src/**/*.ts",
+        "lint:fix": "eslint src/**/*.ts --fix",
+        "dev": "ts-node-dev --respawn src/index",
+        "pretest": "npm-run-all clean build",
+        "prepublishOnly": "npm run test"
+    },
+    "devDependencies": {
+        "@types/chai": "^4.2.14",
+        "@types/mocha": "^8.2.0",
+        "@types/node": "^12.19.16",
+        "@typescript-eslint/eslint-plugin": "^2.34.0",
+        "@typescript-eslint/parser": "^2.34.0",
+        "chai": "^4.3.0",
+        "cross-env": "^7.0.3",
+        "dotenv": "^8.2.0",
+        "eslint": "^6.8.0",
+        "eslint-config-prettier": "^6.15.0",
+        "eslint-plugin-import": "^2.22.1",
+        "eslint-plugin-prettier": "^3.1.4",
+        "husky": "^4.3.0",
+        "lint-staged": "^10.5.1",
+        "mocha": "^8.2.1",
+        "npm-run-all": "^4.1.5",
+        "prettier": "^1.19.1",
+        "rimraf": "^3.0.2",
+        "ts-node": "^8.10.2",
+        "ts-node-dev": "^1.0.0",
+        "typescript": "^4.0.3"
+    }
+}
