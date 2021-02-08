@@ -1,4 +1,4 @@
-name: Node.js Package
+name: Release Actions
 
 on:
   release:
@@ -11,13 +11,22 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: "12.16"
-          registry-url: https://registry.npmjs.org/
+          node-version: "14.17"
+      # PNPM Cache
+      - run: npm i --global pnpm
+      - name: Cache pnpm store
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-pnpm-store
+        with:
+          path: ~/.pnpm-store/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}
       # Set login for package registries
       - run: npm set //registry.npmjs.org/:_authToken=${{secrets.NPMJS_TOKEN}}
       - run: npm set //npm.pkg.github.com/:_authToken=${{secrets.GPR_TOKEN}}
-      - run: npm install
-      - run: npm publish --access public
+      # Install
+      - run: pnpm i
+      - run: pnpm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPMJS_TOKEN}}
 
@@ -27,12 +36,21 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: "12.16"
-          registry-url: https://npm.pkg.github.com/
-      # Set login for package registries (only required for private dependencies)
+          node-version: "14.17"
+      # PNPM Cache
+      - run: npm i --global pnpm
+      - name: Cache pnpm store
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-pnpm-store
+        with:
+          path: ~/.pnpm-store/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}
+      # Set login for package registries
       - run: npm set //registry.npmjs.org/:_authToken=${{secrets.NPMJS_TOKEN}}
       - run: npm set //npm.pkg.github.com/:_authToken=${{secrets.GPR_TOKEN}}
-      - run: npm install
-      - run: npm publish
+      # Install
+      - run: pnpm i
+      - run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}

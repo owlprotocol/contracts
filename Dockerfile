@@ -1,12 +1,24 @@
-FROM node:12
-COPY package*.json ./
-RUN npm install
+# Build
+FROM node:14
+ENV NODE_ENV development
+
+RUN npm i --global pnpm
+COPY package.json .
+COPY pnpm-lock.yaml .
+RUN pnpm i
 COPY . .
 RUN npm run build
 
-FROM node:12-alpine
+# Run Image
+FROM node:14-alpine
 WORKDIR /usr/src/app
-COPY --from=0 package*.json ./
-RUN npm install --only=production
-COPY --from=0 lib/ .
+ENV NODE_ENV production
+ENV MINIMUM_BALANCE 0.2
+ENV TARGET_BALANCE 10
+
+RUN npm i --global pnpm
+COPY --from=0 package.json .
+COPY --from=0 pnpm-lock.yaml .
+RUN pnpm i
+COPY --from=0 lib lib
 CMD ["npm", "start"]

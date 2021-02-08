@@ -1,46 +1,43 @@
 module.exports = {
     env: {
-        node: true
+        node: true,
     },
-    parser: '@typescript-eslint/parser',  // Specifies the ESLint parser
+    parser: '@typescript-eslint/parser', // Specifies the ESLint parser
     extends: [
-        'plugin:@typescript-eslint/recommended',  // Uses the recommended rules from @typescript-eslint/eslint-plugin
-        'prettier/@typescript-eslint',
+        'plugin:@typescript-eslint/recommended', // Uses the recommended rules from @typescript-eslint/eslint-plugin
         'plugin:prettier/recommended',
     ],
     plugins: ['@typescript-eslint', 'prettier'],
     parserOptions: {
-        ecmaVersion: 2018,  // Allows for the parsing of modern ECMAScript features
-        sourceType: 'module',  // Allows for the use of imports
+        ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
+        sourceType: 'module', // Allows for the use of imports
         ecmaFeatures: {
-            jsx: true,  // Allows for the parsing of JSX
         },
     },
     rules: {
-        // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
-        // e.g. '@typescript-eslint/explicit-function-return-type': 'off',
-        'semi': 0,
+        semi: 0,
         'linebreak-style': ['error', 'unix'],
         quotes: ['error', 'single'],
         'no-console': 'warn',
         'no-unused-vars': 'off',
-        '@typescript-eslint/no-unused-vars': [
-            'error',
-            { vars: 'all', args: 'after-used', ignoreRestSiblings: false }
-        ],
-        '@typescript-eslint/explicit-function-return-type': 'warn', // Consider using explicit annotations for object literals and function return types even when they can be inferred.
-        'no-empty': 'warn'
+        'no-empty': 'warn',
+        'import/no-anonymous-default-export': 'off',
+        '@typescript-eslint/no-unused-vars': ['error', { vars: 'all', args: 'after-used', ignoreRestSiblings: false }],
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/ban-ts-comment': 'off',
     },
     settings: {
         'import/resolver': {
-            'node': {
-                'extensions': ['.js', '.jsx', '.ts', '.tsx']
-            }
-        }
+            node: {
+                extensions: ['.js', '.ts',],
+            },
+        },
     },
-    'overrides': [
+    overrides: [
         {
-            'files': ['**/*.ts'],
-        }
-    ]
+            files: ['**/*.ts'],
+        },
+    ],
 };

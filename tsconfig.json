@@ -8,6 +8,8 @@
             "dom"
         ],
         "esModuleInterop": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "declaration": true,
+        "skipLibCheck": true
     }
 }

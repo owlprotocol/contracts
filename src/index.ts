@@ -1,14 +1,10 @@
-import dotenv from 'dotenv';
-import hello from './hello'
-
-if (process.env.NODE_ENV == 'development') {
-    dotenv.config();
-}
+import { NAME } from './utils/environment';
+import hello from './hello';
 
 function main() {
-    const NAME = process.env.NAME || 'world';
-
-    console.debug(hello(NAME ?? undefined));
+    console.debug(hello(NAME));
 }
 
-main();
+if (typeof require !== 'undefined' && require.main === module) {
+    main();
+}
