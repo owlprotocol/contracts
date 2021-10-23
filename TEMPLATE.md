@@ -1,6 +1,4 @@
-# Typescript Starter Project
-
-Typescript starter project.
+# Typescript Template
 
 ## Installing
 
