@@ -17,7 +17,7 @@
         "tsc": "tsc",
         "tsc:watch": "tsc -w",
         "copy": "npm-run-all copy:prepublish",
-        "copy:prepublish": "cp package.json lib/ && cp README.md lib/ && cp LICENSE lib/",
+        "copy:prepublish": "mkdir -p lib && cp package.json lib/ && cp README.md lib/ && cp LICENSE lib/",
         "lint": "eslint src",
         "lint:fix": "eslint src --fix",
         "lint:staged": "lint-staged",
