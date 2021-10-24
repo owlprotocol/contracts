@@ -1,5 +1,14 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# auto-generated
+src/types/ethers
+src/types/truffle
+src/types/web3
+src/ethers
+src/truffle
+src/web3
+src/abi
+
 # dependencies
 /node_modules
 package-lock.json

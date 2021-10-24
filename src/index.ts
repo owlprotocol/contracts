@@ -1,10 +1,4 @@
-import { NAME } from './utils/environment';
-import hello from './hello';
-
-function main() {
-    console.debug(hello(NAME));
-}
-
-if (typeof require !== 'undefined' && require.main === module) {
-    main();
-}
+export * as Abi from './abi';
+export * as EthersContracts from './ethers';
+export * as TruffleContracts from './truffle';
+export * as Web3Contracts from './web3';

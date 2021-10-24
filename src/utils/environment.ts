@@ -17,4 +17,7 @@ const envFileName = argEnv && argEnv.startsWith('.env') ? argEnv : defaultEnv;
 const envFile = envFileName ? path.resolve(process.cwd(), envFileName) : undefined;
 if (envFile) dotenv.config({ path: envFile });
 
-export const NAME = process.env.NAME;
+export const RPC_URL = process.env.RPC_URL;
+export const ACCOUNT_ADDRESS = process.env.ACCOUNT_ADDRESS;
+export const HD_WALLET_MNEMONIC = process.env.HD_WALLET_MNEMONIC;
+export const PRIVATE_KEYS = process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(',') : undefined;
