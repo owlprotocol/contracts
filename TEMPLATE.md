@@ -34,7 +34,15 @@ git push --all
 Then to sync any new changes form this repo to the new repo follow [this](https://help.github.com/en/articles/syncing-a-fork):
 
 ```
-$ git fetch upstream
-$ git checkout master
-$ git merge upstream/master
+git fetch upstream && git checkout master
+```
+
+You can then merge or rebase:
+
+```
+git merge upstream/master
+```
+
+```
+git rebase upstream/master
 ```
