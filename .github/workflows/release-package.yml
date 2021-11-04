@@ -26,31 +26,13 @@ jobs:
       - run: npm set //npm.pkg.github.com/:_authToken=${{secrets.GPR_TOKEN}}
       # Install
       - run: pnpm i
-      - run: pnpm publish --access public
+      # Publish NPMJS
+      - run: npm config set registry=https://registry.npmjs.org/
+      - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPMJS_TOKEN}}
-
-  publish-gpr:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: "14.17"
-      # PNPM Cache
-      - run: npm i --global pnpm
-      - name: Cache pnpm store
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-pnpm-store
-        with:
-          path: ~/.pnpm-store/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}
-      # Set login for package registries
-      - run: npm set //registry.npmjs.org/:_authToken=${{secrets.NPMJS_TOKEN}}
-      - run: npm set //npm.pkg.github.com/:_authToken=${{secrets.GPR_TOKEN}}
-      # Install
-      - run: pnpm i
-      - run: pnpm publish
+      # Publish Github
+      - run: npm config set registry=https://npm.pkg.github.com/
+      - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
