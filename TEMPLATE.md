@@ -23,10 +23,10 @@ pnpm i
 To clone this starter repo and add it as an upstream folow below:
 
 ```
-git clone git@github.com:leovigna/typescript-starter.git myproject
+git clone git@github.com:leovigna/starter-typescript.git myproject
 cd myproject
 git remote set-url origin git@github.com:leovigna/myproject.git
-git remote add upstream git@github.com:leovigna/typescript-starter.git
+git remote add upstream git@github.com:leovigna/starter-typescript.git
 git push origin master
 git push --all
 ```
