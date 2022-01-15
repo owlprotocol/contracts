@@ -26,4 +26,22 @@ describe('FactoryERC20', function () {
         assert.notEqual(String(balOwner), String(toBN(0)), 'Owner minting failed!');
         assert.equal(String(balUser), String(toBN(0)), 'User minting failed!');
     });
+
+    it('FactoryERC20 Generation Test', async () => {
+        const contracts = await createERC20(3);
+        assert.equal(contracts.length, 3, 'factory created contracts');
+    });
 });
+
+export async function createERC20(tokens = 1) {
+    const mintAmount = 0;
+    const coinName = 'TESTCOIN';
+    const coinTicker = 'TST';
+
+    const deployedContracts = [];
+    for (let i = 0; i < tokens; i++) {
+        deployedContracts.push(await FactoryERC20Truffle.new(mintAmount, coinName, coinTicker));
+    }
+
+    return deployedContracts;
+}

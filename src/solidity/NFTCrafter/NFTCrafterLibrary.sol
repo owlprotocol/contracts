@@ -26,6 +26,7 @@ library NFTCrafterLibrary {
     struct RecipeInputERC721 {
         address contractAddr;
         ConsumableType consumableType;
+        uint256 amount;
     }
 
     struct RecipeOutputERC20 {
@@ -43,13 +44,16 @@ library NFTCrafterLibrary {
 
         address owner;
 
+        // Flatten structs for storage
+        // address[] inputERC20ContractAddr;
+        // ConsumableType[] inputERC20ConsumableType;
+        // uint256[] inputERC20Amount;
+
         RecipeInputERC20[] inputsERC20;
         RecipeInputERC721[] inputsERC721;
 
         RecipeOutputERC20[] outputsERC20;
         RecipeOutputERC721[] outputsERC721;
-
-        mapping(address => uint256) balanceERC20;
 
         uint256 craftableAmount;
         uint256 craftedAmount;
