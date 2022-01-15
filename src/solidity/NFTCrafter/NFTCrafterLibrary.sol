@@ -55,4 +55,17 @@ library NFTCrafterLibrary {
         uint256 craftedAmount;
 
     }
+
+    // Return objects cannot include mappings
+    struct RecipeInfo {
+        RecipeInputERC20[] inputsERC20;
+        RecipeInputERC721[] inputsERC721;
+
+        RecipeOutputERC20[] outputsERC20;
+        RecipeOutputERC721[] outputsERC721;
+
+        uint256 craftableAmount;
+        uint256 craftedAmount;
+    }
+
 }
