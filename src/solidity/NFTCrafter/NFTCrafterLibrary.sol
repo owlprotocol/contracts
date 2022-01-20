@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-
 /**
  * @dev Basic crafting structures used through NFTCrafting contracts.
  *
@@ -44,11 +43,6 @@ library NFTCrafterLibrary {
 
         address owner;
 
-        // Flatten structs for storage
-        // address[] inputERC20ContractAddr;
-        // ConsumableType[] inputERC20ConsumableType;
-        // uint256[] inputERC20Amount;
-
         RecipeInputERC20[] inputsERC20;
         RecipeInputERC721[] inputsERC721;
 
@@ -60,16 +54,15 @@ library NFTCrafterLibrary {
 
     }
 
-    // Return objects cannot include mappings
-    struct RecipeInfo {
-        RecipeInputERC20[] inputsERC20;
-        RecipeInputERC721[] inputsERC721;
+    // Events
+    event CreateRecipe(
+        uint256 recipeId,
+        address owner,
+        RecipeInputERC20[] inputsERC20,
+        RecipeInputERC721[] inputsERC721,
+        RecipeOutputERC20[] outputsERC20,
+        RecipeOutputERC721[] outputsERC721
+    );
 
-        RecipeOutputERC20[] outputsERC20;
-        RecipeOutputERC721[] outputsERC721;
-
-        uint256 craftableAmount;
-        uint256 craftedAmount;
-    }
 
 }
