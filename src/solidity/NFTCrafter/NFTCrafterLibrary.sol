@@ -54,15 +54,4 @@ library NFTCrafterLibrary {
 
     }
 
-    // Events
-    event CreateRecipe(
-        uint256 recipeId,
-        address owner,
-        RecipeInputERC20[] inputsERC20,
-        RecipeInputERC721[] inputsERC721,
-        RecipeOutputERC20[] outputsERC20,
-        RecipeOutputERC721[] outputsERC721
-    );
-
-
 }

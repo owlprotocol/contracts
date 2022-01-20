@@ -26,6 +26,23 @@ contract NFTCrafter is ERC721Holder {
     // Store Recipes Locally
     mapping (uint256 => NFTCrafterLibrary.Recipe) _recipes;
 
+    // Events
+    event CreateRecipe(
+        uint256 recipeId,
+        address owner,
+        NFTCrafterLibrary.RecipeInputERC20[] inputsERC20,
+        NFTCrafterLibrary.RecipeInputERC721[] inputsERC721,
+        NFTCrafterLibrary.RecipeOutputERC20[] outputsERC20,
+        NFTCrafterLibrary.RecipeOutputERC721[] outputsERC721
+    );
+    event RecipeDeposit(
+        uint256 recipeId,
+        uint256 craftAmount,
+        uint256[][] outputsERC721Ids
+    );
+    // event WithdrawForRecipe();
+
+
     // Modifiers
     modifier onlyRecipeCreator(uint256 recipeId) {
         require(_recipes[recipeId].owner != address(0), "Recipe does not exist!");
@@ -51,6 +68,7 @@ contract NFTCrafter is ERC721Holder {
         // Requires
         require(inputsERC20.length > 0 || inputsERC721.length > 0, "A crafting input must be given!");
         require(outputsERC20.length > 0 || outputsERC721.length > 0, "A crafting output must be given!");
+        // TODO - is this how we want this to work?
 
         // Push ID
         _recipeIds.increment();
@@ -76,10 +94,11 @@ contract NFTCrafter is ERC721Holder {
         }
         // ERC721 Outputs
         for (uint i = 0; i < outputsERC721.length; i++) {
+            require(outputsERC721[i].ids.length == 0, "Do not include IDs in initialization. Please add them through `depositForRecipe`.");
             r.outputsERC721.push(outputsERC721[i]);
         }
 
-        emit NFTCrafterLibrary.CreateRecipe(
+        emit CreateRecipe(
             id,
             r.owner,
             inputsERC20,
@@ -116,47 +135,68 @@ contract NFTCrafter is ERC721Holder {
         );
     }
 
-    // developer function
+    /**
+     * @notice Must be recipe creator
+     * @dev Used to deposit recipe outputs
+     * @param recipeId ERC20 inputs for recipe
+     * @param craftAmount How many times the recipe should be craftable
+     * @param outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     */
     function depositForRecipe(
         uint256 recipeId,
         uint256 craftAmount,
         uint256[][] calldata outputsERC721Ids
-    ) public onlyRecipeCreator(recipeId)
-    {
+    ) public onlyRecipeCreator(recipeId) {
 
-    // Recipe Pointer
-    NFTCrafterLibrary.Recipe storage r = _recipes[recipeId];
+        // Recipe Pointer
+        NFTCrafterLibrary.Recipe storage r = _recipes[recipeId];
 
-    // Transfer Output ERC20
-    for (uint i = 0; i < r.inputsERC20.length; i++) {
-        SafeERC20.safeTransferFrom(
-            // Token addr
-            IERC20(r.inputsERC20[i].contractAddr),
-            // from
-            msg.sender,
-            // to
-            address(this),
-            // amount
-            r.inputsERC20[i].amount*craftAmount
-        );
-    }
+        // Transfer Output ERC20
+        for (uint i = 0; i < r.outputsERC20.length; i++) {
+            SafeERC20.safeTransferFrom(
+                // Token addr
+                IERC20(r.outputsERC20[i].contractAddr),
+                // from
+                msg.sender,
+                // to
+                address(this),
+                // amount
+                r.outputsERC20[i].amount*craftAmount
+            );
+        }
 
-    // Transfer Output ERC721 (2d array)
+        // Transfer Output ERC721 (2d array)
+        require (r.outputsERC721.length == outputsERC721Ids.length, "Missing ERC721 output item(s)! Please include ALL outputs.");
 
-    // TODO - requires length check
-    for (uint i = 0; i < outputsERC721Ids.length; i++) {
+        // Loop through token(s) list
+        for (uint i = 0; i < outputsERC721Ids.length; i++) {
+            require(craftAmount == outputsERC721Ids[i].length, "Provided ERC721s does not satisfy `craftAmount`!");
 
-        // TODO - require length check
-        for (uint j = 0; j < outputsERC721Ids[i].length; i++) {
-            // Safe Transfer Each Token
-            IERC721(r.outputsERC721[i].contractAddr)
-                .safeTransferFrom(
-                    msg.sender,
-                    address(this),
+            // Loop through individual token(t)
+            for (uint j = 0; j < outputsERC721Ids[i].length; j++) {
+
+                // Safe Transfer Each Token
+                IERC721(r.outputsERC721[i].contractAddr)
+                    .safeTransferFrom(
+                        msg.sender,
+                        address(this),
+                        outputsERC721Ids[i][j]
+                    );
+                // Add the id to our output id storage
+                r.outputsERC721[i].ids.push(
                     outputsERC721Ids[i][j]
                 );
+            }
         }
-    }
+
+        // Increase craftableAmount
+        r.craftableAmount += craftAmount;
+
+        emit RecipeDeposit(
+            recipeId,
+            craftAmount,
+            outputsERC721Ids
+        );
 
     }
 
