@@ -29,19 +29,21 @@ contract NFTCrafter is ERC721Holder {
     // Events
     event CreateRecipe(
         uint256 recipeId,
-        address owner,
+        address indexed owner,
         NFTCrafterLibrary.RecipeInputERC20[] inputsERC20,
         NFTCrafterLibrary.RecipeInputERC721[] inputsERC721,
         NFTCrafterLibrary.RecipeOutputERC20[] outputsERC20,
         NFTCrafterLibrary.RecipeOutputERC721[] outputsERC721
     );
-    event RecipeDeposit(
-        uint256 recipeId,
-        uint256 craftAmount,
-        uint256[][] outputsERC721Ids
+    event RecipeUpdate(
+        uint256 indexed recipeId,
+        uint256 craftableAmount
     );
-    // event WithdrawForRecipe();
-
+    event RecipeCraft(
+        uint256 indexed recipeId,
+        uint256 craftedAmount,
+        address indexed user
+    );
 
     // Modifiers
     modifier onlyRecipeCreator(uint256 recipeId) {
@@ -192,16 +194,73 @@ contract NFTCrafter is ERC721Holder {
         // Increase craftableAmount
         r.craftableAmount += craftAmount;
 
-        emit RecipeDeposit(
+        emit RecipeUpdate(
             recipeId,
-            craftAmount,
-            outputsERC721Ids
+            r.craftableAmount
         );
 
     }
 
-    // developer function
-    // withdrawForRecipe(recipeId, withdrawAmount)
+    /**
+     * @notice Must be recipe creator
+     * @dev Used to withdraw recipe outputs
+     * @param recipeId ERC20 inputs for recipe
+     * @param withdrawCraftAmount How many times the craft otuputs should be withdrawn
+     */
+    function withdrawForRecipe(
+        uint256 recipeId,
+        uint256 withdrawCraftAmount
+    ) public onlyRecipeCreator(recipeId) {
+        // Recipe Pointer
+        NFTCrafterLibrary.Recipe storage r = _recipes[recipeId];
+
+        // Requires
+        require(withdrawCraftAmount > 0, "withdrawCraftAmount cannot be 0!");
+        require(withdrawCraftAmount <= r.craftableAmount, "Not enough resources to withdraw!");
+
+        // Transfer Output ERC20
+        for (uint i = 0; i < r.outputsERC20.length; i++) {
+            SafeERC20.safeTransfer(
+                // Token addr
+                IERC20(r.outputsERC20[i].contractAddr),
+                // to
+                msg.sender,
+                // amount
+                r.outputsERC20[i].amount*withdrawCraftAmount
+            );
+        }
+
+        // Loop through token(s) list
+        for (uint i = 0; i < r.outputsERC721.length; i++) {
+
+            // Loop through individual token(s), starting from back + deleting
+            uint256 lastToken = r.outputsERC721[i].ids.length-1;
+            for (uint j = 0; j < withdrawCraftAmount; j++) {
+
+                // Safe Transfer Each Token
+                IERC721(r.outputsERC721[i].contractAddr)
+                    .safeTransferFrom(
+                        // From
+                        address(this),
+                        // to
+                        msg.sender,
+                        // tokenID
+                        r.outputsERC721[i].ids[lastToken-j]
+                    );
+                // Drop the id from our output id storage
+                delete r.outputsERC721[i].ids[lastToken-j];
+            }
+        }
+
+        // Increase craftableAmount
+        r.craftableAmount -= withdrawCraftAmount;
+
+        emit RecipeUpdate(
+            recipeId,
+            r.craftableAmount
+        );
+
+    }
 
     // users function
     // craftForRecipe(recipeId, inputERC721Ids[inputsERC721.length])
