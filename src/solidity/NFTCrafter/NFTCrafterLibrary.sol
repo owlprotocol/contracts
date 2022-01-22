@@ -25,7 +25,6 @@ library NFTCrafterLibrary {
     struct RecipeInputERC721 {
         address contractAddr;
         ConsumableType consumableType;
-        uint256 amount;
     }
 
     struct RecipeOutputERC20 {

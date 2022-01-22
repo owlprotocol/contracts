@@ -42,13 +42,19 @@ contract NFTCrafter is ERC721Holder {
     event RecipeCraft(
         uint256 indexed recipeId,
         uint256 craftedAmount,
+        uint256 craftableAmount,
         address indexed user
     );
 
     // Modifiers
     modifier onlyRecipeCreator(uint256 recipeId) {
-        require(_recipes[recipeId].owner != address(0), "Recipe does not exist!");
+        require(_recipes[recipeId].owner != address(0), "Specified recipe does not exist!");
         require(_recipes[recipeId].owner == msg.sender, "Only recipe owners can call this!");
+        _;
+    }
+
+    modifier recipeExists(uint256 recipeId) {
+        require(_recipes[recipeId].owner != address(0), "Specified recipe does not exist!");
         _;
     }
 
@@ -117,7 +123,9 @@ contract NFTCrafter is ERC721Holder {
      * @param recipeId ERC20 inputs for recipe
      * @return NFTCrafterLibrary.Recipe struct
      */
-    function getRecipe(uint256 recipeId) public view returns (
+    function getRecipe(
+        uint256 recipeId
+    ) public view recipeExists(recipeId) returns (
         NFTCrafterLibrary.RecipeInputERC20[] memory,
         NFTCrafterLibrary.RecipeInputERC721[] memory,
         NFTCrafterLibrary.RecipeOutputERC20[] memory,
@@ -262,8 +270,122 @@ contract NFTCrafter is ERC721Holder {
 
     }
 
-    // users function
-    // craftForRecipe(recipeId, inputERC721Ids[inputsERC721.length])
+    /**
+     * @notice Must be recipe creator
+     * @dev Used to withdraw recipe outputs
+     * @param recipeId ERC20 inputs for recipe
+     * @param inputERC721Ids Array of pre-approved NFTs for crafting usage
+     */
+    function craftForRecipe(
+        uint256 recipeId,
+        uint256[] calldata inputERC721Ids
+    ) public recipeExists(recipeId) {
+
+        // Recipe Pointer
+        NFTCrafterLibrary.Recipe storage r = _recipes[recipeId];
+
+        require(r.craftableAmount > 0, "Not enough resources left for crafting!");
+
+        // Get ERC20 inputs
+        for (uint i = 0; i < r.inputsERC20.length; i++) {
+            IERC20 token = IERC20(r.inputsERC20[i].contractAddr);
+
+            // ConsumableType: unaffected
+            if (r.inputsERC20[i].consumableType == NFTCrafterLibrary.ConsumableType.unaffected) {
+                require(token.balanceOf(msg.sender) >= r.inputsERC20[i].amount, "Missing ERC20 tokens!");
+            }
+
+            // ConsumableType: burned
+            else if (r.inputsERC20[i].consumableType == NFTCrafterLibrary.ConsumableType.burned) {
+                SafeERC20.safeTransferFrom(
+                    // Token
+                    token,
+                    // from
+                    msg.sender,
+                    // to
+                    address(this),
+                    // amount
+                    r.inputsERC20[i].amount
+                );
+            }
+
+            else {
+                // This should never happen. If it does we have a problem.
+                assert(false);
+            }
+        }
+
+        // Get ERC721 inputs
+        require(r.inputsERC721.length == inputERC721Ids.length, "Invalid number of ERC721 inputs!");
+        for (uint i = 0; i < r.inputsERC721.length; i++) {
+            IERC721 token = IERC721(r.inputsERC721[i].contractAddr);
+
+            // ConsumableType: unaffected
+            if (r.inputsERC721[i].consumableType == NFTCrafterLibrary.ConsumableType.unaffected) {
+                require(token.ownerOf(inputERC721Ids[i]) == msg.sender, "User missing a ERC721 token!");
+            }
+
+            // ConsumableType: burned
+            else if (r.inputsERC721[i].consumableType == NFTCrafterLibrary.ConsumableType.burned) {
+                token.safeTransferFrom(
+                    // from
+                    msg.sender,
+                    // to
+                    address(this),
+                    // id
+                    inputERC721Ids[i]
+                );
+            }
+
+            else {
+                // This should never happen. If it does we have a problem.
+                assert(false);
+            }
+        }
+
+        // Transfer Output ERC20
+        for (uint i = 0; i < r.outputsERC20.length; i++) {
+            SafeERC20.safeTransfer(
+                // Token addr
+                IERC20(r.outputsERC20[i].contractAddr),
+                // to
+                msg.sender,
+                // amount
+                r.outputsERC20[i].amount
+            );
+        }
+
+        // Loop through token(s) list
+        for (uint i = 0; i < r.outputsERC721.length; i++) {
+
+            uint256 lastToken = r.outputsERC721[i].ids.length-1;
+
+            // Transfer out
+            IERC721(r.outputsERC721[i].contractAddr)
+                .safeTransferFrom(
+                    address(this),
+                    msg.sender,
+                    r.outputsERC721[i].ids[lastToken]
+                );
+
+            // Remove lastToken from Ids
+            delete r.outputsERC721[i].ids[lastToken];
+        }
+
+        // Update crafting stats
+        r.craftableAmount--;
+        r.craftedAmount++;
+
+        emit RecipeCraft(
+            recipeId,
+            r.craftedAmount,
+            r.craftableAmount,
+            msg.sender
+        );
+
+
+
+    }
 
 }
 

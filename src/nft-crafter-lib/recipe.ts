@@ -12,7 +12,6 @@ export interface InputERC20 {
 export interface InputERC721 {
     contractAddr: string;
     consumableType: ConsumableType;
-    amount: string;
 }
 
 export interface OutputERC20 {
@@ -64,13 +63,12 @@ export function parseRecipe(recipe: Record<number, unknown>) {
     // InputsERC721
     if (!Array.isArray(recipeVals[1])) throw 'Mis-constructed recipe ERC721 input!';
     for (const inputERC721 of recipeVals[1]) {
-        if (inputERC721.length != 3) {
+        if (inputERC721.length != 2) {
             throw 'Mis-constructed ERC721 recipe inputs!';
         }
         parsedRecipe.inputsERC721.push({
             contractAddr: String(inputERC721[0]),
             consumableType: Number(inputERC721[1]),
-            amount: String(inputERC721[2]),
         });
     }
     // OutputsERC20
