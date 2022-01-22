@@ -12,12 +12,15 @@ specifiers:
   '@typechain/truffle-v5': ^5.1.0
   '@typechain/web3-v1': ^3.1.0
   '@types/chai': ^4.3.0
+  '@types/chai-as-promised': ^7.1.4
   '@types/glob': ^7.2.0
   '@types/mocha': ^9.0.0
   '@types/node': ^16.11.19
   '@typescript-eslint/eslint-plugin': ^4.33.0
   '@typescript-eslint/parser': ^4.33.0
+  bignumber.js: ^9.0.2
   chai: ^4.3.4
+  chai-as-promised: ^7.1.1
   cross-env: ^7.0.3
   dotenv: ^10.0.0
   eslint: ^7.32.0
@@ -63,12 +66,15 @@ devDependencies:
   '@typechain/truffle-v5': 5.1.0_truffle@5.4.14+typechain@5.2.0
   '@typechain/web3-v1': 3.1.0_20db1a7726960426f04452a9d23ee537
   '@types/chai': 4.3.0
+  '@types/chai-as-promised': 7.1.4
   '@types/glob': 7.2.0
   '@types/mocha': 9.0.0
   '@types/node': 16.11.19
   '@typescript-eslint/eslint-plugin': 4.33.0_3289a875d95a672b97ebf589745c66ef
   '@typescript-eslint/parser': 4.33.0_eslint@7.32.0+typescript@4.5.4
+  bignumber.js: 9.0.2
   chai: 4.3.4
+  chai-as-promised: 7.1.1_chai@4.3.4
   cross-env: 7.0.3
   eslint: 7.32.0
   eslint-config-prettier: 8.3.0_eslint@7.32.0
@@ -1970,6 +1976,12 @@ packages:
       '@types/node': 16.11.19
     dev: true
     optional: true
+
+  /@types/chai-as-promised/7.1.4:
+    resolution: {integrity: sha512-1y3L1cHePcIm5vXkh1DSGf/zQq5n5xDKG1fpCvf18+uOkpce0Z1ozNFPkyWsVswK7ntN1sZBw3oU6gmN+pDUcA==}
+    dependencies:
+      '@types/chai': 4.3.0
+    dev: true
 
   /@types/chai/4.3.0:
     resolution: {integrity: sha512-/ceqdqeRraGolFTcfoXNiqjyQhZzbINDngeoAq9GoHa8PPK1yNzTaxWjA6BFWp5Ua9JpXEMSS4s5i9tS0hOJtw==}
@@ -4193,6 +4205,15 @@ packages:
     dependencies:
       align-text: 0.1.4
       lazy-cache: 1.0.4
+    dev: true
+
+  /chai-as-promised/7.1.1_chai@4.3.4:
+    resolution: {integrity: sha512-azL6xMoi+uxu6z4rhWQ1jbdUhOMhis2PvscD/xjLqNMkv3BPPp2JyyuTHOrf9BOosGpNQ11v6BKv/g57RXbiaA==}
+    peerDependencies:
+      chai: '>= 2.1.2 < 5'
+    dependencies:
+      chai: 4.3.4
+      check-error: 1.0.2
     dev: true
 
   /chai/4.3.4:

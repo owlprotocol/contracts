@@ -23,7 +23,7 @@ contract FactoryERC721 is ERC721 {
      * @dev Creates and gives a token to whoever calls the method
      * @param count number of tokens to generate and give
      */
-    function giveTokens(uint256 count) public {
+    function mintTokens(uint256 count) public {
 
         // Loop and assign tokens
         for (uint i = 0; i < count; i++) {

@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-
 /**
  * @dev Basic crafting structures used through NFTCrafting contracts.
  *
@@ -49,10 +48,9 @@ library NFTCrafterLibrary {
         RecipeOutputERC20[] outputsERC20;
         RecipeOutputERC721[] outputsERC721;
 
-        mapping(address => uint256) balanceERC20;
-
         uint256 craftableAmount;
         uint256 craftedAmount;
 
     }
+
 }

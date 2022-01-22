@@ -26,7 +26,7 @@ describe('TestERC721', function () {
         const testERC721 = await FactoryERC721Truffle.new(nftName, nftSymbol);
 
         // Give one to owner
-        await testERC721.giveTokens(3, { from: owner });
+        await testERC721.mintTokens(3, { from: owner });
         let tokenBal = await testERC721.balanceOf(owner);
         assert(tokenBal.eq(toBN(3)), 'Owner token minting failed!');
 
@@ -34,4 +34,37 @@ describe('TestERC721', function () {
         tokenBal = await testERC721.balanceOf(user);
         assert(tokenBal.eq(toBN(0)), 'Anonymous user has NFT!');
     });
+
+    it('FactoryERC721 Generation Test', async () => {
+        const contracts = await createERC721(3);
+        assert.equal(contracts.length, 3, 'factory created contracts');
+
+        for (const contract of contracts) {
+            assert((await contract.balanceOf(owner)).eq(toBN(10)));
+        }
+    });
 });
+
+// Creates + returns dummy ERC721 tokens for use in testing
+export async function createERC721(tokens = 1, mintAmount = 10) {
+    const nftName = 'TESTNFT';
+    const nftSymbol = 'TNFT';
+
+    const contracts = [];
+    for (let i = 0; i < tokens; i++) {
+        contracts.push(FactoryERC721Truffle.new(nftName, nftSymbol));
+    }
+    const deployedContracts = await Promise.all(contracts);
+
+    if (mintAmount) {
+        const mints = [];
+        for (let i = 0; i < tokens; i++) {
+            //@ts-ignore
+            mints.push(deployedContracts[i].mintTokens(mintAmount));
+        }
+        // Mint `mintAmount` nfts to each owner
+        await Promise.all(mints);
+    }
+
+    return deployedContracts;
+}
