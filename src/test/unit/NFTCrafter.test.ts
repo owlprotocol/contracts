@@ -6,7 +6,7 @@ import NFTCrafterTruffle from '../../truffle/NFTCrafter';
 import FactoryERC20Truffle from '../../truffle/FactoryERC20';
 import FactoryERC721Truffle from '../../truffle/FactoryERC721';
 
-import { InputERC20, InputERC721, OutputERC20, OutputERC721, parseRecipe } from '../../nft-crafter-lib/recipe';
+import { InputERC20, InputERC721, OutputERC20, OutputERC721, parseRecipe } from '../../nft-launcher-lib/NFTCrafter';
 import { createERC20 } from './FactoryERC20.test';
 import { createERC721 } from './FactoryERC721.test';
 

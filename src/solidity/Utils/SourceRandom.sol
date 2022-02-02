@@ -11,7 +11,7 @@ library SourceRandom {
     /// @dev Returns a random uint256 sourced from the current time
     /// @return uint256 random value
     function getRandomDebug() internal returns (uint256) {
-        return uint256(keccak256(block.timestamp));
+        return uint256(keccak256(abi.encode(block.timestamp)));
     }
 
     // function getRandomChainlink()

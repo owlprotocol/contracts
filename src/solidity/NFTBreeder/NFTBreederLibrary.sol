@@ -28,13 +28,13 @@ library NFTBreederLibrary {
     }
 
     struct Specimen {
-        SpecimenFeatures[] features;
         uint256 createdBlock;
         uint256 cooldownEndBlock;
         uint256 parent1Id;
         uint256 parent2Id;
         uint256 isPregnantWith;
         uint256 generation;
+        SpecimenFeature[] features;
     }
 
     struct SpecimenFeature {
