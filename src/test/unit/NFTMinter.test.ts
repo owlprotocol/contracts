@@ -183,6 +183,8 @@ describe('NFTMinter', function () {
         await minter.mintSpecimen('1', { from: user });
         await minter.mintSpecimen('1', { from: user });
         await minter.mintSpecimen('1', { from: user });
-        // await minter.mintSpecimen('1', { from: user });
+
+        call = minter.mintSpecimen('1', { from: user });
+        expect(call).eventually.to.rejectedWith(Error);
     });
 });
