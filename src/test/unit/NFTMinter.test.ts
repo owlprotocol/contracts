@@ -34,7 +34,6 @@ describe('NFTMinter', function () {
 
     it('Create species / generate DNA', async () => {
         const minter = await NFTMinterTruffle.new();
-        // const [s1, s2] = await createERC721(2);
         const speciesName = toHex('myspecies');
         const speciesAddress = '0x0000000000000000000000000000000000000001';
 
@@ -100,7 +99,7 @@ describe('NFTMinter', function () {
 
     it('Mintable Species Extension', async () => {
         const minter = await NFTMinterMintableTruffle.new();
-        const [nft1] = await createERC721(1);
+        const [nft1, nft2] = await createERC721(2, 0);
         const [token1] = await createERC20(1);
 
         const speciesName = toHex('myspecies');
@@ -137,7 +136,7 @@ describe('NFTMinter', function () {
         assert.equal(event[0].returnValues.erc20TokenAmount, tokenAmount, 'token amount mismatch');
 
         // Set pricing without permission
-        let call = minter.setSpeciesMintPrice('2', token1.address, tokenAmount, startingTokenId, endingTokenId, {
+        let call = minter.setSpeciesMintPrice('1', token1.address, tokenAmount, startingTokenId, endingTokenId, {
             from: user,
         });
         expect(call).eventually.to.rejectedWith(Error);
@@ -145,9 +144,45 @@ describe('NFTMinter', function () {
         // Purchase NFT
         await token1.increaseAllowance(minter.address, tokenAmount);
         await minter.mintSpecimen('1');
+        assert((await token1.balanceOf(minter.address)).eqn(100), 'erc20 tokens not transferred!');
 
         // Purchase NFT on non-existing species
         call = minter.mintSpecimen('100');
         expect(call).eventually.to.rejectedWith(Error);
+
+        // Get details on our new specimen
+        const specimen = parseSpecimen(await minter.getSpecimen('1', '0'));
+        assert.equal(specimen.features.length, speciesFeatures.length, 'species not generated!');
+        assert.notEqual(specimen.createdBlock, '0', 'species not created!');
+
+        // Create a new species + w/ different user
+        await minter.createSpecies(speciesName, nft2.address, speciesFeatures, { from: user });
+        await minter.setSpeciesMintPrice('2', token1.address, tokenAmount, startingTokenId, endingTokenId, {
+            from: user,
+        });
+        await token1.transfer(user, 100 * 10);
+        await token1.increaseAllowance(minter.address, tokenAmount, { from: user });
+        await minter.mintSpecimen('2', { from: user });
+        assert((await token1.balanceOf(minter.address)).eqn(200), 'erc20 tokens not transferred (user)!');
+
+        // Withdraw coins
+        const beforeBal = await token1.balanceOf(owner);
+        await minter.withdrawTokens('1');
+        assert(beforeBal.addn(100).eq(await token1.balanceOf(owner)), 'balance withdrewn');
+
+        // Withdraw from wrong user
+        call = minter.withdrawTokens('1', { from: user });
+        expect(call).eventually.to.rejectedWith(Error);
+
+        // Withdraw from other user
+        await minter.withdrawTokens('2', { from: user });
+        assert((await token1.balanceOf(minter.address)).eqn(0), 'balance not transferred to user');
+
+        // Text exhaust tokenIds
+        await token1.increaseAllowance(minter.address, Number(tokenAmount) * 10, { from: user });
+        await minter.mintSpecimen('1', { from: user });
+        await minter.mintSpecimen('1', { from: user });
+        await minter.mintSpecimen('1', { from: user });
+        // await minter.mintSpecimen('1', { from: user });
     });
 });

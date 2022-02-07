@@ -72,7 +72,7 @@ contract Mintable is NFTMinter {
 
         // Transfer out tokens
         SafeERC20.safeTransfer(
-            IERC20(species[speciesId].contractAddr),
+            IERC20(speciePrice.erc20TokenAddress),
             msg.sender,
             withdrawAmount
         );
@@ -102,10 +102,10 @@ contract Mintable is NFTMinter {
 
         // Mint our NFT / transfer to `msg.sender`
         IMintableERC721(species[speciesId].contractAddr)
-            ._mint(msg.sender, speciePrice.currentTokenId);
+            .mint(msg.sender, speciePrice.currentTokenId);
 
-        // Generate DNA / register specimen
-        NFTMinter.registerSpecimen(speciesId, speciePrice.currentTokenId);
+        // Generate DNA
+        NFTMinter._registerSpecimen(speciesId, speciePrice.currentTokenId);
 
         // Event
         emit MintSpecimen(speciesId, speciePrice.currentTokenId);

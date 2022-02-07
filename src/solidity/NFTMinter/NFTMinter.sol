@@ -23,7 +23,7 @@ contract NFTMinter {
     modifier speciesOwner(uint256 speciesId) {
         // also tests for existence with below require
         // also allows contract to call itself
-        require(msg.sender == species[speciesId].owner || msg.sender == address(this), "You are not the owner!");
+        require(msg.sender == species[speciesId].owner, "You are not the owner!");
         _;
     }
 
@@ -78,27 +78,37 @@ contract NFTMinter {
         );
     }
 
-    /// @dev Register an existing NFT and generate DNA for it.
+    /// @dev Register an existing NFT and generate DNA for it. Requires speciesOwner permissions!
     /// @param speciesId species to register NFT to
     /// @param tokenId ID of associated NFT
     function registerSpecimen(
         uint256 speciesId,
         uint256 tokenId
-    ) public speciesOwner(speciesId) {
+    ) public speciesOwner(speciesId) { _registerSpecimen(speciesId, tokenId); }
+
+    /// @dev Register an existing NFT and generate DNA for it (internal function).
+    /// @param speciesId species to register NFT to
+    /// @param tokenId ID of associated NFT
+    function _registerSpecimen(
+        uint256 speciesId,
+        uint256 tokenId
+    ) internal {
+        // Setup pointer
         NFTMinterLibrary.Specimen storage s = species[speciesId].specimen[tokenId];
 
         require(s.createdBlock == 0, "Specimen already exists!");
 
-        s.createdBlock = block.number;
-        // Generate DNA for species (uses specimen pointer)
-        _generateRandomDNA(speciesId, s);
+        // Create entropy
+        uint256 randomSeed = SourceRandom.getRandomDebug();
+
+        // Call for specimen generation
+        _generateSpecimen(speciesId, randomSeed, s);
 
         emit RegisterSpecimen(
             speciesId,
             tokenId,
             s.features
         );
-
     }
 
 
@@ -138,18 +148,36 @@ contract NFTMinter {
         );
     }
 
+    /// @dev Process to generates and stores a new specimen.
+    /// Simple now, could be more complex later. Also allows
+    /// batch functions to hook onto this.
+    /// @param speciesId species to register NFT to
+    /// @param randomSeed randomly generated seed to use for DNA generation
+    /// @param specimen unique token to identify
+    function _generateSpecimen(
+        uint256 speciesId,
+        uint256 randomSeed,
+        NFTMinterLibrary.Specimen storage specimen
+    ) internal {
+        // Set date of birth
+        specimen.createdBlock = block.number;
+        // Generate DNA
+        _generateRandomDNA(speciesId, randomSeed, specimen);
+    }
+
     /// @dev Generate random DNA for a new specimen and write it to object.
     /// @param speciesId species to use for DNA generation
+    /// @param randomSeed random seed used in DNA generation
     /// @param specimen pointer to existing specimen.
     function _generateRandomDNA(
         uint256 speciesId,
+        uint256 randomSeed,
         NFTMinterLibrary.Specimen storage specimen
     ) private {
 
         NFTMinterLibrary.Species storage s = species[speciesId];
 
         NFTMinterLibrary.SpecimenFeature memory feature;
-        uint256 randomSeed = SourceRandom.getRandomDebug();
         uint256 randomNonce = 0;
         uint256 random;
 
