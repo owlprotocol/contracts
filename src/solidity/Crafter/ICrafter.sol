@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-import "./NFTCrafterLibrary.sol";
+import "./CrafterLib.sol";
 
 
 /**
@@ -21,25 +21,25 @@ interface INFTCrafter is IERC721Receiver {
      * @param outputsERC721 ERC721 outputs for recipe crafting
      */
     function createRecipe(
-        NFTCrafterLibrary.RecipeInputERC20[] calldata inputsERC20,
-        NFTCrafterLibrary.RecipeInputERC721[] calldata inputsERC721,
-        NFTCrafterLibrary.RecipeOutputERC20[] calldata outputsERC20,
-        NFTCrafterLibrary.RecipeOutputERC721[] calldata outputsERC721
+        CrafterLib.RecipeInputERC20[] calldata inputsERC20,
+        CrafterLib.RecipeInputERC721[] calldata inputsERC721,
+        CrafterLib.RecipeOutputERC20[] calldata outputsERC20,
+        CrafterLib.RecipeOutputERC721[] calldata outputsERC721
     ) external;
 
     /**
      * @notice
      * @dev Used to grab recipe details from contract
      * @param recipeId ERC20 inputs for recipe
-     * @return NFTCrafterLibrary.Recipe struct
+     * @return CrafterLib.Recipe struct
      */
     function getRecipe(
         uint256 recipeId
     ) external view returns (
-        NFTCrafterLibrary.RecipeInputERC20[] memory,
-        NFTCrafterLibrary.RecipeInputERC721[] memory,
-        NFTCrafterLibrary.RecipeOutputERC20[] memory,
-        NFTCrafterLibrary.RecipeOutputERC721[] memory,
+        CrafterLib.RecipeInputERC20[] memory,
+        CrafterLib.RecipeInputERC721[] memory,
+        CrafterLib.RecipeOutputERC20[] memory,
+        CrafterLib.RecipeOutputERC721[] memory,
         uint256,
         uint256
     );

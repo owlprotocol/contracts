@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
  * @dev Basic crafting structures used through NFTCrafting contracts.
  *
  */
-library NFTCrafterLibrary {
+library CrafterLib {
 
     // Recipe Components
     enum ConsumableType {

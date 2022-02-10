@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-import "./NFTCrafterLibrary.sol";
+import "./CrafterLib.sol";
 
 
 /**
@@ -24,16 +24,16 @@ contract NFTCrafter is ERC721Holder {
     Counters.Counter private _recipeIds;
 
     // Store Recipes Locally
-    mapping (uint256 => NFTCrafterLibrary.Recipe) _recipes;
+    mapping (uint256 => CrafterLib.Recipe) _recipes;
 
     // Events
     event CreateRecipe(
         uint256 recipeId,
         address indexed owner,
-        NFTCrafterLibrary.RecipeInputERC20[] inputsERC20,
-        NFTCrafterLibrary.RecipeInputERC721[] inputsERC721,
-        NFTCrafterLibrary.RecipeOutputERC20[] outputsERC20,
-        NFTCrafterLibrary.RecipeOutputERC721[] outputsERC721
+        CrafterLib.RecipeInputERC20[] inputsERC20,
+        CrafterLib.RecipeInputERC721[] inputsERC721,
+        CrafterLib.RecipeOutputERC20[] outputsERC20,
+        CrafterLib.RecipeOutputERC721[] outputsERC721
     );
     event RecipeUpdate(
         uint256 indexed recipeId,
@@ -67,10 +67,10 @@ contract NFTCrafter is ERC721Holder {
      * @param outputsERC721 ERC721 outputs for recipe crafting
      */
     function createRecipe(
-        NFTCrafterLibrary.RecipeInputERC20[] calldata inputsERC20,
-        NFTCrafterLibrary.RecipeInputERC721[] calldata inputsERC721,
-        NFTCrafterLibrary.RecipeOutputERC20[] calldata outputsERC20,
-        NFTCrafterLibrary.RecipeOutputERC721[] calldata outputsERC721
+        CrafterLib.RecipeInputERC20[] calldata inputsERC20,
+        CrafterLib.RecipeInputERC721[] calldata inputsERC721,
+        CrafterLib.RecipeOutputERC20[] calldata outputsERC20,
+        CrafterLib.RecipeOutputERC721[] calldata outputsERC721
     ) public {
 
         // Requires
@@ -83,7 +83,7 @@ contract NFTCrafter is ERC721Holder {
         uint256 id = _recipeIds.current();
 
         // Storage pointer
-        NFTCrafterLibrary.Recipe storage r = _recipes[id];
+        CrafterLib.Recipe storage r = _recipes[id];
 
         // Store owner
         r.owner = msg.sender;
@@ -121,19 +121,19 @@ contract NFTCrafter is ERC721Holder {
      * @notice
      * @dev Used to grab recipe details from contract
      * @param recipeId ERC20 inputs for recipe
-     * @return NFTCrafterLibrary.Recipe struct
+     * @return CrafterLib.Recipe struct
      */
     function getRecipe(
         uint256 recipeId
     ) public view recipeExists(recipeId) returns (
-        NFTCrafterLibrary.RecipeInputERC20[] memory,
-        NFTCrafterLibrary.RecipeInputERC721[] memory,
-        NFTCrafterLibrary.RecipeOutputERC20[] memory,
-        NFTCrafterLibrary.RecipeOutputERC721[] memory,
+        CrafterLib.RecipeInputERC20[] memory,
+        CrafterLib.RecipeInputERC721[] memory,
+        CrafterLib.RecipeOutputERC20[] memory,
+        CrafterLib.RecipeOutputERC721[] memory,
         uint256,
         uint256
     ) {
-        NFTCrafterLibrary.Recipe storage r = _recipes[recipeId];
+        CrafterLib.Recipe storage r = _recipes[recipeId];
 
         return (
             r.inputsERC20,
@@ -159,7 +159,7 @@ contract NFTCrafter is ERC721Holder {
     ) public onlyRecipeCreator(recipeId) {
 
         // Recipe Pointer
-        NFTCrafterLibrary.Recipe storage r = _recipes[recipeId];
+        CrafterLib.Recipe storage r = _recipes[recipeId];
 
         // Transfer Output ERC20
         for (uint i = 0; i < r.outputsERC20.length; i++) {
@@ -220,7 +220,7 @@ contract NFTCrafter is ERC721Holder {
         uint256 withdrawCraftAmount
     ) public onlyRecipeCreator(recipeId) {
         // Recipe Pointer
-        NFTCrafterLibrary.Recipe storage r = _recipes[recipeId];
+        CrafterLib.Recipe storage r = _recipes[recipeId];
 
         // Requires
         require(withdrawCraftAmount > 0, "withdrawCraftAmount cannot be 0!");
@@ -282,7 +282,7 @@ contract NFTCrafter is ERC721Holder {
     ) public recipeExists(recipeId) {
 
         // Recipe Pointer
-        NFTCrafterLibrary.Recipe storage r = _recipes[recipeId];
+        CrafterLib.Recipe storage r = _recipes[recipeId];
 
         require(r.craftableAmount > 0, "Not enough resources left for crafting!");
 
@@ -291,12 +291,12 @@ contract NFTCrafter is ERC721Holder {
             IERC20 token = IERC20(r.inputsERC20[i].contractAddr);
 
             // ConsumableType: unaffected
-            if (r.inputsERC20[i].consumableType == NFTCrafterLibrary.ConsumableType.unaffected) {
+            if (r.inputsERC20[i].consumableType == CrafterLib.ConsumableType.unaffected) {
                 require(token.balanceOf(msg.sender) >= r.inputsERC20[i].amount, "Missing ERC20 tokens!");
             }
 
             // ConsumableType: burned
-            else if (r.inputsERC20[i].consumableType == NFTCrafterLibrary.ConsumableType.burned) {
+            else if (r.inputsERC20[i].consumableType == CrafterLib.ConsumableType.burned) {
                 SafeERC20.safeTransferFrom(
                     // Token
                     token,
@@ -321,12 +321,12 @@ contract NFTCrafter is ERC721Holder {
             IERC721 token = IERC721(r.inputsERC721[i].contractAddr);
 
             // ConsumableType: unaffected
-            if (r.inputsERC721[i].consumableType == NFTCrafterLibrary.ConsumableType.unaffected) {
+            if (r.inputsERC721[i].consumableType == CrafterLib.ConsumableType.unaffected) {
                 require(token.ownerOf(inputERC721Ids[i]) == msg.sender, "User missing a ERC721 token!");
             }
 
             // ConsumableType: burned
-            else if (r.inputsERC721[i].consumableType == NFTCrafterLibrary.ConsumableType.burned) {
+            else if (r.inputsERC721[i].consumableType == CrafterLib.ConsumableType.burned) {
                 token.safeTransferFrom(
                     // from
                     msg.sender,
