@@ -91,7 +91,6 @@ contract Mintable is NFTMinter {
             require(speciePrice.currentTokenId <= speciePrice.endingTokenId);
 
         speciePrice.tokensStored += speciePrice.erc20TokenAmount;
-        speciePrice.currentTokenId++;
 
         // Transfer ERC20 tokens from sender
         IERC20 token = IERC20(speciePrice.erc20TokenAddress);
@@ -106,11 +105,15 @@ contract Mintable is NFTMinter {
         IMintableERC721(species[speciesId].contractAddr)
             .mint(msg.sender, speciePrice.currentTokenId);
 
-        // Event
-        emit MintSpecimen(speciesId, speciePrice.currentTokenId);
-
         // Generate DNA
         NFTMinter._registerSpecimen(speciesId, speciePrice.currentTokenId);
+
+        // Event
+        // TODO - refactor mintspecimen, then move up to order correctly
+        emit MintSpecimen(speciesId, speciePrice.currentTokenId);
+
+        // TODO - this is going to be removed
+        speciePrice.currentTokenId++;
     }
 
 }
