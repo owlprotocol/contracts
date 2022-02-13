@@ -21,19 +21,18 @@ export interface OutputERC20 {
 
 export interface OutputERC721 {
     contractAddr: string;
-    ids: Array<string>;
+    ids: string[];
 }
 export interface Recipe {
-    inputsERC20: Array<InputERC20>;
-    inputsERC721: Array<InputERC721>;
-    outputsERC20: Array<OutputERC20>;
-    outputsERC721: Array<OutputERC721>;
+    inputsERC20: InputERC20[];
+    inputsERC721: InputERC721[];
+    outputsERC20: OutputERC20[];
+    outputsERC721: OutputERC721[];
     craftableAmount: string;
     craftedAmount: string;
 }
 
-export function parseRecipe(recipe: Record<number, unknown>) {
-    const recipeVals = Object.values(recipe);
+export function parseRecipe(recipe: Record<string, unknown>) {
     const parsedRecipe: Recipe = {
         inputsERC20: [],
         inputsERC721: [],
@@ -42,15 +41,9 @@ export function parseRecipe(recipe: Record<number, unknown>) {
         craftableAmount: '0',
         craftedAmount: '0',
     };
-
-    // Overall check
-    if (recipeVals.length != 6) {
-        throw 'Mis-constructed recipe object!';
-    }
-
     // InputsERC20
-    if (!Array.isArray(recipeVals[0])) throw 'Mis-constructed recipe ERC20 input!';
-    for (const inputERC20 of recipeVals[0]) {
+    if (!Array.isArray(recipe.inputsERC20)) throw 'Mis-constructed recipe ERC20 input!';
+    for (const inputERC20 of recipe.inputsERC20) {
         if (inputERC20.length != 3) {
             throw 'Mis-constructed ERC20 recipe inputs!';
         }
@@ -61,8 +54,8 @@ export function parseRecipe(recipe: Record<number, unknown>) {
         });
     }
     // InputsERC721
-    if (!Array.isArray(recipeVals[1])) throw 'Mis-constructed recipe ERC721 input!';
-    for (const inputERC721 of recipeVals[1]) {
+    if (!Array.isArray(recipe.inputsERC721)) throw 'Mis-constructed recipe ERC721 input!';
+    for (const inputERC721 of recipe.inputsERC721) {
         if (inputERC721.length != 2) {
             throw 'Mis-constructed ERC721 recipe inputs!';
         }
@@ -72,8 +65,8 @@ export function parseRecipe(recipe: Record<number, unknown>) {
         });
     }
     // OutputsERC20
-    if (!Array.isArray(recipeVals[2])) throw 'Mis-constructed recipe ERC20 output!';
-    for (const outputERC20 of recipeVals[2]) {
+    if (!Array.isArray(recipe.outputsERC20)) throw 'Mis-constructed recipe ERC20 output!';
+    for (const outputERC20 of recipe.outputsERC20) {
         if (outputERC20.length != 2) {
             throw 'Mis-constructed ERC20 recipe outputs!';
         }
@@ -83,15 +76,15 @@ export function parseRecipe(recipe: Record<number, unknown>) {
         });
     }
     // OutputsERC721
-    if (!Array.isArray(recipeVals[3])) throw 'Mis-constructed recipe ERC721 output!';
-    for (const outputERC721 of recipeVals[3]) {
+    if (!Array.isArray(recipe.outputsERC721)) throw 'Mis-constructed recipe ERC721 output!';
+    for (const outputERC721 of recipe.outputsERC721) {
         if (outputERC721.length != 2) {
             throw 'Mis-constructed ERC721 recipe outputs!';
         }
         if (!Array.isArray(outputERC721[1])) {
             throw 'ERC721 recipe outputs must be an array!';
         }
-        const ids: Array<string> = [];
+        const ids: string[] = [];
         for (const id of outputERC721[1]) {
             ids.push(String(id));
         }
@@ -101,8 +94,8 @@ export function parseRecipe(recipe: Record<number, unknown>) {
         });
     }
     // Craftable Amount
-    parsedRecipe.craftableAmount = String(recipeVals[4]);
-    parsedRecipe.craftedAmount = String(recipeVals[5]);
+    parsedRecipe.craftableAmount = String(recipe.craftableAmount);
+    parsedRecipe.craftedAmount = String(recipe.craftedAmount);
 
     return parsedRecipe;
 }

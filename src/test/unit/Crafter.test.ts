@@ -2,11 +2,11 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import configureGanache from '../../utils/configureGanache';
 import setProvider from '../../utils/setProvider';
-import NFTCrafterTruffle from '../../truffle/NFTCrafter';
+import NFTCrafterTruffle from '../../truffle/Crafter';
 import FactoryERC20Truffle from '../../truffle/FactoryERC20';
 import FactoryERC721Truffle from '../../truffle/FactoryERC721';
 
-import { InputERC20, InputERC721, OutputERC20, OutputERC721, parseRecipe } from '../../nft-launcher-lib/NFTCrafter';
+import { InputERC20, InputERC721, OutputERC20, OutputERC721, parseRecipe } from '../../nft-launcher-lib/Crafter';
 import { createERC20 } from './FactoryERC20.test';
 import { createERC721 } from './FactoryERC721.test';
 
@@ -430,7 +430,7 @@ describe('NFTCrafter', function () {
         assert.equal(await token2.ownerOf(4), nftcrafter.address, 'Token2 transfer unsuccessful');
 
         // Withdraw out
-        await nftcrafter.withdrawForRecipe(recipeId, withdrawCraftAmount);
+        await nftcrafter.withdrawForRecipe(recipeId, withdrawCraftAmount, { gas: 3000000 });
 
         // Get recipe
         recipe = parseRecipe(await nftcrafter.getRecipe(1));
@@ -526,7 +526,7 @@ describe('NFTCrafter', function () {
         assert((await token2.balanceOf(nftcrafter.address)).eqn(9), 'token2 not transferred!');
 
         // Withdraw out
-        await nftcrafter.withdrawForRecipe(recipeId, withdrawCraftAmount);
+        await nftcrafter.withdrawForRecipe(recipeId, withdrawCraftAmount, { gas: 3000000 });
 
         // Get recipe
         recipe = parseRecipe(await nftcrafter.getRecipe(1));
@@ -665,6 +665,12 @@ describe('NFTCrafter', function () {
         // ConsumableType: Unaffected -> await input1.increaseAllowance(nftcrafter.address, '1')
         await input2.setApprovalForAll(nftcrafter.address, true, { from: user });
 
+        // Craft where user doesn't own ids
+        await input1.mintTokens(1);
+        await input2.mintTokens(1);
+        let call = nftcrafter.craftForRecipe(recipeId, ['2', '2'], { from: user, gas: 3000000 });
+        expect(call).eventually.to.rejectedWith(Error);
+
         // Call craft
         await nftcrafter.craftForRecipe(recipeId, ['1', '1'], { from: user, gas: 3000000 });
 
@@ -682,7 +688,7 @@ describe('NFTCrafter', function () {
         assert.equal(recipeEvent[0].returnValues.user, user, 'RecipeCraft event incorrect user');
 
         // No ingredients left
-        const call = nftcrafter.craftForRecipe(recipeId, [], { from: user });
+        call = nftcrafter.craftForRecipe(recipeId, [], { from: user });
         expect(call).eventually.to.rejectedWith(Error);
     });
 
@@ -790,6 +796,94 @@ describe('NFTCrafter', function () {
 
         // No ingredients left
         const call = nftcrafter.craftForRecipe(recipeId, [], { from: user });
+        expect(call).eventually.to.rejectedWith(Error);
+    });
+
+    it('craftRecipeWithDeposit', async () => {
+        // Create contract object
+        const nftcrafter = await NFTCrafterTruffle.new();
+        const [inputNFT1, inputNFT2, outputNFT1, outputNFT2] = await createERC721(4, 0); // create 4 tokens, mint 0 nfts
+        const [inputToken1, inputToken2, outputToken1, outputToken2] = await createERC20(4);
+        const recipeId = 1;
+        const craftAmount = 1;
+
+        // Recipe data
+        const inputsERC20: Array<InputERC20> = [
+            {
+                contractAddr: inputToken1.address,
+                consumableType: 0,
+                amount: '1',
+            },
+            {
+                contractAddr: inputToken2.address,
+                consumableType: 1,
+                amount: '2',
+            },
+        ];
+        const inputsERC721: Array<InputERC721> = [
+            {
+                contractAddr: inputNFT1.address,
+                consumableType: 0,
+            },
+            {
+                contractAddr: inputNFT2.address,
+                consumableType: 1,
+            },
+        ];
+        const outputsERC20: Array<OutputERC20> = [
+            {
+                contractAddr: outputToken1.address,
+                amount: '1',
+            },
+            {
+                contractAddr: outputToken2.address,
+                amount: '2',
+            },
+        ];
+        const outputsERC721: Array<OutputERC721> = [
+            {
+                contractAddr: outputNFT1.address,
+                ids: [],
+            },
+            {
+                contractAddr: outputNFT2.address,
+                ids: [],
+            },
+        ];
+
+        // ERC20 transfers
+        await outputToken1.increaseAllowance(nftcrafter.address, '1');
+        await outputToken2.increaseAllowance(nftcrafter.address, '2');
+
+        // Create/Set approvals for transfers
+        await outputNFT1.mintTokens(1);
+        await outputNFT2.mintTokens(1);
+        await outputNFT1.setApprovalForAll(nftcrafter.address, true);
+        await outputNFT2.setApprovalForAll(nftcrafter.address, true);
+
+        // CreateRecipeWithDespot
+        await nftcrafter.createRecipeWithDeposit(inputsERC20, inputsERC721, outputsERC20, outputsERC721, craftAmount, [
+            ['1'],
+            ['1'],
+        ]);
+
+        // Create with no craftableAmount
+        let call = nftcrafter.createRecipeWithDeposit(inputsERC20, inputsERC721, outputsERC20, outputsERC721, 0, []);
+        expect(call).eventually.to.rejectedWith(Error);
+
+        const recipe = parseRecipe(await nftcrafter.getRecipe(1));
+        assert.equal(recipe.craftableAmount, String(recipeId), 'craftableAmount not updated!');
+
+        // Try deposting (test recipe owner)
+        await outputToken1.increaseAllowance(nftcrafter.address, '1');
+        await outputToken2.increaseAllowance(nftcrafter.address, '2');
+        await outputNFT1.mintTokens(1);
+        await outputNFT2.mintTokens(1);
+
+        await nftcrafter.depositForRecipe(recipeId, craftAmount, [['2'], ['2']]);
+
+        // Try deposting (not owner)
+        call = nftcrafter.depositForRecipe(recipeId, craftAmount, [['2'], ['2']], { from: user });
         expect(call).eventually.to.rejectedWith(Error);
     });
 });
