@@ -9,7 +9,7 @@ export interface Species {
     name: string;
     contractAddr: string;
     owner: string;
-    speciesFeatures: Array<SpeciesFeatures>;
+    speciesFeatures: SpeciesFeatures[];
 }
 
 export interface SpeciesFeatures {
@@ -20,7 +20,7 @@ export interface SpeciesFeatures {
 
 export interface Specimen {
     createdBlock: string;
-    features: Array<SpecimenFeature>;
+    features: SpecimenFeature[];
 }
 
 export interface SpecimenFeature {

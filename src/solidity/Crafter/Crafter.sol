@@ -10,30 +10,30 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-import "./CrafterLib.sol";
+import "./CraftLib.sol";
+import "../Utils/BatchTransfer.sol";
 
 
 /**
- * @dev DIY NFT Crafting Contract.
- *
+ * @dev Pluggable Crafting Contract.
  */
-contract NFTCrafter is ERC721Holder {
+contract Crafter is ERC721Holder {
 
     // Increment Recipe IDs
     using Counters for Counters.Counter;
     Counters.Counter private _recipeIds;
 
     // Store Recipes Locally
-    mapping (uint256 => CrafterLib.Recipe) _recipes;
+    mapping (uint256 => CraftLib.Recipe) private _recipes;
 
     // Events
     event CreateRecipe(
         uint256 recipeId,
         address indexed owner,
-        CrafterLib.RecipeInputERC20[] inputsERC20,
-        CrafterLib.RecipeInputERC721[] inputsERC721,
-        CrafterLib.RecipeOutputERC20[] outputsERC20,
-        CrafterLib.RecipeOutputERC721[] outputsERC721
+        CraftLib.RecipeInputERC20[] inputsERC20,
+        CraftLib.RecipeInputERC721[] inputsERC721,
+        CraftLib.RecipeOutputERC20[] outputsERC20,
+        CraftLib.RecipeOutputERC721[] outputsERC721
     );
     event RecipeUpdate(
         uint256 indexed recipeId,
@@ -67,53 +67,42 @@ contract NFTCrafter is ERC721Holder {
      * @param outputsERC721 ERC721 outputs for recipe crafting
      */
     function createRecipe(
-        CrafterLib.RecipeInputERC20[] calldata inputsERC20,
-        CrafterLib.RecipeInputERC721[] calldata inputsERC721,
-        CrafterLib.RecipeOutputERC20[] calldata outputsERC20,
-        CrafterLib.RecipeOutputERC721[] calldata outputsERC721
+        CraftLib.RecipeInputERC20[] calldata inputsERC20,
+        CraftLib.RecipeInputERC721[] calldata inputsERC721,
+        CraftLib.RecipeOutputERC20[] calldata outputsERC20,
+        CraftLib.RecipeOutputERC721[] calldata outputsERC721
     ) public {
 
         // Requires
         require(inputsERC20.length > 0 || inputsERC721.length > 0, "A crafting input must be given!");
         require(outputsERC20.length > 0 || outputsERC721.length > 0, "A crafting output must be given!");
-        // TODO - is this how we want this to work?
 
         // Push ID
         _recipeIds.increment();
         uint256 id = _recipeIds.current();
 
         // Storage pointer
-        CrafterLib.Recipe storage r = _recipes[id];
+        CraftLib.Recipe storage r = _recipes[id];
 
         // Store owner
         r.owner = msg.sender;
 
         // ERC20 Inputs
-        for (uint i = 0; i < inputsERC20.length; i++) {
+        for (uint i = 0; i < inputsERC20.length; i++)
             r.inputsERC20.push(inputsERC20[i]);
-        }
         // ERC721 Inputs
-        for (uint i = 0; i < inputsERC721.length; i++) {
+        for (uint i = 0; i < inputsERC721.length; i++)
             r.inputsERC721.push(inputsERC721[i]);
-        }
         // ERC20 Outputs
-        for (uint i = 0; i < outputsERC20.length; i++) {
+        for (uint i = 0; i < outputsERC20.length; i++)
             r.outputsERC20.push(outputsERC20[i]);
-        }
         // ERC721 Outputs
         for (uint i = 0; i < outputsERC721.length; i++) {
-            require(outputsERC721[i].ids.length == 0, "Do not include IDs in initialization. Please add them through `depositForRecipe`.");
+            require(outputsERC721[i].ids.length == 0, "Do not include IDs in initialization. Use `createRecipeWithDeposit`.");
             r.outputsERC721.push(outputsERC721[i]);
         }
 
-        emit CreateRecipe(
-            id,
-            r.owner,
-            inputsERC20,
-            inputsERC721,
-            outputsERC20,
-            outputsERC721
-        );
+        emit CreateRecipe(id, r.owner, inputsERC20, inputsERC721, outputsERC20, outputsERC721);
 
     }
 
@@ -121,19 +110,19 @@ contract NFTCrafter is ERC721Holder {
      * @notice
      * @dev Used to grab recipe details from contract
      * @param recipeId ERC20 inputs for recipe
-     * @return CrafterLib.Recipe struct
+     * @return inputsERC20 inputsERC721 outputsERC20 outputsERC721 craftableAmount craftedAmount
      */
     function getRecipe(
         uint256 recipeId
     ) public view recipeExists(recipeId) returns (
-        CrafterLib.RecipeInputERC20[] memory,
-        CrafterLib.RecipeInputERC721[] memory,
-        CrafterLib.RecipeOutputERC20[] memory,
-        CrafterLib.RecipeOutputERC721[] memory,
-        uint256,
-        uint256
+        CraftLib.RecipeInputERC20[] memory inputsERC20,
+        CraftLib.RecipeInputERC721[] memory inputsERC721,
+        CraftLib.RecipeOutputERC20[] memory outputsERC20,
+        CraftLib.RecipeOutputERC721[] memory outputsERC721,
+        uint256 craftableAmount,
+        uint256 craftedAmount
     ) {
-        CrafterLib.Recipe storage r = _recipes[recipeId];
+        CraftLib.Recipe storage r = _recipes[recipeId];
 
         return (
             r.inputsERC20,
@@ -157,56 +146,33 @@ contract NFTCrafter is ERC721Holder {
         uint256 craftAmount,
         uint256[][] calldata outputsERC721Ids
     ) public onlyRecipeCreator(recipeId) {
-
         // Recipe Pointer
-        CrafterLib.Recipe storage r = _recipes[recipeId];
+        CraftLib.Recipe storage r = _recipes[recipeId];
 
-        // Transfer Output ERC20
-        for (uint i = 0; i < r.outputsERC20.length; i++) {
-            SafeERC20.safeTransferFrom(
-                // Token addr
-                IERC20(r.outputsERC20[i].contractAddr),
-                // from
-                msg.sender,
-                // to
-                address(this),
-                // amount
-                r.outputsERC20[i].amount*craftAmount
-            );
-        }
-
-        // Transfer Output ERC721 (2d array)
+        // Requires
         require (r.outputsERC721.length == outputsERC721Ids.length, "Missing ERC721 output item(s)! Please include ALL outputs.");
 
-        // Loop through token(s) list
-        for (uint i = 0; i < outputsERC721Ids.length; i++) {
-            require(craftAmount == outputsERC721Ids[i].length, "Provided ERC721s does not satisfy `craftAmount`!");
+        // Batch Transfer ERC20
+        address[] memory tokenAddresses;
+        uint256[] memory tokenAmounts;
+        ( tokenAddresses, tokenAmounts ) = CraftLib._buildBatchTransferERC20(r.outputsERC20, craftAmount);
+        BatchTransfer.transferFromERC20(tokenAddresses, msg.sender, address(this), tokenAmounts);
 
-            // Loop through individual token(t)
-            for (uint j = 0; j < outputsERC721Ids[i].length; j++) {
+        // Batch Transfer ERC721
+        address[] memory nftAddresses;
+        ( nftAddresses, ) = CraftLib._buildBatchTransferERC721(r.outputsERC721, 0); // withdrawAmount=0
+        BatchTransfer.transferFromERC721(nftAddresses, msg.sender, address(this), outputsERC721Ids);
 
-                // Safe Transfer Each Token
-                IERC721(r.outputsERC721[i].contractAddr)
-                    .safeTransferFrom(
-                        msg.sender,
-                        address(this),
-                        outputsERC721Ids[i][j]
-                    );
-                // Add the id to our output id storage
-                r.outputsERC721[i].ids.push(
-                    outputsERC721Ids[i][j]
-                );
-            }
-        }
+        // Add ids to storage
+        for (uint i = 0; i < outputsERC721Ids.length; i++)
+            for (uint j = 0; j < outputsERC721Ids[i].length; j++)
+                r.outputsERC721[i].ids.push(outputsERC721Ids[i][j]);
 
-        // Increase craftableAmount
+        // Increase craftableAmount (after transfers have confirmed, prevent reentry)
         r.craftableAmount += craftAmount;
 
-        emit RecipeUpdate(
-            recipeId,
-            r.craftableAmount
-        );
 
+        emit RecipeUpdate(recipeId, r.craftableAmount);
     }
 
     /**
@@ -220,54 +186,56 @@ contract NFTCrafter is ERC721Holder {
         uint256 withdrawCraftAmount
     ) public onlyRecipeCreator(recipeId) {
         // Recipe Pointer
-        CrafterLib.Recipe storage r = _recipes[recipeId];
+        CraftLib.Recipe storage r = _recipes[recipeId];
 
         // Requires
         require(withdrawCraftAmount > 0, "withdrawCraftAmount cannot be 0!");
         require(withdrawCraftAmount <= r.craftableAmount, "Not enough resources to withdraw!");
-
-        // Transfer Output ERC20
-        for (uint i = 0; i < r.outputsERC20.length; i++) {
-            SafeERC20.safeTransfer(
-                // Token addr
-                IERC20(r.outputsERC20[i].contractAddr),
-                // to
-                msg.sender,
-                // amount
-                r.outputsERC20[i].amount*withdrawCraftAmount
-            );
-        }
-
-        // Loop through token(s) list
-        for (uint i = 0; i < r.outputsERC721.length; i++) {
-
-            // Loop through individual token(s), starting from back + deleting
-            uint256 lastToken = r.outputsERC721[i].ids.length-1;
-            for (uint j = 0; j < withdrawCraftAmount; j++) {
-
-                // Safe Transfer Each Token
-                IERC721(r.outputsERC721[i].contractAddr)
-                    .safeTransferFrom(
-                        // From
-                        address(this),
-                        // to
-                        msg.sender,
-                        // tokenID
-                        r.outputsERC721[i].ids[lastToken-j]
-                    );
-                // Drop the id from our output id storage
-                delete r.outputsERC721[i].ids[lastToken-j];
-            }
-        }
-
-        // Increase craftableAmount
+        // Increase craftableAmount (check-effects)
         r.craftableAmount -= withdrawCraftAmount;
 
-        emit RecipeUpdate(
-            recipeId,
-            r.craftableAmount
-        );
+        // Batch Transfer ERC20
+        address[] memory tokenAddresses;
+        uint256[] memory tokenAmounts;
+        ( tokenAddresses, tokenAmounts ) = CraftLib._buildBatchTransferERC20(r.outputsERC20, withdrawCraftAmount);
+        BatchTransfer.transferFromERC20(tokenAddresses, address(this), msg.sender, tokenAmounts);
 
+        // Batch Transfer ERC721
+        address[] memory nftAddresses;
+        uint256[][] memory nftIds;
+        ( nftAddresses, nftIds ) = CraftLib._buildBatchTransferERC721(r.outputsERC721, withdrawCraftAmount);
+        BatchTransfer.transferFromERC721(nftAddresses, address(this), msg.sender, nftIds);
+
+        emit RecipeUpdate(recipeId,r.craftableAmount);
+    }
+
+    /**
+     * @dev Creates a recipe while transferring assets to allow for immediate usage
+     * @param inputsERC20 ERC20 inputs for recipe
+     * @param inputsERC721 ERC721 inputs for recipe
+     * @param outputsERC20 ERC20 outputs for recipe crafting
+     * @param outputsERC721 ERC721 outputs for recipe crafting
+     * @param craftAmount How many times the recipe should be craftable
+     * @param outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     */
+    function createRecipeWithDeposit(
+        CraftLib.RecipeInputERC20[] calldata inputsERC20,
+        CraftLib.RecipeInputERC721[] calldata inputsERC721,
+        CraftLib.RecipeOutputERC20[] calldata outputsERC20,
+        CraftLib.RecipeOutputERC721[] calldata outputsERC721,
+        uint256 craftAmount,
+        uint256[][] calldata outputsERC721Ids
+    ) public {
+        require(craftAmount != 0, "`craftAmount` must be larger than 0!");
+
+        createRecipe(inputsERC20, inputsERC721, outputsERC20, outputsERC721);
+
+        uint256 recipeId = _recipeIds.current();
+
+        depositForRecipe(recipeId, craftAmount, outputsERC721Ids);
+
+        // Update our owner since it defaulted to function caller (this contract)
+        _recipes[recipeId].owner = msg.sender;
     }
 
     /**
@@ -280,112 +248,42 @@ contract NFTCrafter is ERC721Holder {
         uint256 recipeId,
         uint256[] calldata inputERC721Ids
     ) public recipeExists(recipeId) {
-
         // Recipe Pointer
-        CrafterLib.Recipe storage r = _recipes[recipeId];
+        CraftLib.Recipe storage r = _recipes[recipeId];
 
         require(r.craftableAmount > 0, "Not enough resources left for crafting!");
-
-        // Get ERC20 inputs
-        for (uint i = 0; i < r.inputsERC20.length; i++) {
-            IERC20 token = IERC20(r.inputsERC20[i].contractAddr);
-
-            // ConsumableType: unaffected
-            if (r.inputsERC20[i].consumableType == CrafterLib.ConsumableType.unaffected) {
-                require(token.balanceOf(msg.sender) >= r.inputsERC20[i].amount, "Missing ERC20 tokens!");
-            }
-
-            // ConsumableType: burned
-            else if (r.inputsERC20[i].consumableType == CrafterLib.ConsumableType.burned) {
-                SafeERC20.safeTransferFrom(
-                    // Token
-                    token,
-                    // from
-                    msg.sender,
-                    // to
-                    address(this),
-                    // amount
-                    r.inputsERC20[i].amount
-                );
-            }
-
-            else {
-                // This should never happen. If it does we have a problem.
-                assert(false);
-            }
-        }
-
-        // Get ERC721 inputs
-        require(r.inputsERC721.length == inputERC721Ids.length, "Invalid number of ERC721 inputs!");
-        for (uint i = 0; i < r.inputsERC721.length; i++) {
-            IERC721 token = IERC721(r.inputsERC721[i].contractAddr);
-
-            // ConsumableType: unaffected
-            if (r.inputsERC721[i].consumableType == CrafterLib.ConsumableType.unaffected) {
-                require(token.ownerOf(inputERC721Ids[i]) == msg.sender, "User missing a ERC721 token!");
-            }
-
-            // ConsumableType: burned
-            else if (r.inputsERC721[i].consumableType == CrafterLib.ConsumableType.burned) {
-                token.safeTransferFrom(
-                    // from
-                    msg.sender,
-                    // to
-                    address(this),
-                    // id
-                    inputERC721Ids[i]
-                );
-            }
-
-            else {
-                // This should never happen. If it does we have a problem.
-                assert(false);
-            }
-        }
-
-        // Transfer Output ERC20
-        for (uint i = 0; i < r.outputsERC20.length; i++) {
-            SafeERC20.safeTransfer(
-                // Token addr
-                IERC20(r.outputsERC20[i].contractAddr),
-                // to
-                msg.sender,
-                // amount
-                r.outputsERC20[i].amount
-            );
-        }
-
-        // Loop through token(s) list
-        for (uint i = 0; i < r.outputsERC721.length; i++) {
-
-            uint256 lastToken = r.outputsERC721[i].ids.length-1;
-
-            // Transfer out
-            IERC721(r.outputsERC721[i].contractAddr)
-                .safeTransferFrom(
-                    address(this),
-                    msg.sender,
-                    r.outputsERC721[i].ids[lastToken]
-                );
-
-            // Remove lastToken from Ids
-            delete r.outputsERC721[i].ids[lastToken];
-        }
-
-        // Update crafting stats
+        // Update crafting stats (check-effects)
         r.craftableAmount--;
         r.craftedAmount++;
 
-        emit RecipeCraft(
-            recipeId,
-            r.craftedAmount,
-            r.craftableAmount,
-            msg.sender
-        );
+        // Batch Transfer/Verify Input ERC20
+        address[] memory addressesERC20;
+        uint256[] memory unaffectedAmountsERC20;
+        uint256[] memory burnedAmountsERC20;
+        ( addressesERC20, unaffectedAmountsERC20, burnedAmountsERC20 ) = CraftLib._splitConsumeablesERC20(r.inputsERC20);
+        BatchTransfer.assertBalanceERC20(addressesERC20, msg.sender, unaffectedAmountsERC20);
+        BatchTransfer.transferFromERC20(addressesERC20, msg.sender, address(this), burnedAmountsERC20);
 
+        // Batch Transfer/Verify Input ERC721
+        address[] memory addressesERC721;
+        uint256[][] memory unaffectedAmountsERC721;
+        uint256[][] memory burnedAmountsERC721;
+        ( addressesERC721, unaffectedAmountsERC721, burnedAmountsERC721 ) = CraftLib._splitConsumeablesERC721(r.inputsERC721, inputERC721Ids);
+        BatchTransfer.assertBalanceERC721(addressesERC721, msg.sender, unaffectedAmountsERC721);
+        BatchTransfer.transferFromERC721(addressesERC721, msg.sender, address(this), burnedAmountsERC721);
 
+        // Batch Transfer Output ERC20
+        address[] memory tokenAddresses;
+        uint256[] memory tokenAmounts;
+        ( tokenAddresses, tokenAmounts ) = CraftLib._buildBatchTransferERC20(r.outputsERC20, 1);
+        BatchTransfer.transferFromERC20(tokenAddresses, address(this), msg.sender, tokenAmounts);
 
+        // Batch Transfer Output ERC721
+        address[] memory nftAddresses;
+        uint256[][] memory nftIds;
+        ( nftAddresses, nftIds ) = CraftLib._buildBatchTransferERC721(r.outputsERC721, 1); // craftAmount = 1
+        BatchTransfer.transferFromERC721(nftAddresses, address(this), msg.sender, nftIds);
+
+        emit RecipeCraft(recipeId, r.craftedAmount, r.craftableAmount, msg.sender);
     }
-
 }
-
