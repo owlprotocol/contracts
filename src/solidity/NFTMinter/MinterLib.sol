@@ -5,32 +5,33 @@ pragma solidity ^0.8.0;
  * @dev NFT Minter common data types
  *
  */
-library NFTMinterLibrary {
+library MinterLib {
 
+    // TODO - remove recessive / dominant traits once
+    // gene mixing algorithm complete
     enum FeatureType {
         recessive,
         dominant
     }
 
     struct Species {
-        bytes32 name;
         address contractAddr;
         address owner;
+        address mintFeeToken;
+        uint256 mintFeeAmount;
+        address mintFeeAddress;
         SpeciesFeature[] speciesFeatures;
         mapping(uint256 => Specimen) specimen;
     }
 
     struct SpeciesFeature {
-        bytes32 name;
-        // Because we use mod operator to calculate random values,
-        // values will not be generated greater than sqrt(2**256-1).
-        // This results in uint128 values. 
-        uint128 minValue;
-        uint128 maxValue;
+        uint8 minValue;
+        uint8 maxValue;
     }
 
     struct Specimen {
-        uint256 createdBlock;
+        uint64 createdBlock;
+        uint256 dna;
         SpecimenFeature[] features;
     }
 
