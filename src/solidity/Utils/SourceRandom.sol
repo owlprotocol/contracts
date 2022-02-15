@@ -13,20 +13,14 @@ library SourceRandom {
     function getRandomDebug() internal view returns (uint256) {
         uint256 random = uint256(keccak256(abi.encode(block.timestamp)));
         require(random != 0);  // shouldn't ever happen but just to be safe.
-        // TODO - should we add this?
-        // if (random < 2**128)
-        //     random += 2**128;
         return random;
     }
 
     /// @dev Returns a random uint256 sourced from a seed
     /// @return uint256 random value
-    function getSeededRandom(bytes memory seed) internal pure returns (uint256) {
-        uint256 random = uint256(keccak256(seed));
+    function getSeededRandom(uint256 seed, uint256 nonce) internal pure returns (uint256) {
+        uint256 random = uint256(keccak256(abi.encode(seed,nonce)));
         require(random != 0);  // shouldn't ever happen but just to be safe
-        // TODO - should we add this?
-        // if (random < 2**128)
-        //     random += 2**128;
         return random;
     }
 
