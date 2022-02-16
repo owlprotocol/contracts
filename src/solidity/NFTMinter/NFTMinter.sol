@@ -184,14 +184,14 @@ contract NFTMinter {
         for (uint i = 0; i < s.speciesFeatures.length; i++) {
 
             // Get a random value from seed + nonce
-            random = SourceRandom.getSeededRandom(abi.encode(randomSeed, randomNonce++));
+            random = SourceRandom.getSeededRandom(randomSeed, randomNonce++);
 
             // random % (max-min + 1)
             feature.featureValue = uint128(random % (s.speciesFeatures[i].maxValue - s.speciesFeatures[i].minValue + 1));
 
             // We need another truly-random value for recessive/dominant.
             // If we were to use the same, certain trait values would correlate.
-            random = SourceRandom.getSeededRandom(abi.encode(randomSeed, randomNonce++));
+            random = SourceRandom.getSeededRandom(randomSeed, randomNonce++);
             feature.featureType = NFTMinterLibrary.FeatureType(random % 2);
 
             // Assign values to specimen (via pointer)

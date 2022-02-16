@@ -1,12 +1,12 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import configureGanache from '../../utils/configureGanache';
-import setProvider from '../../utils/setProvider';
-import NFTCrafterTruffle from '../../truffle/Crafter';
-import FactoryERC20Truffle from '../../truffle/FactoryERC20';
-import FactoryERC721Truffle from '../../truffle/FactoryERC721';
+import configureGanache from '../../../utils/configureGanache';
+import setProvider from '../../../utils/setProvider';
+import NFTCrafterTruffle from '../../../truffle/Crafter';
+import FactoryERC20Truffle from '../../../truffle/FactoryERC20';
+import FactoryERC721Truffle from '../../../truffle/FactoryERC721';
 
-import { InputERC20, InputERC721, OutputERC20, OutputERC721, parseRecipe } from '../../nft-launcher-lib/Crafter';
+import { InputERC20, InputERC721, OutputERC20, OutputERC721, parseRecipe } from '../../../nft-launcher-lib/Crafter';
 import { createERC20 } from './FactoryERC20.test';
 import { createERC721 } from './FactoryERC721.test';
 
