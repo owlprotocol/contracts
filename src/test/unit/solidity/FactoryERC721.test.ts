@@ -1,6 +1,6 @@
-import configureGanache from '../../utils/configureGanache';
-import setProvider from '../../utils/setProvider';
-import FactoryERC721Truffle from '../../truffle/FactoryERC721';
+import configureGanache from '../../../utils/configureGanache';
+import setProvider from '../../../utils/setProvider';
+import FactoryERC721Truffle from '../../../truffle/FactoryERC721';
 import { toBN } from 'web3-utils';
 import { assert } from 'chai';
 

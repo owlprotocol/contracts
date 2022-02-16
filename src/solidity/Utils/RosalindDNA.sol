@@ -4,8 +4,10 @@ pragma solidity ^0.8.0;
 import "./SourceRandom.sol";
 
 /**
- * @dev Sources different levels of randomness
- *
+ * @dev Library used for combining uint256-encoded genes
+ * Named Rosalind after chemist
+ * Rosalind Franklin who discovered double-helix and significantly
+ * furthered our understanding of DNAs molecular structure.
  */
 library RosalindDNA {
 
@@ -22,8 +24,13 @@ library RosalindDNA {
         uint8[] calldata genes,
         uint256 randomSeed
     ) internal pure returns (uint256) {
+        // Requires
+        require(parents.length < 256, "No more than 255 parents allowed!");
+
         // Store genes being passed down
-        uint256[] memory selectedGenes = new uint256[](genes.length);
+        // uint256[] memory selectedGenes = new uint256[](genes.length);
+
+        uint256 childDNA;
 
         // Loop genes
         for (uint geneIdx = 0; geneIdx < genes.length; geneIdx++) {
@@ -31,7 +38,7 @@ library RosalindDNA {
             // Gene details
             uint256 geneStartIdx = genes[geneIdx];
             uint256 geneEndIdx;
-            if (geneIdx < genes.length)
+            if (geneIdx < genes.length-1)
                 geneEndIdx = genes[geneIdx+1];
             else
                 geneEndIdx = 256;
@@ -40,18 +47,19 @@ library RosalindDNA {
             uint8 randomParentIdx = uint8(SourceRandom.getSeededRandom(randomSeed, geneIdx) % parents.length);
             uint256 selectedParent = parents[randomParentIdx];
 
-            uint256 bitMaskStart = type(uint256).max >> geneStartIdx;
-            uint256 bitMaskEnd = type(uint256).max << geneEndIdx;
-            uint256 bitMask = bitMaskStart ^ bitMaskEnd;
+            uint256 bitMaskStart = type(uint256).max << geneStartIdx;
+            uint256 bitMaskEnd = type(uint256).max >> (256 - geneEndIdx);
+            uint256 bitMask = bitMaskStart & bitMaskEnd;
 
-            uint256 gene = selectedParent ^ bitMask;
-            selectedGenes[geneIdx] = gene;
+            uint256 gene = selectedParent & bitMask;
+            // selectedGenes[geneIdx] = gene;
+            childDNA = childDNA | gene;
         }
 
         // Merge into final childDNA
-        uint256 childDNA;
-        for (uint geneIdx = 0; geneIdx < genes.length; geneIdx++)
-            childDNA = childDNA | selectedGenes[geneIdx];
+        // uint256 childDNA;
+        // for (uint geneIdx = 0; geneIdx < genes.length; geneIdx++)
+        //     childDNA = childDNA | selectedGenes[geneIdx];
 
         return childDNA;
     }

@@ -7,7 +7,7 @@ import "../Utils/RosalindDNA.sol";
  * @dev **INTERNAL TOOL**
  * Used to test RosalindDNA library.
  */
-contract RosalindLab {
+contract RosalindTestLab {
 
     /**
      * @dev Breeds multiple parents DNA, returning a new combined
@@ -17,10 +17,10 @@ contract RosalindLab {
      * the DNA into two genes of equal length
      * @param randomSeed random value to use for gene splicing
      */
-    function testBreedDNASimple(
+    function breedDNASimple(
         uint256[] calldata parents,
         uint8[] calldata genes,
         uint256 randomSeed
-    ) internal pure returns (uint256) { return RosalindDNA.breedDNASimple(parents, genes, randomSeed); }
+    ) public pure returns (uint256) { return RosalindDNA.breedDNASimple(parents, genes, randomSeed); }
 
 }

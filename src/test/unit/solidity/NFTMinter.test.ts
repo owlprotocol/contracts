@@ -1,14 +1,14 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import configureGanache from '../../utils/configureGanache';
-import setProvider from '../../utils/setProvider';
-import NFTMinterTruffle from '../../truffle/NFTMinter';
-import NFTMinterMintableTruffle from '../../truffle/Mintable';
-import FactoryERC20Truffle from '../../truffle/FactoryERC20';
-import FactoryERC721Truffle from '../../truffle/FactoryERC721';
+import configureGanache from '../../../utils/configureGanache';
+import setProvider from '../../../utils/setProvider';
+import NFTMinterTruffle from '../../../truffle/NFTMinter';
+import NFTMinterMintableTruffle from '../../../truffle/Mintable';
+import FactoryERC20Truffle from '../../../truffle/FactoryERC20';
+import FactoryERC721Truffle from '../../../truffle/FactoryERC721';
 import { toHex } from 'web3-utils';
 
-import { SpeciesFeatures, parseSpecies, parseSpecimen } from '../../nft-launcher-lib/NFTMinter';
+import { SpeciesFeatures, parseSpecies, parseSpecimen } from '../../../nft-launcher-lib/NFTMinter';
 import { createERC721 } from './FactoryERC721.test';
 import { createERC20 } from './FactoryERC20.test';
 
