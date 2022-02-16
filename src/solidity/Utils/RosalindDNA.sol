@@ -27,9 +27,6 @@ library RosalindDNA {
         // Requires
         require(parents.length < 256, "No more than 255 parents allowed!");
 
-        // Store genes being passed down
-        // uint256[] memory selectedGenes = new uint256[](genes.length);
-
         uint256 childDNA;
 
         // Loop genes
@@ -52,14 +49,10 @@ library RosalindDNA {
             uint256 bitMask = bitMaskStart & bitMaskEnd;
 
             uint256 gene = selectedParent & bitMask;
-            // selectedGenes[geneIdx] = gene;
+            
+            // Save genes to childDNA
             childDNA = childDNA | gene;
         }
-
-        // Merge into final childDNA
-        // uint256 childDNA;
-        // for (uint geneIdx = 0; geneIdx < genes.length; geneIdx++)
-        //     childDNA = childDNA | selectedGenes[geneIdx];
 
         return childDNA;
     }
