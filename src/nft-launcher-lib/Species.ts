@@ -1,6 +1,6 @@
 import { toBN } from 'web3-utils';
 
-export function encodeGenesUint256(values: BN[], genes: number[]) {
+export function encodeGenesUint256(values: BN[], genes: number[]): BN {
     let encodedGenes = toBN(0);
 
     if (values.length != genes.length) throw 'mismatching values/genes length!';
@@ -13,6 +13,7 @@ export function encodeGenesUint256(values: BN[], genes: number[]) {
         // Perform bitwise left-shift on selectedGene
         const selectedGene = values[geneIdx].shln(geneStartIdx);
         // Merge selected gene w/ our encoding
+        //@ts-ignore
         encodedGenes = encodedGenes.or(selectedGene);
     }
     return encodedGenes;
