@@ -43,7 +43,9 @@
         "ganache": "ganache-cli -b 1 --networkId 1337 --chainId 1337 -m $HD_WALLET_MNEMONIC"
     },
     "dependencies": {
-        "dotenv": "^10.0.0"
+        "dotenv": "^10.0.0",
+        "ipfs-http-client": "^56.0.1",
+        "merge-images": "^2.0.0"
     },
     "peerDependencies": {
         "@ethersproject/abi": "^5.4.0",
@@ -77,11 +79,13 @@
         "@types/chai": "^4.3.0",
         "@types/chai-as-promised": "^7.1.4",
         "@types/glob": "^7.2.0",
+        "@types/merge-images": "^1.2.1",
         "@types/mocha": "^9.0.0",
         "@types/node": "^16.11.19",
         "@typescript-eslint/eslint-plugin": "^4.33.0",
         "@typescript-eslint/parser": "^4.33.0",
         "bignumber.js": "^9.0.2",
+        "canvas": "^2.9.0",
         "chai": "^4.3.4",
         "chai-as-promised": "^7.1.1",
         "cross-env": "^7.0.3",
