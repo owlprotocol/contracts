@@ -83,6 +83,7 @@ describe('Rosalind DNA Library', function () {
             toBN(2).pow(toBN(256).subn(1)), // 100% chance to mutate
         ];
 
+        //@ts-ignore
         const offspringDNA = await dnaLib.breedDNAWithMutations([parent1, parent2], genes, randomSeed, mutationRates);
 
         const offspringGenes = decodeGenesUint256(offspringDNA, genes);

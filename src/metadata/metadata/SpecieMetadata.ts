@@ -1,4 +1,5 @@
 import SpecieTrait from './SpecieTrait';
+import web3 from 'web3';
 import { Value } from '../types';
 
 export interface Metadata {
@@ -40,7 +41,7 @@ class SpecieMetadata {
     dnaToMetadata(n: number): Value[] {
         if (!(n < 2 ** this.maxBitSize) || n < 0) throw new Error('Dna out of metadata range');
 
-        const bin = padLeadingZeros(n.toString(2), this.maxBitSize);
+        const bin = web3.utils.padLeft(n.toString(2), this.maxBitSize);
         const bitsList: number[] = this.traits.map((trait) => trait.getBitSize());
         const metadata: Value[] = [];
 
@@ -65,12 +66,6 @@ class SpecieMetadata {
 
         return metadata;
     }
-}
-
-export function padLeadingZeros(num: string, size: number) {
-    let s = num + '';
-    while (s.length < size) s = '0' + s;
-    return s;
 }
 
 export class InvalidDnaError extends Error {
