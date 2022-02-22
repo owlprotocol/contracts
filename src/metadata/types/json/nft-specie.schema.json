@@ -1,0 +1,80 @@
+{
+    "title": "NFT Specie Metadata Schema",
+    "description": "Schema for a valid Specie Metadata",
+    "definitions": {
+        "Name": {
+            "type": "string",
+            "description": "Name of the item",
+            "examples": ["Bored Ape Yacht Club", "Cool Cats"]
+        },
+        "Description": {
+            "type": "string",
+            "description": "These are the attributes for the item, which will show up on the OpenSea page for the item."
+        },
+        "Traits": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "trait_type": {
+                        "type": "string",
+                        "description": "The trait being referred to",
+                        "examples": ["Eyes"]
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "This is what the data encodes. Usually, will refer to items in value_options array",
+                        "examples": ["number", "enum", "Image"]
+                    },
+                    "value_options": {
+                        "type": "array",
+                        "properties": {
+                            "value_name": {
+                                "type": "string",
+                                "description": "An instance of a trait_type",
+                                "examples": ["Blue", "Big", "Square"]
+                            },
+                            "image": {
+                                "type": "string",
+                                "description": "Image of the value"
+                            },
+                            "value": {
+                                "type": "string",
+                                "description": "Value referred to by value_name"
+                            }
+                        },
+                        "required": ["value_name"],
+                        "oneOf": [
+                            {
+                                "required": ["value"]
+                            },
+                            {
+                                "required": ["image"]
+                            }
+                        ]
+                    },
+                    "value_bit_size": {
+                        "type": "number",
+                        "description": "The amount of bits required to encapsulate all possible instances of this SpecieMetadata",
+                        "minimum": 0,
+                        "maximum": 256,
+                        "examples": [1, 2]
+                    },
+                    "display_type": {
+                        "type": "string",
+                        "description": "How to display trait value on Opensea",
+                        "examples": ["number", "boost_number", "boost_percentage", "date"]
+                    },
+                    "max_value": {
+                        "type": "number",
+                        "description": "Optional, defines max value. Only applicable when type is number"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Description of atrribute, as per EIP-721"
+                    }
+                }
+            }
+        }
+    }
+}
