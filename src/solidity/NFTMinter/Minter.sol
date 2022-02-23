@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./MinterLib.sol";
-import "../Utils/IMintableERC721.sol";
+import "../ERC721/IMintableERC721.sol";
 import "../Utils/SourceRandom.sol";
 
 /**
