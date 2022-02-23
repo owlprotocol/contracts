@@ -12,4 +12,6 @@ interface IMintableERC721 is IERC721 {
 
     function mint(address to) external;
 
+    function safeMint(address to) external;
+
 }

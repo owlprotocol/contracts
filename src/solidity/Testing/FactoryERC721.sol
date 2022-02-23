@@ -40,4 +40,14 @@ contract FactoryERC721 is ERC721 {
     function mint(address to) public {
         _mint(to, lastTokenId++);
     }
+
+    /**
+     * @dev Mints a token and assigns it to `to`.
+     * doesn't require permissions.
+     * @param to add
+     */
+     function safeMint(address to) public {
+         _safeMint(to, lastTokenId++);
+     }
+
 }
