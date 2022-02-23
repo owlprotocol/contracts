@@ -43,6 +43,7 @@
         "ganache": "ganache-cli -b 1 --networkId 1337 --chainId 1337 -m $HD_WALLET_MNEMONIC"
     },
     "dependencies": {
+        "ajv": "^8.10.0",
         "dotenv": "^10.0.0",
         "ipfs-http-client": "^56.0.1",
         "merge-images": "^2.0.0"
