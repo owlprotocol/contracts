@@ -116,7 +116,7 @@ contract Minter {
         uint256 randomDNA = SourceRandom.getRandomDebug();
         _createSpecimen(speciesId, tokenId, randomDNA);
     }
-    
+
     /**
      * @dev Internal function used to check / create / emit on Specimen creation.
      * @param speciesId species identifier
@@ -151,5 +151,4 @@ contract Minter {
     ) public view returns (
         uint256 dna
     ) { return species[speciesId].specimenDNA[tokenId]; }
-
 }
