@@ -1,19 +1,16 @@
-import { hexToUtf8 } from 'web3-utils';
-
+// TODO - this will be removed in the future
 export enum FeatureType {
     recessive,
     dominant,
 }
 
 export interface Species {
-    name: string;
     contractAddr: string;
     owner: string;
     speciesFeatures: SpeciesFeatures[];
 }
 
 export interface SpeciesFeatures {
-    name: string;
     minValue: string;
     maxValue: string;
 }
@@ -30,14 +27,10 @@ export interface SpecimenFeature {
 
 export function parseSpecies(species: Record<string, unknown>) {
     const parsed: Species = {
-        name: '',
         contractAddr: '',
         owner: '',
         speciesFeatures: [],
     };
-
-    if (typeof species.name != 'string') throw 'Mis-constructed name!';
-    parsed.name = hexToUtf8(species.name);
 
     if (typeof species.contractAddr != 'string') throw 'Mis-constructed contractAddr!';
     parsed.contractAddr = species.contractAddr;
@@ -48,10 +41,9 @@ export function parseSpecies(species: Record<string, unknown>) {
     // SpeciesFeatures
     if (!Array.isArray(species.features)) throw 'Mis-constructed SpeciesFeatures list!';
     for (const feature of species.features) {
-        if (feature.length != 3) throw 'Mis-constructed SpeciesFeature!';
+        if (feature.length != 2) throw 'Mis-constructed SpeciesFeature!';
 
         parsed.speciesFeatures.push({
-            name: String(feature[0]),
             minValue: String(feature[1]),
             maxValue: String(feature[2]),
         });

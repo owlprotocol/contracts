@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
  */
 interface IMintableERC721 is IERC721 {
 
-    function mint(address to, uint256 tokenId) external;
+    function mint(address to) external;
 
+    function safeMint(address to) external;
 }
