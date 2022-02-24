@@ -5,26 +5,38 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./MinterLib.sol";
-import "../ERC721/IMintableERC721.sol";
-import "../Utils/SourceRandom.sol";
+import "../ERC721/IERC721Mintable.sol";
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
-contract Minter {
+contract MinterCore {
 
     // Data Storage
     using Counters for Counters.Counter;
     Counters.Counter private speciesIds;
 
-    mapping (uint256 => MinterLib.Species) internal species;
+    mapping (uint256 => Species) internal species;
+
+    // Structs
+    struct Species {
+        address contractAddr;
+        address owner;
+        address mintFeeToken;
+        uint256 mintFeeAmount;
+        address mintFeeAddress;
+    }
 
     // Modifiers
     modifier speciesOwner(uint256 speciesId) {
         // also tests for existence with below require
         require(msg.sender == species[speciesId].owner, "You are not the owner!");
+        _;
+    }
+    modifier speciesExists(uint256 speciesId) {
+        // tests for existence
+        require(address(0) != species[speciesId].owner, "Species does not exist!");
         _;
     }
 
@@ -36,12 +48,6 @@ contract Minter {
         address mintFeeToken,
         address mintFeeAddress,
         uint256 mintFeeAmount
-    );
-
-    event SpecimenCreated(
-        uint256 indexed speciesId,
-        uint256 tokenId,
-        uint256 dna
     );
 
     /**
@@ -61,7 +67,7 @@ contract Minter {
         speciesIds.increment();
 
         // Save our pointer
-        MinterLib.Species storage s = species[speciesIds.current()];
+        Species storage s = species[speciesIds.current()];
         s.contractAddr = contractAddress;
         s.owner = msg.sender;
         s.mintFeeToken = mintFeeToken;
@@ -91,7 +97,7 @@ contract Minter {
         uint256 mintFeeAmount,
         address mintFeeAddress
     ) {
-        MinterLib.Species storage s = species[speciesId];
+        Species storage s = species[speciesId];
         return (
             s.contractAddr,
             s.owner,
@@ -102,53 +108,39 @@ contract Minter {
     }
 
     /**
-     * @dev Register an existing NFT and generate DNA for it.
-     * Requires speciesOwner permissions! Used for developers to test/
-     * migrate existing NFTs.
-     * @param speciesId species to register NFT to
-     * @param tokenId ID of associated NFT
+     * @dev Base minting function (not safeMint). Called
+     * by implementation contracts.
+     * @param speciesId species identifier
+     * @param buyer who's paying the ERC20 fee / gets the ERC721 token
+     * @param tokenId the token identifier to mint
      */
-    function registerSpecimen(
-        uint256 speciesId,
-        uint256 tokenId
-    ) public speciesOwner(speciesId) {
-        // Set our species DNA
-        uint256 randomDNA = SourceRandom.getRandomDebug();
-        _createSpecimen(speciesId, tokenId, randomDNA);
+    function _mintForFee(uint256 speciesId, address buyer, uint256 tokenId) internal {
+        Species storage s = species[speciesId];
+
+        // Transfer ERC20
+        SafeERC20.safeTransferFrom(IERC20(s.mintFeeToken), buyer, s.mintFeeAddress, s.mintFeeAmount);
+
+        // Call minting operation
+        IERC721Mintable(s.contractAddr).mint(buyer, tokenId);
     }
 
     /**
-     * @dev Internal function used to check / create / emit on Specimen creation.
+     * @dev Base minting function (safeMint). Called
+     * by implementation contracts.
      * @param speciesId species identifier
-     * @param tokenId token identifier
-     * @param dna dna stored for specimen
+     * @param buyer who's paying the ERC20 fee / gets the ERC721 token
+     * @param tokenId the token identifier to mint
      */
-    function _createSpecimen(
-        uint256 speciesId,
-        uint256 tokenId,
-        uint256 dna
-    ) internal {
-        require(species[speciesId].specimenDNA[tokenId] == 0, "Specimen already exists!");
+    function _safeMintForFee(uint256 speciesId, address buyer, uint256 tokenId) internal {
+        Species storage s = species[speciesId];
 
-        // Store DNA / emit event
-        species[speciesId].specimenDNA[tokenId] = dna;
-        emit SpecimenCreated(
-            speciesId,
-            tokenId,
-            dna
-        );
+        // Transfer ERC20
+        SafeERC20.safeTransferFrom(IERC20(s.mintFeeToken), buyer, s.mintFeeAddress, s.mintFeeAmount);
 
+        // Call minting operation
+        IERC721Mintable(s.contractAddr).safeMint(buyer, tokenId);
     }
 
-    /**
-     * @dev Returns DNA generated for a species
-     * @param speciesId species identifier
-     * @param tokenId NFT identifier
-     */
-    function tokenDNA(
-        uint256 speciesId,
-        uint256 tokenId
-    ) public view returns (
-        uint256 dna
-    ) { return species[speciesId].specimenDNA[tokenId]; }
+
+
 }
