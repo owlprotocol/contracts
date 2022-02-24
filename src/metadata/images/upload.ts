@@ -40,7 +40,10 @@ export async function uploadERC721Single(metadata: ERC721Metadata, options?: ERC
  *
  * @param metadataList each image must be uplaoded beforehand to form the metadata
  */
-export async function uploadERC721Many(metadataList: ERC721Metadata[], pathField: keyof ERC721Metadata) {
+export async function uploadERC721Many(
+    metadataList: ERC721Metadata[],
+    pathField: keyof ERC721Metadata,
+): Promise<AsyncIterable<AddResult>> {
     return client.addAll(
         //@ts-ignore
         metadataList.map((m) => {
