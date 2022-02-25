@@ -51,6 +51,10 @@ describe('metadata.integration', () => {
             expect(() => metadata.dnaToMetadata(7)).to.throw('Invalid Dna for this SpecieMetadata');
             assert.deepEqual(instanceMetadata8, metadata.dnaToMetadata(8));
         });
+
+        it('metadataToDna', () => {
+            assert.equal(8, metadata.metadataToDna(instanceMetadata8));
+        });
     });
 
     describe('validate', () => {

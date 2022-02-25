@@ -75,6 +75,27 @@ class SpecieMetadata {
 
         return metadata;
     }
+
+    metadataToDna(metadata: Value[]): number {
+        let finalBin: string = '';
+        metadata.forEach((value: Value) => {
+            const trait = this.traits.find(
+                (specieTrait: SpecieTrait) => specieTrait.getTraitType() === value.trait_type,
+            );
+            if (!trait)
+                throw new InvalidMetadataError(`Invalid trait ${value.trait_type} not found in this SpecieMetadata`);
+
+            const index = trait.getValueOptions().findIndex((option) => value.value === option.value_name);
+            if (index === -1)
+                throw new InvalidMetadataError(
+                    `Value ${value.value} for trait_type ${value.trait_type} not found in this SpecieMetadata `,
+                );
+
+            finalBin += web3.utils.padLeft(index.toString(2), trait.getBitSize());
+        });
+
+        return parseInt(finalBin, 2);
+    }
 }
 
 export function validateSchema(object: any): boolean {
@@ -97,6 +118,15 @@ export class InvalidDnaError extends Error {
     constructor() {
         super('Invalid Dna for this SpecieMetadata');
         this.name = 'InvalidDnaError';
+    }
+}
+
+export class InvalidMetadataError extends Error {
+    constructor(msg?: string) {
+        if (!msg) super('Invalid Metadata for this SpecieMetadata');
+        else super(msg);
+
+        this.name = 'InvalidMetadataError';
     }
 }
 
