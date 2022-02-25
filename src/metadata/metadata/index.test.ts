@@ -89,6 +89,12 @@ describe('metadata.integration', () => {
             );
         });
 
+        it("type is not 'enum, 'image', or 'value'", () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].type = 'asdsad';
+            expect(() => validateSchema(json2)).to.throw('must be equal to one of the allowed values');
+        });
+
         it('empty value_options array', () => {
             json.traits[0].value_options = [];
             expect(() => validateSchema(json)).to.throw('must NOT have fewer than 1 items');
