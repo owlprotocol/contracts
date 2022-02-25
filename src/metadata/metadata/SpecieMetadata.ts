@@ -1,7 +1,7 @@
 import SpecieTrait from './SpecieTrait';
 import web3 from 'web3';
-import { Value } from '../types';
-
+import Ajv from 'ajv';
+import { Value, SpecieMetadataSchema } from '../types';
 export interface Metadata {
     [key: string]: Value[];
 }
@@ -13,6 +13,15 @@ class SpecieMetadata {
     constructor(traits: SpecieTrait[]) {
         this.traits = traits;
         this.maxBitSize = traits.reduce((total, trait) => total + trait.getBitSize(), 0);
+    }
+
+    getJsonMetadata() {
+        const jsonTraits = this.traits.map((trait) => trait.getJsonFormat());
+
+        return {
+            traits: jsonTraits,
+            maxBitSize: this.maxBitSize,
+        };
     }
 
     getSpecieMetadata(): SpecieTrait[] {
@@ -68,6 +77,22 @@ class SpecieMetadata {
     }
 }
 
+export function validateSchema(object: any): boolean {
+    const ajv = new Ajv();
+    const valid = ajv.validate(SpecieMetadataSchema, object);
+    if (!valid) throw new Error(ajv.errors?.map((e) => e.message).join(', '));
+    return valid;
+}
+
+export function validateAndGetSchema(object: any): SpecieMetadata {
+    validateSchema(object); // errors will be thrown in validateSchema()
+    return new SpecieMetadata(
+        object.traits.map((trait: any) => {
+            const { trait_type, type, value_options, display_type, max_value, description } = trait;
+            return new SpecieTrait(trait_type, type, value_options, display_type, max_value, description);
+        }),
+    );
+}
 export class InvalidDnaError extends Error {
     constructor() {
         super('Invalid Dna for this SpecieMetadata');

@@ -38,7 +38,7 @@ class SpecieTrait {
             type: this.type,
             value_options: this.value_options,
             value_bit_size: this.value_bit_size,
-            dispaly_type: this.display_type,
+            display_type: this.display_type,
             max_value: this.max_value,
             description: this.description,
         };
