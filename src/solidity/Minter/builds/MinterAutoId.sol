@@ -31,11 +31,7 @@ contract MinterAutoId is MinterCore {
         // Mint Operation
         MinterCore._mintForFee(speciesId, msg.sender, nextTokenId[speciesId]);
 
-        emit MintSpecies(
-            speciesId,
-            msg.sender,
-            nextTokenId[speciesId]
-        );
+        emit MintSpecies(speciesId, msg.sender, nextTokenId[speciesId]);
 
         return nextTokenId[speciesId];
     }
@@ -52,11 +48,7 @@ contract MinterAutoId is MinterCore {
         // Mint Operation
         MinterCore._safeMintForFee(speciesId, msg.sender, nextTokenId[speciesId]);
 
-        emit MintSpecies(
-            speciesId,
-            msg.sender,
-            nextTokenId[speciesId]
-        );
+        emit MintSpecies(speciesId, msg.sender, nextTokenId[speciesId]);
 
         return nextTokenId[speciesId];
     }
