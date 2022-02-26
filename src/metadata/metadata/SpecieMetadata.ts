@@ -1,10 +1,7 @@
 import SpecieTrait from './SpecieTrait';
 import web3 from 'web3';
 import Ajv from 'ajv';
-import { Value, SpecieMetadataSchema } from '../types';
-export interface Metadata {
-    [key: string]: Value[];
-}
+import { Value, SpecieMetadataSchema, MetadataList } from '../types';
 class SpecieMetadata {
     //order in this array matter; earlier traits function as lower layers in image generation
     private traits: SpecieTrait[];
@@ -28,8 +25,8 @@ class SpecieMetadata {
         return this.traits;
     }
 
-    generateAllInstances(): Metadata {
-        const instances: Metadata = {};
+    generateAllInstances(): MetadataList {
+        const instances: MetadataList = {};
         for (let i = 0; i < 2 ** this.maxBitSize; i++) {
             try {
                 instances[i] = this.dnaToMetadata(i);
@@ -77,7 +74,7 @@ class SpecieMetadata {
     }
 
     metadataToDna(metadata: Value[]): number {
-        let finalBin: string = '';
+        let finalBin = '';
         metadata.forEach((value: Value) => {
             const trait = this.traits.find(
                 (specieTrait: SpecieTrait) => specieTrait.getTraitType() === value.trait_type,

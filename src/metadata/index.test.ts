@@ -42,21 +42,25 @@ describe('E2E Test', () => {
         this.timeout(60000);
         const list: ERC721Metadata[] = [];
 
-        for (const [dna, instance] of Object.entries(allM)) {
-            const mergedImage = await merge(instance, metadata, {
+        for (const dna in allM) {
+            console.log(dna);
+            const mergedImage = await merge(allM[dna], metadata, {
                 Canvas,
                 Image: _Image,
             });
+
             // remove "data:image/png;base64,"
             const imgBinary = fromString(mergedImage.substring(mergedImage.indexOf(',') + 1), 'base64');
+
             //upload each image manually
             const { path } = await uploadImage(imgBinary);
 
             const token: ERC721Metadata = {
                 name: `${dna}`,
                 image: `ipfs://${path}`,
-                attributes: instance,
+                attributes: allM[dna],
             };
+
             list.push(token);
         }
 
@@ -67,6 +71,6 @@ describe('E2E Test', () => {
         const { cid } = r[r.length - 1];
         console.log(list);
         console.log('path:', cid);
-        //check if ipfs://[cid] has all files in list
+        // check if ipfs://[cid] has all files in list
     });
 });
