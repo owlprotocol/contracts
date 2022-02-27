@@ -13,6 +13,9 @@ import "../../Utils/RosalindDNA.sol";
  */
 contract MinterBreeding is MinterCore {
 
+    // TODO - docs
+    // TODO - setter
+
     uint8 constant public defaultGenesNum = 8;
     uint8 constant public defaultRequiredParents = 2;
     uint256 constant public defaultBreedingCooldownSeconds = 604800; // 7 days
