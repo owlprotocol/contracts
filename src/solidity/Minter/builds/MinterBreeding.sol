@@ -13,9 +13,6 @@ import "../../Utils/RosalindDNA.sol";
  */
 contract MinterBreeding is MinterCore {
 
-    // TODO - docs
-    // TODO - setter
-
     uint8 constant public defaultGenesNum = 8;
     uint8 constant public defaultRequiredParents = 2;
     uint256 constant public defaultBreedingCooldownSeconds = 604800; // 7 days
@@ -38,6 +35,13 @@ contract MinterBreeding is MinterCore {
         address to,
         uint256 tokenId,
         uint256[] parents
+    );
+    event SetBreedingRules(
+        uint256 speciesId,
+        uint8 requiredParents,
+        uint256 breedCooldownSeconds,
+        uint8[] genes,
+        uint256[] mutationRates
     );
 
     /**
@@ -65,6 +69,46 @@ contract MinterBreeding is MinterCore {
      * @param speciesId address of associated NFT
      * @return tokenId minted token id
      */
+    function setBreedingRules(
+        uint256 speciesId,
+        uint8 requiredParents,
+        uint256 breedCooldownSeconds,
+        uint8[] memory genes,
+        uint256[] memory mutationRates
+    ) public speciesExists(speciesId) returns (uint256 tokenId) {
+        // Breed species
+        BreedingRules storage r = _breedingRules[speciesId];
+
+        // Set values
+        r.requiredParents = requiredParents;
+        r.breedCooldownSeconds = breedCooldownSeconds;
+
+        // Delete arrays in case they exist
+        if (r.genes.length > 0) delete r.genes;
+        if (r.mutationRates.length > 0) delete r.mutationRates;
+
+        // Set array vals
+        for (uint i = 0; i < genes.length; i++)
+            r.genes.push(genes[i]);
+        for (uint i = 0; i < mutationRates.length; i++)
+            r.mutationRates.push(mutationRates[i]);
+
+        emit SetBreedingRules(
+            speciesId,
+            requiredParents,
+            breedCooldownSeconds,
+            genes,
+            mutationRates
+        );
+
+        return tokenId;
+    }
+
+    /**
+     * @dev Create a new type of species and define attributes.
+     * @param speciesId address of associated NFT
+     * @return tokenId minted token id
+     */
     function safeBreed(
         uint256 speciesId,
         uint256[] calldata parents
@@ -80,6 +124,13 @@ contract MinterBreeding is MinterCore {
         return tokenId;
     }
 
+    /**
+     * @dev Internal function to do the heavy lifting for breeding
+     * @param speciesId address of associated NFT
+     * @param parents parents to use for breeding
+     * @param caller owner of parent NFTs (this will be verified)
+     * @return tokenId new token id
+     */
     function _breedSpecies(
         uint256 speciesId,
         uint256[] calldata parents,
@@ -124,6 +175,14 @@ contract MinterBreeding is MinterCore {
             tokenId = RosalindDNA.breedDNAWithMutations(parents, genes, randomSeed, mutationRates);
     }
 
+    /**
+     * @dev Internal function to do the heavy lifting for breeding
+     * @param speciesId species identifier
+     * @return requiredParents number of parents required (defaults to 2)
+     * @return breedCooldownSeconds number of seconds to cooldown (defaults to 7 days)
+     * @return genes 256-bit gene split locations (defaults to 8 32-bit genes)
+     * @return mutationRates mutation rate locations (defaults to none)
+     */
     function _getBreedingRules(
         uint256 speciesId
     ) internal view returns (
