@@ -38,7 +38,7 @@ describe('E2E Test', () => {
         allM = metadata.generateAllInstances();
     });
 
-    it('UploadERC721Many', async function () {
+    it.skip('UploadERC721Many', async function () {
         this.timeout(60000);
         const list: ERC721Metadata[] = [];
 

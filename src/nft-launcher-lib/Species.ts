@@ -1,25 +1,42 @@
 import { toBN } from 'web3-utils';
 
-export function encodeGenesUint256(values: BN[], genes: number[]): BN {
+export function encodeGenesUint256(values: (string | BN | number)[], genes: number[]): BN {
     let encodedGenes = toBN(0);
 
+    // Check value/gene lengths
     if (values.length != genes.length) throw 'mismatching values/genes length!';
 
-    // TODO - reject oversized values.
-
     for (let geneIdx = 0; geneIdx < genes.length; geneIdx++) {
+        // Type checks
+        let geneValue = values[geneIdx];
+        if (typeof geneValue == 'string' || typeof geneValue == 'number') geneValue = toBN(geneValue);
+
         // Calculate gene start
         const geneStartIdx = genes[geneIdx];
+
+        // Check for overflows
+        let geneEndIdx = 256;
+        if (geneIdx < genes.length - 1)
+            // If we're not on our last iteration, use the next value
+            geneEndIdx = genes[geneIdx + 1];
+        // Calculate our biggest possible value for this slot (2^n - 1)
+        const geneSpace = toBN(2)
+            .pow(toBN(geneEndIdx - geneStartIdx))
+            .subn(1);
+        if (geneSpace.lt(geneValue)) throw `Value: ${geneValue} too large for it's slot!`;
+
         // Perform bitwise left-shift on selectedGene
-        const selectedGene = values[geneIdx].shln(geneStartIdx);
+        const selectedGene = geneValue.shln(geneStartIdx);
         // Merge selected gene w/ our encoding
-        //@ts-ignore
         encodedGenes = encodedGenes.or(selectedGene);
     }
     return encodedGenes;
 }
 
-export function decodeGenesUint256(dna: BN, genes: number[]) {
+export function decodeGenesUint256(dna: BN | string | number, genes: number[]) {
+    // Type checks
+    if (typeof dna == 'string' || typeof dna == 'number') dna = toBN(dna);
+
     const decodedGenes: BN[] = [];
 
     for (let geneIdx = 0; geneIdx < genes.length; geneIdx++) {

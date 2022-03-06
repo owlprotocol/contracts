@@ -19,7 +19,7 @@ contract RosalindTestLab {
      */
     function breedDNASimple(
         uint256[] calldata parents,
-        uint8[] calldata genes,
+        uint8[] memory genes,
         uint256 randomSeed
     ) public pure returns (uint256) { return RosalindDNA.breedDNASimple(parents, genes, randomSeed); }
 
@@ -46,9 +46,9 @@ contract RosalindTestLab {
      */
     function breedDNAWithMutations(
         uint256[] calldata parents,
-        uint8[] calldata genes,
+        uint8[] memory genes,
         uint256 randomSeed,
-        uint256[] calldata mutationRates
+        uint256[] memory mutationRates
     ) public pure returns (uint256 childDNA) {
         return RosalindDNA.breedDNAWithMutations(parents, genes, randomSeed, mutationRates);
     }

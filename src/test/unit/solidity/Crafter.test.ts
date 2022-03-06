@@ -13,7 +13,10 @@ import { createERC721 } from './FactoryERC721.test';
 chai.use(chaiAsPromised);
 const { assert, expect } = chai;
 
-describe('NFTCrafter', function () {
+describe('Crafter', function () {
+    // Extra time
+    this.timeout(10000);
+
     let accounts: string[];
     let owner: string;
     let user: string;

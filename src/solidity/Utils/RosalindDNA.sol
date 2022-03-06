@@ -22,7 +22,7 @@ library RosalindDNA {
      */
     function breedDNASimple(
         uint256[] calldata parents,
-        uint8[] calldata genes,
+        uint8[] memory genes,
         uint256 randomSeed
     ) internal pure returns (uint256 childDNA) {
         // Loop genes
@@ -77,9 +77,9 @@ library RosalindDNA {
      */
     function breedDNAWithMutations(
         uint256[] calldata parents,
-        uint8[] calldata genes,
+        uint8[] memory genes,
         uint256 randomSeed,
-        uint256[] calldata mutationRates
+        uint256[] memory mutationRates
     ) internal pure returns (uint256 childDNA) {
         // Loop genes
         for (uint geneIdx = 0; geneIdx < genes.length; geneIdx++) {
