@@ -1,4 +1,4 @@
-import { assert } from 'chai';
+import { assert, expect } from 'chai';
 import { encodeGenesUint256, decodeGenesUint256 } from '../../../nft-launcher-lib/Species';
 import { toBN } from 'web3-utils';
 
@@ -14,5 +14,14 @@ describe('Encoding/Decoding uint256 genes', function () {
         // Compare before/after
         for (let valueIdx = 0; valueIdx < values.length; valueIdx++)
             assert(decodedDna[valueIdx].eq(values[valueIdx]), `values at index ${valueIdx} not equal!`);
+    });
+    it('Test overflows values', async () => {
+        // Encode the following values:
+        encodeGenesUint256([255, 0], [0, 8]);
+        expect(() => encodeGenesUint256([256, 0], [0, 8])).to.throw();
+
+        // Test the end spacing
+        encodeGenesUint256([0, toBN(2).pow(toBN(128)).subn(1)], [0, 128]);
+        expect(() => encodeGenesUint256([0, toBN(2).pow(toBN(128))], [0, 128])).to.throw();
     });
 });
