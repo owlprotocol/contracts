@@ -26,12 +26,13 @@
         "generate-factory": "ts-node src/generate.ts",
         "tsc": "tsc",
         "tsc:watch": "tsc -w",
-        "copy": "npm-run-all -p copy:solidity copy:ethers copy:truffle copy:prepublish",
+        "copy": "npm-run-all -p copy:solidity copy:ethers copy:truffle copy:prepublish copy:testImages",
         "copy:solidity": "mkdir -p lib/solidity && cp -r src/solidity lib/",
         "copy:ethers": "mkdir -p lib/types/ethers && cp -r src/types/ethers/*.d.ts lib/types/ethers",
         "copy:truffle": "mkdir -p lib/types/truffle && cp -r src/types/truffle/*.d.ts lib/types/truffle",
         "copy:web3": "mkdir -p lib/types/web3 && cp -r src/types/web3/*.d.ts lib/types/web3",
         "copy:prepublish": "mkdir -p lib && cp package.json lib/ && cp README.md lib/ && cp LICENSE lib/",
+        "copy:testImages": "cp -R src/metadata/testimages lib/metadata/",
         "deploy": "ts-node src/deploy.ts",
         "deploy:test": "cross-env NODE_ENV=test ts-node src/deploy.ts",
         "lint": "eslint src",
@@ -43,6 +44,7 @@
         "ganache": "ganache-cli -b 1 --networkId 1337 --chainId 1337 -m $HD_WALLET_MNEMONIC"
     },
     "dependencies": {
+        "ajv": "^8.10.0",
         "dotenv": "^10.0.0",
         "ipfs-http-client": "^56.0.1",
         "merge-images": "^2.0.0"

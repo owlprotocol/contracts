@@ -1,5 +1,5 @@
 import { assert, expect } from 'chai';
-import SpecieMetadata from './SpecieMetadata';
+import SpecieMetadata, { validateSchema } from './SpecieMetadata';
 import SpecieTrait from './SpecieTrait';
 import { generateAllInstances, instanceMetadata8 } from './test-results';
 
@@ -34,6 +34,7 @@ describe('metadata.integration', () => {
         //Order in array matters
         metadata = new SpecieMetadata([bodyTraits, eyeTraits, mouthTraits]);
     });
+
     describe('SpecieMetadata.ts', () => {
         it('getSpecieMetadata', () => {
             assert.deepEqual(metadata.generateAllInstances(), generateAllInstances);
@@ -49,6 +50,66 @@ describe('metadata.integration', () => {
         it('dnaToMetadata', () => {
             expect(() => metadata.dnaToMetadata(7)).to.throw('Invalid Dna for this SpecieMetadata');
             assert.deepEqual(instanceMetadata8, metadata.dnaToMetadata(8));
+        });
+
+        it('metadataToDna', () => {
+            assert.equal(8, metadata.metadataToDna(instanceMetadata8));
+        });
+    });
+
+    describe('validate', () => {
+        let json: any;
+
+        beforeEach(() => {
+            json = metadata.getJsonMetadata();
+        });
+
+        it('missing maxBitSize', () => {
+            json = { traits: json.traits };
+            expect(() => validateSchema(json)).to.throw("must have required property 'maxBitSize'");
+        });
+
+        it('missing traits', () => {
+            json = { maxBitSize: json.maxBitSize };
+            expect(() => validateSchema(json)).to.throw("must have required property 'traits'");
+        });
+
+        it('fields not defined in schema should still pass', () => {
+            json = { ...json, hello: 'bye' };
+            assert.equal(validateSchema(json), true);
+        });
+
+        //traits schema
+        it('traits is not array', () => {
+            json.traits = '';
+            expect(() => validateSchema(json)).to.throw('must be array');
+        });
+
+        it('object in value_options array not having value or image', () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].value_options[0] = { value_name: 'Eyes' };
+            expect(() => validateSchema(json2)).to.throw(
+                "must have required property 'image', must have required property 'value', must match exactly one schema in oneOf",
+            );
+        });
+
+        it("type is not 'enum, 'image', or 'value'", () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].type = 'asdsad';
+            expect(() => validateSchema(json2)).to.throw('must be equal to one of the allowed values');
+        });
+
+        it('empty value_options array', () => {
+            json.traits[0].value_options = [];
+            expect(() => validateSchema(json)).to.throw('must NOT have fewer than 1 items');
+        });
+
+        it('value_bit_size between 0 and 256', () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].value_bit_size = -1;
+            expect(() => validateSchema(json2)).to.throw('must be >= 0');
+            json2.traits[0].value_bit_size = 257;
+            expect(() => validateSchema(json2)).to.throw('must be <= 256');
         });
     });
 
