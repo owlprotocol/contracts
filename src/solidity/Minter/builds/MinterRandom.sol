@@ -8,7 +8,10 @@ import "../../Utils/SourceRandom.sol";
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterAutoId is MinterCore {
+contract MinterRandom is MinterCore {
+
+    // Nonce
+    uint256 private _numMinted;
 
     // Events
     event MintSpecies(
@@ -24,7 +27,8 @@ contract MinterAutoId is MinterCore {
      */
     function mint(uint256 speciesId) public speciesExists(speciesId) returns (uint256 tokenId) {
         // Generate tokenid
-        tokenId = SourceRandom.getRandomDebug();
+        uint256 random = SourceRandom.getRandomDebug();
+        tokenId = SourceRandom.getSeededRandom(random, _numMinted++);
 
         // Mint Operation
         MinterCore._mintForFee(speciesId, msg.sender, tokenId);
@@ -41,7 +45,8 @@ contract MinterAutoId is MinterCore {
      */
     function safeMint(uint256 speciesId) public speciesExists(speciesId) returns (uint256 tokenId) {
         // Generate tokenId
-        tokenId = SourceRandom.getRandomDebug();
+        uint256 random = SourceRandom.getRandomDebug();
+        tokenId = SourceRandom.getSeededRandom(random, _numMinted++);
 
         // Mint Operation
         MinterCore._safeMintForFee(speciesId, msg.sender, tokenId);

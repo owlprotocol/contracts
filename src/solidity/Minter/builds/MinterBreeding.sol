@@ -69,6 +69,26 @@ contract MinterBreeding is MinterCore {
      * @param speciesId address of associated NFT
      * @return tokenId minted token id
      */
+    function safeBreed(
+        uint256 speciesId,
+        uint256[] calldata parents
+    ) public speciesExists(speciesId) returns (uint256 tokenId) {
+        // Breed species
+        tokenId = _breedSpecies(speciesId, parents, msg.sender);
+
+        // Mint Operation
+        MinterCore._safeMintForFee(speciesId, msg.sender, tokenId);
+
+        emit MintSpecies(speciesId, msg.sender, tokenId, parents);
+
+        return tokenId;
+    }
+
+    /**
+     * @dev Create a new type of species and define attributes.
+     * @param speciesId address of associated NFT
+     * @return tokenId minted token id
+     */
     function setBreedingRules(
         uint256 speciesId,
         uint8 requiredParents,
@@ -105,23 +125,18 @@ contract MinterBreeding is MinterCore {
     }
 
     /**
-     * @dev Create a new type of species and define attributes.
-     * @param speciesId address of associated NFT
-     * @return tokenId minted token id
+     * @dev Returns the current breeding rules used for a species
+     * @param speciesId species identifier
      */
-    function safeBreed(
-        uint256 speciesId,
-        uint256[] calldata parents
-    ) public speciesExists(speciesId) returns (uint256 tokenId) {
-        // Breed species
-        tokenId = _breedSpecies(speciesId, parents, msg.sender);
-
-        // Mint Operation
-        MinterCore._safeMintForFee(speciesId, msg.sender, tokenId);
-
-        emit MintSpecies(speciesId, msg.sender, tokenId, parents);
-
-        return tokenId;
+    function getBreedingRules(
+        uint256 speciesId
+    ) public view speciesExists(speciesId) returns (
+        uint8 requiredParents,
+        uint256 breedCooldownSeconds,
+        uint8[] memory genes,
+        uint256[] memory mutationRates
+    ) {
+        (requiredParents, breedCooldownSeconds, genes, mutationRates) = _getBreedingRules(speciesId);
     }
 
     /**
@@ -217,10 +232,12 @@ contract MinterBreeding is MinterCore {
 
         // Grab mutation rates (none by default)
         mutationRates = new uint256[](rules.mutationRates.length);
-        if (mutationRates.length != 0)
+        if (mutationRates.length != 0) {
+            require(mutationRates.length == genes.length, "mutation rates length and genes length must match.");
             // Copy over mutation data
             for (uint i = 0; i < mutationRates.length; i++)
                 mutationRates[i] = rules.mutationRates[i];
+        }
     }
 
 }
