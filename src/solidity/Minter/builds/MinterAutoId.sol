@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../MinterCore.sol";
+import "./IMinterAutoId.sol";
 
 /**
  * @dev Decentralized NFT Minter contract
@@ -18,6 +19,15 @@ contract MinterAutoId is MinterCore {
         address to,
         uint256 tokenId
     );
+
+    // Constructor
+    constructor () {
+        // Register ERC1820 Private Interface
+        bytes32 interfaceName = keccak256("OWLProtocol://MinterAutoId");
+        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
+        // Register ERC165 Interface
+        ERC165Storage._registerInterface(type(IMinterAutoId).interfaceId);
+    }
 
     /**
      * @dev Create a new type of species and define attributes.
@@ -63,5 +73,4 @@ contract MinterAutoId is MinterCore {
     function setNextTokenId(uint256 speciesId, uint256 nextTokenId_) public speciesOwner(speciesId) {
         nextTokenId[speciesId] = nextTokenId_;
     }
-
 }

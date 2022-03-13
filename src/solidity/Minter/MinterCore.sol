@@ -2,16 +2,19 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165Storage.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "./IMinterCore.sol";
 import "../ERC721/IERC721Mintable.sol";
+import "../ERC1820/ERC1820ImplementerAuthorizeAll.sol";
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterCore {
+abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
 
     // Data Storage
     using Counters for Counters.Counter;
@@ -38,6 +41,15 @@ contract MinterCore {
         // tests for existence
         require(address(0) != species[speciesId].owner, "Species does not exist!");
         _;
+    }
+
+    // Constructor
+    constructor () {
+        // Register Private Name
+        bytes32 interfaceName = keccak256("OWLProtocol://MinterCore");
+        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
+        // Register ERC165 Interface
+        ERC165Storage._registerInterface(type(IMinterCore).interfaceId);
     }
 
     // Events
@@ -140,7 +152,4 @@ contract MinterCore {
         // Call minting operation
         IERC721Mintable(s.contractAddr).safeMint(buyer, tokenId);
     }
-
-
-
 }
