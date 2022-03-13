@@ -93,12 +93,14 @@ library RosalindDNA {
                 geneEndIdx = 256;
 
             // Select parent / mutation
-            uint256 selectedParent;
+            uint256 selectedGene;
             uint256 geneMutationSeed = SourceRandom.getSeededRandom(randomSeed, geneIdx);
             if (geneMutationSeed <= mutationRates[geneIdx])
-                selectedParent = SourceRandom.getSeededRandom(geneMutationSeed, 0);
+                // Mutate Gene
+                selectedGene = SourceRandom.getSeededRandom(geneMutationSeed, 0);
             else
-                selectedParent = parents[  // parents[randomParentIdx]
+                // Select random parent
+                selectedGene = parents[  // parents[randomParentIdx]
                     uint8(SourceRandom.getSeededRandom(randomSeed, geneIdx) % parents.length)
                 ];
 
@@ -107,7 +109,7 @@ library RosalindDNA {
             uint256 bitMaskEnd = type(uint256).max >> (256 - geneEndIdx);
             uint256 bitMask = bitMaskStart & bitMaskEnd;
             // Isolate our gene
-            uint256 gene = selectedParent & bitMask;
+            uint256 gene = selectedGene & bitMask;
 
             // Save genes to childDNA
             childDNA = childDNA | gene;

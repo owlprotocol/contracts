@@ -29,8 +29,4 @@ interface IERC721Mintable is IERC721, IAccessControl {
      * @param baseURI_ set the baseURI value.
      */
     function setBaseURI(string calldata baseURI_) external;
-
-    // The following functions are overrides required by Solidity.
-
-    function supportsInterface(bytes4 interfaceId) external view override returns (bool);
 }
