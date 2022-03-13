@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../MinterCore.sol";
+import "./IMinterRandom.sol";
 import "../../Utils/SourceRandom.sol";
 
 /**
@@ -19,6 +20,15 @@ contract MinterRandom is MinterCore {
         address to,
         uint256 tokenId
     );
+
+    // Constructor
+    constructor () {
+        // Register ERC1820 Private Interface
+        bytes32 interfaceName = keccak256("OWLProtocol://MinterRandom");
+        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
+        // Register ERC165 Interface
+        ERC165Storage._registerInterface(type(IMinterRandom).interfaceId);
+    }
 
     /**
      * @dev Create a new type of species and define attributes.
@@ -55,5 +65,4 @@ contract MinterRandom is MinterCore {
 
         return tokenId;
     }
-
 }

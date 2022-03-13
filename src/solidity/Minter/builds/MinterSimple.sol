@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../MinterCore.sol";
+import "./IMinterSimple.sol";
 
 /**
  * @dev Decentralized NFT Minter contract
@@ -15,6 +16,15 @@ contract MinterSimple is MinterCore {
         address to,
         uint256 tokenId
     );
+
+    // Constructor
+    constructor () {
+        // Register ERC1820 Private Interface
+        bytes32 interfaceName = keccak256("OWLProtocol://MinterSimple");
+        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
+        // Register ERC165 Interface
+        ERC165Storage._registerInterface(type(IMinterSimple).interfaceId);
+    }
 
     /**
      * @dev Create a new type of species and define attributes.

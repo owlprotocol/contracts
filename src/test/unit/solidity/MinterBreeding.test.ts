@@ -119,7 +119,7 @@ describe('MinterBreeding tests', function () {
         // Set mutation rules
         const mutationRates = [];
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        for (const _ of genes) mutationRates.push(toBN(2).pow(toBN(256).subn(1))); //every gene has 100% chance to mutate
+        for (const _ of genes) mutationRates.push(toBN(2).pow(toBN(256)).subn(1)); //every gene has 100% chance to mutate
         await minterBreeding.setBreedingRules(
             speciesId, // speciesId
             3, // requiredParents (default to 0)
@@ -158,8 +158,8 @@ describe('MinterBreeding tests', function () {
     });
 
     it('MinterBreeding BreedingRules configuration', async () => {
-        const mutate100 = toBN(2).pow(toBN(256).subn(1));
-        const mutate50 = toBN(2).pow(toBN(255).subn(1));
+        const mutate100 = toBN(2).pow(toBN(256)).subn(1);
+        const mutate50 = toBN(2).pow(toBN(255)).subn(1);
 
         // Set mutation rules
         let mutationRates = [];

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "../MinterCore.sol";
+import "./IMinterBreeding.sol";
 import "../../Utils/SourceRandom.sol";
 import "../../Utils/RosalindDNA.sol";
 
@@ -43,6 +44,15 @@ contract MinterBreeding is MinterCore {
         uint8[] genes,
         uint256[] mutationRates
     );
+
+    // Constructor
+    constructor () {
+        // Register ERC1820 Private Interface
+        bytes32 interfaceName = keccak256("OWLProtocol://MinterBreeding");
+        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
+        // Register ERC165 Interface
+        ERC165Storage._registerInterface(type(IMinterBreeding).interfaceId);
+    }
 
     /**
      * @dev Create a new type of species and define attributes.
@@ -239,5 +249,4 @@ contract MinterBreeding is MinterCore {
                 mutationRates[i] = rules.mutationRates[i];
         }
     }
-
 }
