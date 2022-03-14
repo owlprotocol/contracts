@@ -66,11 +66,13 @@ describe('metadata.integration', () => {
 
         it('missing maxBitSize', () => {
             json = { traits: json.traits };
+            // eslint-disable-next-line quotes
             expect(() => validateSchema(json)).to.throw("must have required property 'maxBitSize'");
         });
 
         it('missing traits', () => {
             json = { maxBitSize: json.maxBitSize };
+            // eslint-disable-next-line quotes
             expect(() => validateSchema(json)).to.throw("must have required property 'traits'");
         });
 
@@ -89,10 +91,12 @@ describe('metadata.integration', () => {
             const json2 = JSON.parse(JSON.stringify(json));
             json2.traits[0].value_options[0] = { value_name: 'Eyes' };
             expect(() => validateSchema(json2)).to.throw(
+                // eslint-disable-next-line quotes
                 "must have required property 'image', must have required property 'value', must match exactly one schema in oneOf",
             );
         });
 
+        // eslint-disable-next-line quotes
         it("type is not 'enum, 'image', or 'value'", () => {
             const json2 = JSON.parse(JSON.stringify(json));
             json2.traits[0].type = 'asdsad';

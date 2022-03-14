@@ -1,7 +1,7 @@
 import { fromString } from 'uint8arrays/from-string';
 import { Canvas, Image as _Image } from 'canvas';
-import { SpecieTrait, SpecieMetadata, Metadata } from './metadata';
-import { ERC721Metadata } from './types';
+import { SpecieTrait, SpecieMetadata } from './metadata';
+import { ERC721Metadata, MetadataList } from './types';
 import { merge, uploadImage, uploadERC721Many } from './images';
 
 describe('E2E Test', () => {
@@ -14,7 +14,7 @@ describe('E2E Test', () => {
     let bodyTraits, eyeTraits, mouthTraits;
 
     let metadata: SpecieMetadata;
-    let allM: Metadata;
+    let allM: MetadataList;
 
     before(() => {
         orangeBody = { value_name: 'orange', image: __dirname + '/testimages/body/orange_body.png' };

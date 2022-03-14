@@ -94,4 +94,36 @@ describe('Rosalind DNA Library', function () {
             'Every gene in offspring orginiating from parent1 or parent2! (no mutations occured)',
         );
     });
+
+    it('Rosalind GenerateMutations', async () => {
+        const dnaLib = await RosalindTestLabTruffle.new();
+        // WARNING -> Our assertions use THIS random seed to ensure mutations occur!
+        // Changing that value COULD break these tests (if you're unlucky!).
+        const randomSeed = '12345';
+
+        const genes = [0, 8, 24, 40, 48];
+        const dna = [toBN(255), toBN(65_535), toBN(10), toBN(0), toBN(100_000)];
+        const encodedDna = encodeGenesUint256(dna, genes);
+        const mutationRates = [
+            toBN(0), // 0% chance to mutate
+            toBN(2).pow(toBN(254)).subn(1), // 25% chance to mutate
+            toBN(2).pow(toBN(255)).subn(1), // 50% chance to mutate
+            toBN(2) // 75% chance to mutate
+                .pow(toBN(255)) // 255^2...
+                .add(toBN(2).pow(toBN(254))) // + 254^2...
+                .subn(1), // -1
+            toBN(2).pow(toBN(256).subn(1)), // 100% chance to mutate
+        ];
+
+        //@ts-ignore
+        const mutatedDNA = await dnaLib.generateMutations(encodedDna, genes, randomSeed, mutationRates);
+
+        const mutatedGenes = decodeGenesUint256(mutatedDNA, genes);
+
+        // First gene should never mutate
+        assert(mutatedGenes[0].eq(dna[0]), 'unexpected gene mutations');
+
+        // Last gene should always mutated
+        assert(mutatedGenes[4].eq(dna[4]), 'expected dna mutation');
+    });
 });
