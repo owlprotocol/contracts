@@ -1,12 +1,12 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import configureGanache from '../../../utils/configureGanache';
-import setProvider from '../../../utils/setProvider';
-import MinterSimple from '../../../truffle/MinterSimple';
-import FactoryERC20Truffle from '../../../truffle/FactoryERC20';
-import FactoryERC721Truffle from '../../../truffle/FactoryERC721';
+import configureGanache from '../../../src/utils/configureGanache';
+import setProvider from '../../../src/utils/setProvider';
+import MinterSimple from '../../../factory/truffle/MinterSimple';
+import FactoryERC20Truffle from '../../../factory/truffle/FactoryERC20';
+import FactoryERC721Truffle from '../../../factory/truffle/FactoryERC721';
 
-import { parseSpecies } from '../../../nft-launcher-lib/Minter';
+import { parseSpecies } from '../../../src/nft-launcher-lib/Minter';
 
 chai.use(chaiAsPromised);
 const { assert, expect } = chai;

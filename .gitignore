@@ -2,6 +2,12 @@
 
 .vscode
 
+#hardhat
+typechain
+artifacts
+cache
+factory
+
 # auto-generated
 src/types/ethers
 src/types/truffle

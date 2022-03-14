@@ -1,5 +1,5 @@
 import { assert, expect } from 'chai';
-import { encodeGenesUint256, decodeGenesUint256 } from '../../../nft-launcher-lib/Species';
+import { encodeGenesUint256, decodeGenesUint256 } from '../../../src/nft-launcher-lib/Species';
 import { toBN } from 'web3-utils';
 
 describe('Encoding/Decoding uint256 genes', function () {

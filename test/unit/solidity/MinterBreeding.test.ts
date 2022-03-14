@@ -1,14 +1,14 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import configureGanache from '../../../utils/configureGanache';
-import setProvider from '../../../utils/setProvider';
-import MinterSimple from '../../../truffle/MinterSimple';
-import MinterBreeding from '../../../truffle/MinterBreeding';
-import FactoryERC20Truffle from '../../../truffle/FactoryERC20';
-import FactoryERC721Truffle from '../../../truffle/FactoryERC721';
-import { encodeGenesUint256, decodeGenesUint256 } from '../../../nft-launcher-lib/Species';
+import configureGanache from '../../../src/utils/configureGanache';
+import setProvider from '../../../src/utils/setProvider';
+import MinterSimple from '../../../factory/truffle/MinterSimple';
+import MinterBreeding from '../../../factory/truffle/MinterBreeding';
+import FactoryERC20Truffle from '../../../factory/truffle/FactoryERC20';
+import FactoryERC721Truffle from '../../../factory/truffle/FactoryERC721';
+import { encodeGenesUint256, decodeGenesUint256 } from '../../../src/nft-launcher-lib/Species';
 import { toBN } from 'web3-utils';
-import sleep from '../../../utils/sleep';
+import sleep from '../../../src/utils/sleep';
 
 chai.use(chaiAsPromised);
 const { assert, expect } = chai;
