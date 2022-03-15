@@ -20,6 +20,7 @@
         "test": "npx hardhat test",
         "start": "npx hardhat run --network localhost scripts/deploy.t",
         "test:parallel": "npx hardhat test --parallel",
+        "compile": "npx hardhat clean && npx hardhat compile && npx hardhat run src/generate.ts",
         "deploy": "npx hardhat src/deploy.ts",
         "deploy:test": "cross-env NODE_ENV=test ts-node src/deploy.ts",
         "lint": "eslint src test",
