@@ -124,6 +124,6 @@ describe('Rosalind DNA Library', function () {
         assert(mutatedGenes[0].eq(dna[0]), 'unexpected gene mutations');
 
         // Last gene should always mutated
-        assert(mutatedGenes[4].eq(dna[4]), 'expected dna mutation');
+        assert(!mutatedGenes[4].eq(dna[4]), 'expected dna mutation');
     });
 });
