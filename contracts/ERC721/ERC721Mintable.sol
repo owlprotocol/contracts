@@ -61,21 +61,7 @@ contract ERC721Mintable is ERC721, AccessControl {
         return baseURI;
     }
 
-<<<<<<< HEAD:src/solidity/ERC721/ERC721Mintable.sol
-    /**
-     * @dev ERC165 compatibility
-     */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, AccessControl)
-        returns (bool)
-    {
-=======
-    // The following functions are overrides required by Solidity.
-
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
->>>>>>> issue-56:contracts/ERC721/ERC721Mintable.sol
         return super.supportsInterface(interfaceId);
     }
 }
