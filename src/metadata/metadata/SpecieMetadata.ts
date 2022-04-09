@@ -2,6 +2,10 @@ import SpecieTrait from './SpecieTrait';
 import web3 from 'web3';
 import Ajv from 'ajv';
 import { Value, SpecieMetadataSchema, MetadataList } from '../types';
+
+export interface Metadata {
+    [key: string]: Value[];
+}
 class SpecieMetadata {
     //order in this array matter; earlier traits function as lower layers in image generation
     private traits: SpecieTrait[];

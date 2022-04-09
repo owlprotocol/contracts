@@ -1,15 +1,15 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import configureGanache from '../../../utils/configureGanache';
-import setProvider from '../../../utils/setProvider';
-import MinterRandom from '../../../truffle/MinterRandom';
-import FactoryERC20Truffle from '../../../truffle/FactoryERC20';
-import FactoryERC721Truffle from '../../../truffle/FactoryERC721';
+import configureGanache from '../../../src/utils/configureGanache';
+import setProvider from '../../../src/utils/setProvider';
+import MinterSimple from '../../../factory/truffle/MinterSimple';
+import FactoryERC20Truffle from '../../../factory/truffle/FactoryERC20';
+import FactoryERC721Truffle from '../../../factory/truffle/FactoryERC721';
 
 chai.use(chaiAsPromised);
 const { assert } = chai;
 
-describe('MinterRandom tests', function () {
+describe('MinterSimple tests', function () {
     let accounts: string[];
     let owner: string;
     let developer: string;
@@ -17,7 +17,7 @@ describe('MinterRandom tests', function () {
     before(async () => {
         const config = await configureGanache();
         ({ accounts } = config);
-        setProvider([MinterRandom], config.provider, accounts[0]);
+        setProvider([MinterSimple], config.provider, accounts[0]);
         setProvider([FactoryERC20Truffle], config.provider, accounts[0]);
         setProvider([FactoryERC721Truffle], config.provider, accounts[0]);
 
@@ -25,8 +25,8 @@ describe('MinterRandom tests', function () {
         developer = accounts[2];
     });
 
-    it('MinterRandom testing', async () => {
-        const minter = await MinterRandom.new();
+    it('MinterSimple testing', async () => {
+        const minter = await MinterSimple.new();
         const nft = await FactoryERC721Truffle.new('NFT', 'NFT');
         const erc20 = await FactoryERC20Truffle.new('0', 'ERC', 'ERC');
         const speciesAddress = nft.address;
@@ -41,18 +41,15 @@ describe('MinterRandom tests', function () {
         await erc20.increaseAllowance(minter.address, '20');
 
         // Mint Specimen
-        await minter.mint('1');
+        await minter.mint('1', '1');
 
         // SafeMint Specimen
-        await minter.safeMint('1');
+        await minter.safeMint('1', '2');
 
         // Event testing
         const event = await minter.getPastEvents('MintSpecies');
         assert.equal(event[0].returnValues.speciesId, 1, 'Species minted');
         assert.equal(event[0].returnValues.to, owner, 'nft owner');
-
-        // Random id
-        assert.notEqual(event[0].returnValues.tokenId, '1', 'tokenId minted');
-        // console.log(`Random ID: ${event[0].returnValues.tokenId}`);
+        assert.equal(event[0].returnValues.tokenId, '2', 'tokenId minted');
     });
 });

@@ -1,6 +1,6 @@
-import configureGanache from '../../../utils/configureGanache';
-import setProvider from '../../../utils/setProvider';
-import FactoryERC20Truffle from '../../../truffle/FactoryERC20';
+import configureGanache from '../../../src/utils/configureGanache';
+import setProvider from '../../../src/utils/setProvider';
+import FactoryERC20Truffle from '../../../factory/truffle/FactoryERC20';
 import { toBN } from 'web3-utils';
 import { assert } from 'chai';
 

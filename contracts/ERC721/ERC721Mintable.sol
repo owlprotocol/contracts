@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@openzeppelin/contracts/access/AccessControl.sol';
 
 contract ERC721Mintable is ERC721, AccessControl {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256('MINTER_ROLE');
 
     string public baseURI;
 
@@ -61,6 +61,7 @@ contract ERC721Mintable is ERC721, AccessControl {
         return baseURI;
     }
 
+<<<<<<< HEAD:src/solidity/ERC721/ERC721Mintable.sol
     /**
      * @dev ERC165 compatibility
      */
@@ -70,6 +71,11 @@ contract ERC721Mintable is ERC721, AccessControl {
         override(ERC721, AccessControl)
         returns (bool)
     {
+=======
+    // The following functions are overrides required by Solidity.
+
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
+>>>>>>> issue-56:contracts/ERC721/ERC721Mintable.sol
         return super.supportsInterface(interfaceId);
     }
 }

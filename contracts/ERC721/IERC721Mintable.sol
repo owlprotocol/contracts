@@ -1,12 +1,10 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/access/IAccessControl.sol";
+import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import '@openzeppelin/contracts/access/IAccessControl.sol';
 
 interface IERC721Mintable is IERC721, IAccessControl {
-
     /**
      * @notice Must have MINTER_ROLE
      * @dev Allows MINTER_ROLE to mint NFTs
