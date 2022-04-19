@@ -19,7 +19,6 @@ const config: HardhatUserConfig = {
             accounts: [],
         },
     },
-    //@ts-ignore
     typechain: {
         outDir: 'typechain', //default
         target: 'truffle-v5', //All options: ethers-v5, web3-v1, truffle-v5
