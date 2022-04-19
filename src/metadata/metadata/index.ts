@@ -1,2 +1,2 @@
 export { default as SpecieTrait } from './SpecieTrait';
-export { default as SpecieMetadata, Metadata, validateSchema, validateAndGetSchema } from './SpecieMetadata';
+export { default as SpecieMetadata, validateSchema, validateAndGetSchema } from './SpecieMetadata';
