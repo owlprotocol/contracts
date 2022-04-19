@@ -82,6 +82,7 @@
         "chai": "^4.3.4",
         "chai-as-promised": "^7.1.1",
         "cross-env": "^7.0.3",
+        "crypto-js": "^4.1.1",
         "eslint": "^7.32.0",
         "eslint-config-prettier": "^8.3.0",
         "eslint-plugin-import": "^2.25.4",
