@@ -1,13 +1,13 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import configureGanache from '../../../utils/configureGanache';
-import setProvider from '../../../utils/setProvider';
-import ERC1820Registry from '../../../truffle/ERC1820Registry';
-import MinterSimple from '../../../truffle/MinterSimple';
-import MinterAutoId from '../../../truffle/MinterAutoId';
-import MinterBreeding from '../../../truffle/MinterBreeding';
-import MinterRandom from '../../../truffle/MinterRandom';
-import InterfaceIds from '../../../truffle/InterfaceIds';
+import configureGanache from '../../../src/utils/configureGanache';
+import setProvider from '../../../src/utils/setProvider';
+import ERC1820Registry from '../../../src/truffle/ERC1820Registry';
+import MinterSimple from '../../../src/truffle/MinterSimple';
+import MinterAutoId from '../../../src/truffle/MinterAutoId';
+import MinterBreeding from '../../../src/truffle/MinterBreeding';
+import MinterRandom from '../../../src/truffle/MinterRandom';
+import InterfaceIds from '../../../src/truffle/InterfaceIds';
 import Web3 from 'web3';
 import { keccak256 } from 'web3-utils';
 

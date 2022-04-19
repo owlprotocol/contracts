@@ -23,11 +23,13 @@ export function encodeGenesUint256(values: (string | BN | number)[], genes: numb
         const geneSpace = toBN(2)
             .pow(toBN(geneEndIdx - geneStartIdx))
             .subn(1);
+        //@ts-ignore
         if (geneSpace.lt(geneValue)) throw `Value: ${geneValue} too large for it's slot!`;
 
         // Perform bitwise left-shift on selectedGene
         const selectedGene = geneValue.shln(geneStartIdx);
         // Merge selected gene w/ our encoding
+        //@ts-ignore
         encodedGenes = encodedGenes.or(selectedGene);
     }
     return encodedGenes;
