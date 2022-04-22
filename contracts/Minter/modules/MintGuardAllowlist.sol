@@ -10,6 +10,9 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  */
 contract MintGuardAllowlist is ERC165 {
 
+    // TODO - events
+    // TODO - docs
+
     // // Constructor
     // constructor () {
     //     // Register Private Name
@@ -52,6 +55,19 @@ contract MintGuardAllowlist is ERC165 {
             // Permission to this contract species for user
             keccak256(abi.encode(minterContract, speciesId, user))
         ] = false;
+    }
+
+    function allowMint(
+        uint256 speciesId,
+        address user
+    ) public view returns (bool) {
+        return allowedMinters[
+            keccak256(abi.encode(
+                msg.sender, // Minter contract
+                speciesId,
+                user
+            ))
+        ];
     }
 
 }

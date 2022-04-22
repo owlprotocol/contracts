@@ -2,10 +2,10 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import configureGanache from '../../../src/utils/configureGanache';
 import setProvider from '../../../src/utils/setProvider';
-import MinterSimple from '../../../src/truffle/MinterSimple';
-import FactoryERC20Truffle from '../../../src/truffle/FactoryERC20';
-import FactoryERC721Truffle from '../../../src/truffle/FactoryERC721';
-// import MintGuardAllowlistTruffle from '../../../src/truffle/MintGuardAllowlist';
+import MinterSimple from '../../../factory/truffle/MinterSimple';
+import FactoryERC20Truffle from '../../../factory/truffle/FactoryERC20';
+import FactoryERC721Truffle from '../../../factory/truffle/FactoryERC721';
+import MintGuardAllowlistTruffle from '../../../factory/truffle/MintGuardAllowlist';
 import MerkleTree from 'merkletreejs';
 import SHA256 from 'crypto-js/sha256';
 
@@ -14,7 +14,7 @@ const { assert } = chai;
 
 describe.only('MintGuard tests', function () {
     let accounts: string[];
-    // let owner: string;
+    let owner: string;
     let developer: string;
 
     before(async () => {
@@ -23,15 +23,18 @@ describe.only('MintGuard tests', function () {
         setProvider([MinterSimple], config.provider, accounts[0]);
         setProvider([FactoryERC20Truffle], config.provider, accounts[0]);
         setProvider([FactoryERC721Truffle], config.provider, accounts[0]);
+        setProvider([MintGuardAllowlistTruffle], config.provider, accounts[0]);
 
-        // owner = accounts[0];
+        owner = accounts[0];
         developer = accounts[1];
     });
 
-    it('Standard Allowlist', async () => {
+    it('MintGuardAllowlist.sol', async () => {
         const minter = await MinterSimple.new();
         const nft = await FactoryERC721Truffle.new('NFT', 'NFT');
         const erc20 = await FactoryERC20Truffle.new('0', 'ERC', 'ERC');
+        const mintGuard = await MintGuardAllowlistTruffle.new();
+
         const speciesAddress = nft.address;
         const mintFeeToken = erc20.address;
         const mintFeeAddress = developer;
@@ -44,10 +47,22 @@ describe.only('MintGuard tests', function () {
         await erc20.increaseAllowance(minter.address, '20');
 
         // Mint guard
-        await minter.setMintGuard();
+        await minter.setMintGuard('1', mintGuard.address);
+
+        // Mint denied
+        let call = minter.mint('1', '1');
+        expect(call).eventually.to.rejectedWith(Error);
+
+        // Allow minting for owner
+        await mintGuard.addAllowedUser(minter.address, '1', owner);
 
         // Mint Specimen
         await minter.mint('1', '1');
+
+        // Non species owner cannot add to whitelist
+        call = mintGuard.addAllowedUser(minter.address, '1', developer, { from: developer });
+        // await call;
+        expect(call).eventually.to.rejectedWith(Error);
     });
 
     it('Merkletree Allowlist', async () => {
