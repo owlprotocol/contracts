@@ -22,4 +22,16 @@ interface IMintGuard is IERC165 {
         bool // True / false -> allow minting operation to proceed.
     );
 
+    /**
+     * @dev Overload allowing for Merkle verification
+     */
+    function allowMint(
+        uint256 speciesId,
+        address userMinting,
+        bytes32 merkleRoot,
+        bytes32[] calldata merkleProof
+    ) external returns (
+        bool
+    );
+
 }

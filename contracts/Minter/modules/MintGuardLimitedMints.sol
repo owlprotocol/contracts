@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * @dev Allowlist MintGuard for Minter
  *
  */
-contract MintGuardAllowlist is ERC165 {
+contract MintGuardLimitedMints is ERC165 {
 
     // TODO - events
     // TODO - docs

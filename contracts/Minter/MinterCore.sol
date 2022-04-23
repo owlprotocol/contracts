@@ -45,10 +45,13 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
         _;
     }
     modifier mintAllowed(uint256 speciesId) {
-        // check mint guard
-        address mintGuard = species[speciesId].mintGuard;
-        if (mintGuard != address(0))
-            require(IMintGuard(mintGuard).allowMint(speciesId, msg.sender) == true, "Mint denied!");
+        // Verify mint guard function (no merkle overload)
+        _verifyMintGuard(speciesId);
+        _;
+    }
+    modifier mintAllowedMerkle(uint256 speciesId, bytes32 merkleRoot, bytes32[] calldata merkleProof) {
+        // Verify mint guard function (WITH merkle overload)
+        _verifyMintGuard(speciesId, merkleRoot, merkleProof);
         _;
     }
 
@@ -147,7 +150,11 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
      * @param buyer who's paying the ERC20 fee / gets the ERC721 token
      * @param tokenId the token identifier to mint
      */
-    function _mintForFee(uint256 speciesId, address buyer, uint256 tokenId) mintAllowed(speciesId) internal {
+    function _mintForFee(
+        uint256 speciesId,
+        address buyer,
+        uint256 tokenId
+    ) internal {
         Species storage s = species[speciesId];
 
         // Transfer ERC20
@@ -164,7 +171,7 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
      * @param buyer who's paying the ERC20 fee / gets the ERC721 token
      * @param tokenId the token identifier to mint
      */
-    function _safeMintForFee(uint256 speciesId, address buyer, uint256 tokenId) mintAllowed(speciesId) internal {
+    function _safeMintForFee(uint256 speciesId, address buyer, uint256 tokenId) internal {
         Species storage s = species[speciesId];
 
         // Transfer ERC20
@@ -173,4 +180,35 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
         // Call minting operation
         IERC721Mintable(s.contractAddr).safeMint(buyer, tokenId);
     }
+
+    // =================== Mint Guard =====================
+
+    function _verifyMintGuard(
+        uint256 speciesId
+    ) private {
+        // check mint guard
+        address mintGuard = species[speciesId].mintGuard;
+        if (mintGuard != address(0))
+            // Verify mint guard (no merkle)
+            require(IMintGuard(mintGuard)
+                .allowMint(speciesId, msg.sender) == true,
+                "Mint denied!"
+            );
+    }
+
+    function _verifyMintGuard(
+        uint256 speciesId,
+        bytes32 merkleRoot,
+        bytes32[] calldata merkleProof
+    ) private {
+        // check mint guard
+        address mintGuard = species[speciesId].mintGuard;
+        if (mintGuard != address(0))
+            // Verify mint guard (merkle proof overload func)
+            require(IMintGuard(mintGuard)
+                .allowMint(speciesId, msg.sender, merkleRoot, merkleProof) == true,
+                "Mint denied!"
+            );
+    }
+
 }
