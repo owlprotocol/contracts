@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../IMinterCore.sol";
+import "../MintGuardCore.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
@@ -11,32 +11,24 @@ import "hardhat/console.sol";
  * @dev MerkleTree-based Allowlist MintGuard for Minters
  *
  */
-contract MintGuardMerkle is ERC165 {
+contract MintGuardMerkle is MintGuardCore {
 
-    // TODO - events
-    // TODO - docs
-
-    // // Constructor
-    // constructor () {
-    //     // Register Private Name
-    //     bytes32 interfaceName = keccak256("OWLProtocol://MinterCore");
-    //     ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-    //     // Register ERC165 Interface
-    //     ERC165Storage._registerInterface(type(IMinterCore).interfaceId);
-    // }
+    event SetAllowedRoot(
+        address minterContract,
+        uint256 speciesId,
+        bytes32 merkleRoot
+    );
 
     // Store a hash of [ minterContract + speciesId + user ]
     // Allows us to condense the storage down to one slot
     mapping (bytes32 => bytes32) allowedMintRoots;
 
-    modifier isSpeciesOwner(address minterContract, uint256 speciesId) {
-        // Assert that this user actually has permission to do this
-        address minterOwner;
-        (,minterOwner,,,) = IMinterCore(minterContract).getSpecies(speciesId);
-        require(minterOwner == msg.sender, "Not the owner!");
-        _;
-    }
-
+    /**
+     * @dev Set allowed merkle root used to verify leaves for minting.
+     * @param minterContract minter contract address
+     * @param speciesId species identifier
+     * @param merkleRoot (keccak256) root of merkle tree
+     */
     function addAllowedRoot(
         address minterContract,
         uint256 speciesId,
@@ -46,8 +38,16 @@ contract MintGuardMerkle is ERC165 {
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, merkleRoot));
         // Add user to allowed minters
         allowedMintRoots[key] = merkleRoot;
+        // Emit
+        emit SetAllowedRoot(minterContract, speciesId, merkleRoot);
     }
 
+    /**
+     * @dev Remove allowed merkle root used to verify leaves for minting.
+     * @param minterContract minter contract address
+     * @param speciesId species identifier
+     * @param merkleRoot (keccak256) root of merkle tree
+     */
     function removeAllowedRoot(
         address minterContract,
         uint256 speciesId,
@@ -57,8 +57,17 @@ contract MintGuardMerkle is ERC165 {
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, merkleRoot));
         // Permission to this contract species for user
         allowedMintRoots[key] = "";
+        // Emit
+        emit SetAllowedRoot(minterContract, speciesId, merkleRoot);
     }
 
+    /**
+     * @dev Called externally from minter contract, to determine whether a mint is allowed.
+     * @param speciesId species identifier
+     * @param user user address
+     * @param merkleRoot merkle root to verify
+     * @param merkleProof proofs to generate root
+     */
     function allowMint(
         uint256 speciesId,
         address user,

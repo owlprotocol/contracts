@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./IMinterCore.sol";
-import "./modules/IMintGuard.sol";
+import "./modules/MintGuard/IMintGuard.sol";
 import "../ERC721/IERC721Mintable.sol";
 import "../ERC1820/ERC1820ImplementerAuthorizeAll.sol";
 

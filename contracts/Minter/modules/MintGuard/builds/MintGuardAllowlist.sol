@@ -1,39 +1,37 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../IMinterCore.sol";
+import "../MintGuardCore.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
  * @dev Allowlist MintGuard for Minter
  *
  */
-contract MintGuardLimitedMints is ERC165 {
+contract MintGuardAllowlist is MintGuardCore {
 
-    // TODO - events
-    // TODO - docs
+    event AddAllowedUser(
+        address minterContract,
+        uint256 speciesId,
+        address user
+    );
 
-    // // Constructor
-    // constructor () {
-    //     // Register Private Name
-    //     bytes32 interfaceName = keccak256("OWLProtocol://MinterCore");
-    //     ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-    //     // Register ERC165 Interface
-    //     ERC165Storage._registerInterface(type(IMinterCore).interfaceId);
-    // }
+    event RemoveAllowedUser(
+        address minterContract,
+        uint256 speciesId,
+        address user
+    );
 
     // Store a hash of [ minterContract + speciesId + user ]
     // Allows us to condense the storage down to one slot
     mapping (bytes32 => bool) allowedMinters;
 
-    modifier isSpeciesOwner(address minterContract, uint256 speciesId) {
-        // Assert that this user actually has permission to do this
-        address minterOwner;
-        (,minterOwner,,,) = IMinterCore(minterContract).getSpecies(speciesId);
-        require(minterOwner == msg.sender, "Not the owner!");
-        _;
-    }
-
+    /**
+     * @dev Allowlist a user, under a species, under a minting contract.
+     * @param minterContract minter contract address
+     * @param speciesId species identifier
+     * @param user user identifier
+     */
     function addAllowedUser(
         address minterContract,
         uint256 speciesId,
@@ -43,8 +41,16 @@ contract MintGuardLimitedMints is ERC165 {
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, user));
         // Add user to allowed minters
         allowedMinters[key] = true;
+        // Emit
+        emit AddAllowedUser(minterContract, speciesId, user);
     }
 
+    /**
+     * @dev Remove a user, under a species, under a minting contract.
+     * @param minterContract minter contract address
+     * @param speciesId species identifier
+     * @param user user identifier
+     */
     function removeAllowedUser(
         address minterContract,
         uint256 speciesId,
@@ -54,8 +60,15 @@ contract MintGuardLimitedMints is ERC165 {
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, user));
         // Permission to this contract species for user
         allowedMinters[key] = false;
+        // Emit
+        emit RemoveAllowedUser(minterContract, speciesId, user);
     }
 
+    /**
+     * @dev Called externally from minter contract, to determine whether a mint is allowed.
+     * @param speciesId species identifier
+     * @param user user address
+     */
     function allowMint(
         uint256 speciesId,
         address user

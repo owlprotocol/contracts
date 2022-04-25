@@ -8,13 +8,14 @@ import FactoryERC721Truffle from '../../../factory/truffle/FactoryERC721';
 import MintGuardAllowlistTruffle from '../../../factory/truffle/MintGuardAllowlist';
 import MintGuardMerkleTruffle from '../../../factory/truffle/MintGuardMerkle';
 import MinterSimpleMerkleTruffle from '../../../factory/truffle/MinterSimpleMerkle';
+import MintGuardLimitedMintsTruffle from '../../../factory/truffle/MintGuardLimitedMints';
 import MerkleTree from 'merkletreejs';
 import { keccak256, hexZeroPad } from 'ethers/lib/utils';
 
 chai.use(chaiAsPromised);
 const { assert } = chai;
 
-describe.only('MintGuard tests', function () {
+describe('MintGuard tests', function () {
     let accounts: string[];
     let owner: string;
     let developer: string;
@@ -28,6 +29,7 @@ describe.only('MintGuard tests', function () {
         setProvider([FactoryERC721Truffle], config.provider, accounts[0]);
         setProvider([MintGuardAllowlistTruffle], config.provider, accounts[0]);
         setProvider([MintGuardMerkleTruffle], config.provider, accounts[0]);
+        setProvider([MintGuardLimitedMintsTruffle], config.provider, accounts[0]);
 
         owner = accounts[0];
         developer = accounts[1];
@@ -54,7 +56,7 @@ describe.only('MintGuard tests', function () {
         await minter.setMintGuard('1', mintGuard.address);
 
         // Mint denied
-        let call = minter.mint('1', '1');
+        let call: any = minter.mint('1', '1');
         expect(call).eventually.to.rejectedWith(Error);
 
         // Allow minting for owner
@@ -66,6 +68,44 @@ describe.only('MintGuard tests', function () {
         // Non species owner cannot add to whitelist
         call = mintGuard.addAllowedUser(minter.address, '1', developer, { from: developer });
         // await call;
+        expect(call).eventually.to.rejectedWith(Error);
+    });
+
+    it('MintGuardLimitedMints.sol', async () => {
+        const minter = await MinterSimple.new();
+        const nft = await FactoryERC721Truffle.new('NFT', 'NFT');
+        const erc20 = await FactoryERC20Truffle.new('0', 'ERC', 'ERC');
+        const mintGuard = await MintGuardLimitedMintsTruffle.new();
+
+        const speciesAddress = nft.address;
+        const mintFeeToken = erc20.address;
+        const mintFeeAddress = developer;
+        const mintFeeAmount = 10;
+
+        // Create species
+        await minter.createSpecies(speciesAddress, mintFeeToken, mintFeeAddress, mintFeeAmount);
+
+        // Authorize transfer
+        await erc20.increaseAllowance(minter.address, '30');
+
+        // Mint guard
+        await minter.setMintGuard('1', mintGuard.address);
+
+        // Mint denied
+        let call = minter.mint('1', '1');
+        expect(call).eventually.to.rejectedWith(Error);
+
+        // Allow minting for owner
+        await mintGuard.setUserMints(minter.address, '1', owner, 2);
+
+        // Mint Specimen
+        await minter.mint('1', '1');
+
+        // Mint 2nd Specimen
+        await minter.mint('1', '2');
+
+        // Third call should fail
+        call = minter.mint('1', '3');
         expect(call).eventually.to.rejectedWith(Error);
     });
 
@@ -98,9 +138,6 @@ describe.only('MintGuard tests', function () {
         const mintFeeAddress = developer;
         const mintFeeAmount = 10;
 
-        console.log(`User: ${leaves[0]} | ${keccak256(leaves[0])}`);
-        console.log(`keccak256: ${JSON.stringify(await minter.hashKeccakUser({ from: developer }))}`);
-
         // Create species
         await minter.createSpecies(speciesAddress, mintFeeToken, mintFeeAddress, mintFeeAmount);
 
@@ -113,7 +150,7 @@ describe.only('MintGuard tests', function () {
 
         // Mint denied
         proof = proof.map((x) => '0x' + x.data.toString('hex'));
-        let call = minter.mint('1', '1', '0xabcd', proof);
+        let call: any = minter.mint('1', '1', '0xabcd', proof);
         expect(call).eventually.to.rejectedWith(Error);
 
         // Allow minting for owner
@@ -121,7 +158,6 @@ describe.only('MintGuard tests', function () {
         await mintGuard.addAllowedRoot(minter.address, '1', root);
 
         // // Mint Specimen
-        console.log(`Leaves: ${JSON.stringify(proof)}`);
         await minter.mint('1', '1', root, proof, { from: developer });
 
         // Non species owner cannot add to whitelist
