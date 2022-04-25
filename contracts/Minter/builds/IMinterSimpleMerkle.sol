@@ -7,20 +7,20 @@ import "../IMinterCore.sol";
  * @dev Decentralized NFT Minter contract
  *
  */
-interface IMinterSimple is IMinterCore {
+interface IMinterSimpleMerkle is IMinterCore {
 
     /**
      * @dev Create a new type of species and define attributes.
      * @param speciesId address of associated NFT
      * @param tokenId minted token id
      */
-    function mint(uint256 speciesId, uint256 tokenId) external;
+    function mint(uint256 speciesId, uint256 tokenId, bytes32 merkleRoot, bytes32[] calldata merkleProof) external;
 
     /**
      * @dev Create a new type of species and define attributes.
      * @param speciesId address of associated NFT
      * @param tokenId minted token id
      */
-    function safeMint(uint256 speciesId, uint256 tokenId) external;
+    function safeMint(uint256 speciesId, uint256 tokenId, bytes32 merkleRoot, bytes32[] calldata merkleProof) external;
 
 }

@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./IMinterCore.sol";
+import "./modules/MintGuard/IMintGuard.sol";
 import "../ERC721/IERC721Mintable.sol";
 import "../ERC1820/ERC1820ImplementerAuthorizeAll.sol";
 
@@ -29,6 +30,7 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
         address mintFeeToken;
         uint256 mintFeeAmount;
         address mintFeeAddress;
+        address mintGuard;
     }
 
     // Modifiers
@@ -40,6 +42,16 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
     modifier speciesExists(uint256 speciesId) {
         // tests for existence
         require(address(0) != species[speciesId].owner, "Species does not exist!");
+        _;
+    }
+    modifier mintAllowed(uint256 speciesId) {
+        // Verify mint guard function (no merkle overload)
+        _verifyMintGuard(speciesId);
+        _;
+    }
+    modifier mintAllowedMerkle(uint256 speciesId, bytes32 merkleRoot, bytes32[] calldata merkleProof) {
+        // Verify mint guard function (WITH merkle overload)
+        _verifyMintGuard(speciesId, merkleRoot, merkleProof);
         _;
     }
 
@@ -97,6 +109,18 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
     }
 
     /**
+     * @dev Set external contract to determine whether minting is allowed or not.
+     * @param speciesId identifier
+     * @param mintGuardAddress contract address of the mint guard
+     */
+    function setMintGuard(
+        uint256 speciesId,
+        address mintGuardAddress
+    ) public {
+        species[speciesId].mintGuard = mintGuardAddress;
+    }
+
+    /**
      * @dev Returns features created for a species
      * @param speciesId species identifier
      */
@@ -126,7 +150,11 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
      * @param buyer who's paying the ERC20 fee / gets the ERC721 token
      * @param tokenId the token identifier to mint
      */
-    function _mintForFee(uint256 speciesId, address buyer, uint256 tokenId) internal {
+    function _mintForFee(
+        uint256 speciesId,
+        address buyer,
+        uint256 tokenId
+    ) internal {
         Species storage s = species[speciesId];
 
         // Transfer ERC20
@@ -152,4 +180,35 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
         // Call minting operation
         IERC721Mintable(s.contractAddr).safeMint(buyer, tokenId);
     }
+
+    // =================== Mint Guard =====================
+
+    function _verifyMintGuard(
+        uint256 speciesId
+    ) private {
+        // check mint guard
+        address mintGuard = species[speciesId].mintGuard;
+        if (mintGuard != address(0))
+            // Verify mint guard (no merkle)
+            require(IMintGuard(mintGuard)
+                .allowMint(speciesId, msg.sender) == true,
+                "Mint denied!"
+            );
+    }
+
+    function _verifyMintGuard(
+        uint256 speciesId,
+        bytes32 merkleRoot,
+        bytes32[] calldata merkleProof
+    ) private {
+        // check mint guard
+        address mintGuard = species[speciesId].mintGuard;
+        if (mintGuard != address(0))
+            // Verify mint guard (merkle proof overload func)
+            require(IMintGuard(mintGuard)
+                .allowMint(speciesId, msg.sender, merkleRoot, merkleProof) == true,
+                "Mint denied!"
+            );
+    }
+
 }
