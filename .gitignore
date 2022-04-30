@@ -1,21 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-.vscode
-
-#hardhat
-typechain
-artifacts
-cache
-factory
-
-# auto-generated
 src/types/ethers
 src/types/truffle
 src/types/web3
-src/ethers
-src/truffle
-src/web3
-src/abi
 
 # dependencies
 /node_modules
@@ -33,11 +19,7 @@ yarn.lock
 # misc
 .DS_Store
 .env
-.env.*
-!.env.test
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-soljson-v*.js

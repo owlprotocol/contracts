@@ -1,0 +1,3 @@
+packages:
+  - "packages/nft-launcher-contracts-lib"
+  - "packages/nft-launcher-contracts-sol"
