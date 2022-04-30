@@ -114,13 +114,9 @@
         "web3-utils": "^1.6.1"
     },
     "files": [
-        "*",
-        "!test",
-        "!./**/*.test.*"
+        "artifacts/contracts",
+        "contracts",
+        "typechain"
     ],
-    "main": "index.js",
-    "types": "index.d.ts",
-    "publishConfig": {
-        "directory": "lib"
-    }
+    "types": "./typechain/index.d.ts"
 }
