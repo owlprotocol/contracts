@@ -1,7 +1,4 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-src/types/ethers
-src/types/truffle
-src/types/web3
 
 # dependencies
 /node_modules
@@ -19,6 +16,8 @@ yarn.lock
 # misc
 .DS_Store
 .env
+.env.*
+!.env.test
 
 npm-debug.log*
 yarn-debug.log*
