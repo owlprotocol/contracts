@@ -94,7 +94,7 @@ describe('Rosalind DNA Library', function () {
         );
     });
 
-    it.skip('Rosalind GenerateMutations', async () => {
+    it('Rosalind GenerateMutations', async () => {
         const dnaLib = await RosalindTestLabTruffle.new();
         // WARNING -> Our assertions use THIS random seed to ensure mutations occur!
         // Changing that value COULD break these tests (if you're unlucky!).
@@ -123,6 +123,6 @@ describe('Rosalind DNA Library', function () {
         assert(mutatedGenes[0].eq(dna[0]), 'unexpected gene mutations');
 
         // Last gene should always mutated
-        assert(mutatedGenes[4].eq(dna[4]), 'expected dna mutation');
+        assert.isFalse(mutatedGenes[4].eq(dna[4]), 'expected dna mutation');
     });
 });
