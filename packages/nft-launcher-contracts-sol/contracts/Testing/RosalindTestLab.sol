@@ -82,4 +82,27 @@ contract RosalindTestLab {
         return RosalindDNA.generateMutations(dna, genes, randomSeed, mutationRates);
     }
 
+    /**
+     * @dev Gets the generation for a specimen
+     * @param child child dna to read specimen age
+     */
+    function getGenCount(
+        uint256 child
+    ) public pure returns (uint) {
+        // Returns the age of generation
+        return RosalindDNA.getGenCount(child);
+    }
+
+    /**
+     * @dev Sets an offsprings generation (increases max parent +1)
+     * @param child child dna
+     * @param parents array of parent dna
+     */
+    function breedDNAGenCount(
+        uint256 child,
+        uint256[] calldata parents
+    ) public pure returns (uint256) {
+        return RosalindDNA.breedDNAGenCount(child, parents);
+    }
+
 }
