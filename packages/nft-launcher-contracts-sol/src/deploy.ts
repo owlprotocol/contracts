@@ -1,39 +1,57 @@
-// import FactoryERC20 from './truffle/FactoryERC20';
-// import { getWeb3Default } from './utils/getWeb3';
-// import setProvider from './utils/setProvider';
-// import { toBN } from 'web3-utils';
+// We require the Hardhat Runtime Environment explicitly here. This is optional
+// but useful for running the script in a standalone fashion through `node <script>`.
+//
+// When running the script with `npx hardhat run <script>` you'll find the Hardhat
+// Runtime Environment's members available in the global scope.
+import { ethers } from 'hardhat';
 
-// //Set Web3 provider
-// export const contracts = {
-//     FactoryERC20,
-// };
+async function main() {
+    // Hardhat always runs the compile task when running scripts with its command
+    // line interface.
+    //
+    // If this script is run directly using `node` you may want to call compile
+    // manually to make sure everything is compiled
+    // await hre.run('compile');
 
-// export async function deploy() {
-//     const example = await FactoryERC20.new();
-//     console.log('CONTRACTS DEPLOYED');
-//     console.log({
-//         example: example.address,
-//     });
-// }
+    // We get the contract to deploy
+    // const Greeter = await ethers.getContractFactory("Greeter");
+    // const greeter = await Greeter.deploy("Hello, Hardhat!");
 
-// export async function main() {
-//     const { web3, provider, account } = await getWeb3Default();
-//     setProvider(Object.values(contracts), provider, account);
+    // await greeter.deployed();
 
-//     const balance = await web3.eth.getBalance(account);
-//     if (toBN(balance).eq(toBN(0))) {
-//         throw new Error(`${account} balance = 0! Make sure to get some ether.`);
-//     } else {
-//         try {
-//             await deploy();
-//         } catch (error) {
-//             console.error(error);
-//         }
-//     }
-// }
+    // console.log("Greeter deployed to:", greeter.address);
 
-// if (typeof require !== 'undefined' && require.main === module) {
-//     main()
-//         .then(() => process.exit())
-//         .catch((error) => console.error(error));
-// }
+    // const minterSimple = await ethers.getContractFactory('MinterSimple');
+    // const factoryERC721 = await ethers.getContractFactory('FactoryERC721');
+    // const factoryERC20 = await ethers.getContractFactory('FactoryERC20');
+
+    // const marketContr = await ethers.getContractFactory('SnakeGameRewards', {
+    //     libraries: {
+    //         CBORDecoding: (await cborDecoder.deploy()).address,
+    //     },
+    // });
+    // const minterSimpleDeployed = await minterSimple.deploy();
+    // const factoryERC721Deployed = await factoryERC721.deploy('owl', 'owl');
+    // const factoryERC20Deployed = await factoryERC20.deploy('0', 'owl', 'owl');
+
+    // await minterSimpleDeployed.deployed();
+    // console.log('MinterSimple at: ', minterSimpleDeployed.address);
+
+    // await factoryERC721Deployed.deployed();
+    // console.log('FactoryERC721 at: ', factoryERC721Deployed.address);
+
+    // await factoryERC20Deployed.deployed();
+    // console.log('factoryERC20 at: ', factoryERC20Deployed.address);
+
+    //   const NFTContr = await ethers.getContractFactory("NFT");
+    //   const NFTDeploy = await NFTContr.deploy(marketDeploy.address);
+
+    //   console.log("NFT deployed at: ", NFTDeploy.address);
+}
+
+// We recommend this pattern to be able to use async/await everywhere
+// and properly handle errors.
+main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+});
