@@ -11,6 +11,9 @@ import "./SourceRandom.sol";
  */
 library RosalindDNA {
 
+    // First 8 bits are generation
+    uint256 private constant GENERATION_MASK = 0x00000000000000FF;
+
     /**
      * @dev Breeds multiple parents DNA, returning a new combined
      * @param parents N different parent DNAs
@@ -135,6 +138,48 @@ library RosalindDNA {
         // Merge existing DNA after slicing out mutation genes
         dna = dna & (~mutationMask);
         mutatedDNA = dna | mutatedDNA;
+    }
+
+    /**
+     * @dev Sets an offsprings generation (increases max parent +1)
+     * @param child child dna
+     * @param parents array of parent dna
+     */
+    function breedDNAGenCount(
+        uint256 child,
+        uint256[] calldata parents
+    ) internal pure returns (uint256) {
+
+        // Discover oldest parent
+        uint oldestParent;
+        for (uint i = 0; i < parents.length; i++) {
+            uint parentAge = uint8(parents[i] & GENERATION_MASK);
+            if (parentAge > oldestParent)
+                oldestParent = parentAge;
+        }
+
+        // 255 == oldest generation allowed
+        if (oldestParent == type(uint8).max)
+            revert("Max generation reached!");
+
+        // Remove any age from child
+        child = child & ~GENERATION_MASK;
+        // Set new age
+        child = child | (oldestParent + 1);
+
+        return child;
+
+    }
+
+    /**
+     * @dev Gets the generation for a specimen
+     * @param child child dna to read specimen age
+     */
+    function getGenCount(
+        uint256 child
+    ) internal pure returns (uint8) {
+        // Returns the age of generation
+        return uint8(child & GENERATION_MASK);
     }
 
     /**

@@ -125,4 +125,41 @@ describe('Rosalind DNA Library', function () {
         // Last gene should always mutated
         assert.isFalse(mutatedGenes[4].eq(dna[4]), 'expected dna mutation');
     });
+
+    it('Rosalind Breed DNA Generation Counter', async () => {
+        const dnaLib = await RosalindTestLabTruffle.new();
+        const randomSeed = '1234';
+
+        const genes = [0, 8, 24, 40, 48];
+        let parent1Age = 1;
+        let parent2Age = 2;
+        let parent1Genes = [parent1Age, toBN(65_535), toBN(10), toBN(0), toBN(100_000)];
+        let parent2Genes = [parent2Age, toBN(30_000), toBN(5), toBN(2), toBN(200_000)];
+        let parent1 = encodeGenesUint256(parent1Genes, genes);
+        let parent2 = encodeGenesUint256(parent2Genes, genes);
+
+        let offspringDNA = await dnaLib.breedDNASimple([parent1, parent2], genes, randomSeed);
+
+        // Set generation
+        offspringDNA = await dnaLib.breedDNAGenCount(offspringDNA, [parent1, parent2]);
+        const offspringGenes = decodeGenesUint256(offspringDNA, genes);
+
+        // Assert generation == 3
+        assert.isTrue(offspringGenes[0].eqn(3), 'offspring generation not incremented!');
+
+        parent1Age = 1;
+        parent2Age = 255;
+        parent1Genes = [parent1Age, toBN(65_535), toBN(10), toBN(0), toBN(100_000)];
+        parent2Genes = [parent2Age, toBN(30_000), toBN(5), toBN(2), toBN(200_000)];
+        parent1 = encodeGenesUint256(parent1Genes, genes);
+        parent2 = encodeGenesUint256(parent2Genes, genes);
+
+        offspringDNA = await dnaLib.breedDNASimple([parent1, parent2], genes, randomSeed);
+
+        // Attempt to get generations
+        let genAge = await dnaLib.getGenCount(parent1);
+        assert.isTrue(genAge.eqn(parent1Age), 'age not parsed');
+        genAge = await dnaLib.getGenCount(parent2);
+        assert.isTrue(genAge.eqn(parent2Age), 'age2 not parsed');
+    });
 });
