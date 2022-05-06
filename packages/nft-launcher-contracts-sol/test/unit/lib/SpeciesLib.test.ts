@@ -24,6 +24,7 @@ describe('Species.ts', function () {
 
         // Test the end spacing
         encodeGenesUint256([0, toBN(2).pow(toBN(128)).sub(1)], [0, 128]);
+
         expect(() => encodeGenesUint256([0, toBN(2).pow(toBN(128))], [0, 128])).to.throw();
     });
 });
