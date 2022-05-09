@@ -16,7 +16,7 @@ import '../Utils/BatchMint.sol';
 /**
  * @dev Pluggable Crafting Contract
  */
-contract Crafter is ERC721Holder {
+contract CrafterMint is ERC721Holder {
     using Counters for Counters.Counter;
     Counters.Counter private _recipeIds;
 
@@ -95,13 +95,12 @@ contract Crafter is ERC721Holder {
             CraftLib.RecipeInputERC721[] memory inputsERC721,
             CraftLib.RecipeOutputERC20[] memory outputsERC20,
             CraftLib.RecipeOutputERC721[] memory outputsERC721,
-            uint256 craftableAmount,
             uint256 craftedAmount
         )
     {
         CraftLib.Recipe storage r = _recipes[recipeId];
 
-        return (r.inputsERC20, r.inputsERC721, r.outputsERC20, r.outputsERC721, r.craftableAmount, r.craftedAmount);
+        return (r.inputsERC20, r.inputsERC721, r.outputsERC20, r.outputsERC721, r.craftedAmount);
     }
 
     /**
