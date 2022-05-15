@@ -1,12 +1,12 @@
-import { encodeGenesUint256, decodeGenesUint256 } from '../../../src/nft-launcher-lib/Species';
+import { encodeGenesUint256, decodeGenesUint256 } from '../../../../src/nft-launcher-lib/Species';
 import { BigNumber } from 'ethers';
 import { assert, expect } from 'chai';
 import { ethers } from 'hardhat';
-import { RosalindTestLab__factory } from '../../../typechain';
+import { RosalindTestLab__factory } from '../../../../typechain';
 
 const toBN = BigNumber.from;
 
-describe('Rosalind DNA Library', async () => {
+describe('RosalindDNA.sol', async () => {
     let dnaLibFactory: RosalindTestLab__factory;
     let dnaLib: any;
 
@@ -22,9 +22,6 @@ describe('Rosalind DNA Library', async () => {
     const parent3 = encodeGenesUint256(parent3Genes, genes);
 
     before(async () => {
-        // const config = await configureGanache();
-        // ({ accounts } = config);
-        // setProvider([RosalindTestLabTruffle], config.provider, accounts[0]);
         dnaLibFactory = await ethers.getContractFactory('RosalindTestLab');
 
         // Since all functions are pure, we don't need to worry
