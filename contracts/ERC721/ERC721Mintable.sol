@@ -64,4 +64,8 @@ contract ERC721Mintable is ERC721, AccessControl {
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
+
+    function grantMinter(address a) public onlyRole(MINTER_ROLE) {
+        _grantRole(MINTER_ROLE, a);
+    }
 }
