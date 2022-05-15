@@ -1,37 +1,42 @@
-import configureGanache from '../../../src/utils/configureGanache';
-import setProvider from '../../../src/utils/setProvider';
-import FactoryERC20Truffle from '../../../factory/truffle/FactoryERC20';
-import { toBN } from 'web3-utils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { assert } from 'chai';
+import { ethers } from 'hardhat';
+import { FactoryERC20__factory } from '../../../typechain';
 
-describe('FactoryERC20', function () {
-    let accounts: string[];
+let FactoryERC20: FactoryERC20__factory;
+
+describe('FactoryERC20.sol', function () {
+    let owner: SignerWithAddress;
+    let user: SignerWithAddress;
+
     const mintAmount = 0;
     const coinName = 'TESTCOIN';
     const coinTicker = 'TST';
 
     before(async () => {
-        const config = await configureGanache();
-        ({ accounts } = config);
-        setProvider([FactoryERC20Truffle], config.provider, accounts[0]);
+        FactoryERC20 = await ethers.getContractFactory('FactoryERC20');
+
+        [owner, user] = await ethers.getSigners();
     });
 
-    it('FactoryERC20 Contract Minting', async () => {
+    it('FactoryERC20.mint(...)', async () => {
         // Create contract object
-        const testERC20 = await FactoryERC20Truffle.new(mintAmount, coinName, coinTicker);
+        const testERC20 = await FactoryERC20.deploy(mintAmount, coinName, coinTicker);
+        await testERC20.deployed();
 
-        const balOwner = await testERC20.balanceOf(accounts[0]);
-        const balUser = await testERC20.balanceOf(accounts[1]);
+        const balOwner = await testERC20.balanceOf(owner.address);
+        const balUser = await testERC20.balanceOf(user.address);
 
-        assert.notEqual(String(balOwner), String(toBN(0)), 'Owner minting failed!');
-        assert.equal(String(balUser), String(toBN(0)), 'User minting failed!');
+        assert.notEqual(String(balOwner), String(0), 'Owner minting failed!');
+        assert.equal(String(balUser), String(0), 'User minting failed!');
     });
 
-    it('FactoryERC20 Generation Test', async () => {
+    it('Helper function generation', async () => {
         const contracts = await createERC20(3);
         assert.equal(contracts.length, 3, 'factory created contracts');
 
         for (let i = 0; i < contracts.length; i++) {
-            assert(!(await contracts[i].balanceOf(accounts[0])).eq(toBN(0)));
+            assert(!(await contracts[i].balanceOf(owner.address)).eq(0));
         }
     });
 });
@@ -41,11 +46,14 @@ export async function createERC20(tokens = 1) {
     const mintAmount = 0; // 0 => mints 1million to owner
     const coinName = 'TESTCOIN';
     const coinTicker = 'TST';
+    const FactoryERC20 = await ethers.getContractFactory('FactoryERC20');
 
     const contracts = [];
     for (let i = 0; i < tokens; i++) {
-        contracts.push(FactoryERC20Truffle.new(mintAmount, coinName, coinTicker));
+        contracts.push(FactoryERC20.deploy(mintAmount, coinName, coinTicker));
     }
     const deployedContracts = await Promise.all(contracts);
+    // Assert all deployed
+    await Promise.all(deployedContracts.map((c) => c.deployed()));
     return deployedContracts;
 }

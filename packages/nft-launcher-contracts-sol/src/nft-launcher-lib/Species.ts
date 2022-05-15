@@ -1,4 +1,6 @@
-import { toBN } from 'web3-utils';
+import { BigNumber } from 'ethers';
+type BN = BigNumber;
+const toBN = BigNumber.from;
 
 export function encodeGenesUint256(values: (string | BN | number)[], genes: number[]): BN {
     let encodedGenes = toBN(0);
@@ -22,12 +24,12 @@ export function encodeGenesUint256(values: (string | BN | number)[], genes: numb
         // Calculate our biggest possible value for this slot (2^n - 1)
         const geneSpace = toBN(2)
             .pow(toBN(geneEndIdx - geneStartIdx))
-            .subn(1);
+            .sub(1);
         //@ts-ignore
         if (geneSpace.lt(geneValue)) throw `Value: ${geneValue} too large for it's slot!`;
 
         // Perform bitwise left-shift on selectedGene
-        const selectedGene = geneValue.shln(geneStartIdx);
+        const selectedGene = geneValue.shl(geneStartIdx);
         // Merge selected gene w/ our encoding
         //@ts-ignore
         encodedGenes = encodedGenes.or(selectedGene);
@@ -49,12 +51,12 @@ export function decodeGenesUint256(dna: BN | string | number, genes: number[]) {
             // If we're NOT at the end of array, grab the next gene ending value
             geneEndIdx = genes[geneIdx + 1];
         // Extract gene value
-        let geneValue = dna.clone();
+        let geneValue = dna;
         if (geneEndIdx < 256)
             // Turn off all values past endIdx
-            geneValue = geneValue.maskn(geneEndIdx);
+            geneValue = geneValue.mask(geneEndIdx);
         // Bitwise right-shift
-        geneValue = geneValue.shrn(geneStartIdx);
+        geneValue = geneValue.shr(geneStartIdx);
         decodedGenes.push(geneValue);
     }
     return decodedGenes;
