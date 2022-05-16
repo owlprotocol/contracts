@@ -41,6 +41,7 @@ library CraftLib {
     struct Recipe {
 
         address owner;
+        address burnAddress;
 
         RecipeInputERC20[] inputsERC20;
         RecipeInputERC721[] inputsERC721;
