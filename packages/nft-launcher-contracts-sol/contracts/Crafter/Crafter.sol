@@ -229,43 +229,53 @@ contract Crafter is ERC721Holder {
     function craftForRecipe(uint256 recipeId, uint256[] calldata inputERC721Ids) public recipeExists(recipeId) {
         // Recipe Pointer
         CraftLib.Recipe storage r = _recipes[recipeId];
+        address burnAddress = r.burnAddress != address(0) ? r.burnAddress : address(this);
 
         require(r.craftableAmount > 0, 'Not enough resources left for crafting!');
         // Update crafting stats (check-effects)
         r.craftableAmount--;
         r.craftedAmount++;
+        {
+            // Batch Transfer/Verify Input ERC20
+            address[] memory addressesERC20;
+            uint256[] memory unaffectedAmountsERC20;
+            uint256[] memory burnedAmountsERC20;
+            (addressesERC20, unaffectedAmountsERC20, burnedAmountsERC20) = CraftLib._splitConsumeablesERC20(r.inputsERC20);
+            BatchTransfer.assertBalanceERC20(addressesERC20, msg.sender, unaffectedAmountsERC20);
+            BatchTransfer.transferFromERC20(addressesERC20, msg.sender, burnAddress, burnedAmountsERC20);
 
-        // Batch Transfer/Verify Input ERC20
-        address[] memory addressesERC20;
-        uint256[] memory unaffectedAmountsERC20;
-        uint256[] memory burnedAmountsERC20;
-        (addressesERC20, unaffectedAmountsERC20, burnedAmountsERC20) = CraftLib._splitConsumeablesERC20(r.inputsERC20);
-        BatchTransfer.assertBalanceERC20(addressesERC20, msg.sender, unaffectedAmountsERC20);
-        BatchTransfer.transferFromERC20(addressesERC20, msg.sender, address(this), burnedAmountsERC20);
 
-        // Batch Transfer/Verify Input ERC721
-        address[] memory addressesERC721;
-        uint256[][] memory unaffectedAmountsERC721;
-        uint256[][] memory burnedAmountsERC721;
-        (addressesERC721, unaffectedAmountsERC721, burnedAmountsERC721) = CraftLib._splitConsumeablesERC721(
-            r.inputsERC721,
-            inputERC721Ids
-        );
-        BatchTransfer.assertBalanceERC721(addressesERC721, msg.sender, unaffectedAmountsERC721);
-        BatchTransfer.transferFromERC721(addressesERC721, msg.sender, address(this), burnedAmountsERC721);
+            // Batch Transfer/Verify Input ERC721
+            address[] memory addressesERC721;
+            uint256[][] memory unaffectedAmountsERC721;
+            uint256[][] memory burnedAmountsERC721;
+            (addressesERC721, unaffectedAmountsERC721, burnedAmountsERC721) = CraftLib._splitConsumeablesERC721(
+                r.inputsERC721,
+                inputERC721Ids
+            );
+            BatchTransfer.assertBalanceERC721(addressesERC721, msg.sender, unaffectedAmountsERC721);
+            BatchTransfer.transferFromERC721(addressesERC721, msg.sender, burnAddress, burnedAmountsERC721);
+        }
 
-        // Batch Transfer Output ERC20
-        address[] memory tokenAddresses;
-        uint256[] memory tokenAmounts;
-        (tokenAddresses, tokenAmounts) = CraftLib._buildBatchTransferERC20(r.outputsERC20, 1);
-        BatchTransfer.transferFromERC20(tokenAddresses, address(this), msg.sender, tokenAmounts);
+        {
+            // Batch Transfer Output ERC20
+            address[] memory tokenAddresses;
+            uint256[] memory tokenAmounts;
+            (tokenAddresses, tokenAmounts) = CraftLib._buildBatchTransferERC20(r.outputsERC20, 1);
+            BatchTransfer.transferFromERC20(tokenAddresses, address(this), msg.sender, tokenAmounts);
 
-        // Batch Transfer Output ERC721
-        address[] memory nftAddresses;
-        uint256[][] memory nftIds;
-        (nftAddresses, nftIds) = CraftLib._buildBatchTransferERC721(r.outputsERC721, 1); // craftAmount = 1
-        BatchTransfer.transferFromERC721(nftAddresses, address(this), msg.sender, nftIds);
+            // Batch Transfer Output ERC721
+            address[] memory nftAddresses;
+            uint256[][] memory nftIds;
+            (nftAddresses, nftIds) = CraftLib._buildBatchTransferERC721(r.outputsERC721, 1); // craftAmount = 1
+            BatchTransfer.transferFromERC721(nftAddresses, address(this), msg.sender, nftIds);
+        }
 
         emit RecipeCraft(recipeId, r.craftedAmount, r.craftableAmount, msg.sender);
     }
+
+    function setBurnAddress(uint256 recipeId, address addr) public onlyRecipeCreator(recipeId) {
+       _recipes[recipeId].burnAddress = addr;
+    }
+
 }

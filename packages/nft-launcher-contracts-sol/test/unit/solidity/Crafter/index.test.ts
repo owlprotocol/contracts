@@ -12,6 +12,7 @@ describe('Crafter.sol', function () {
     let accounts: SignerWithAddress[];
     let owner: SignerWithAddress;
     let user: SignerWithAddress;
+    let burnAddress: SignerWithAddress;
 
     let NFTCrafter: Crafter__factory;
 
@@ -21,6 +22,7 @@ describe('Crafter.sol', function () {
         accounts = await ethers.getSigners();
         owner = accounts[0];
         user = accounts[1];
+        burnAddress = accounts[2];
     });
 
     // Must be called with `it` for the async variables to exist
@@ -34,7 +36,7 @@ describe('Crafter.sol', function () {
         });
 
         describe('Module: Crafting', async () => {
-            Crafting(NFTCrafter, owner, user);
+            Crafting(NFTCrafter, owner, user, burnAddress);
         });
     });
 });

@@ -5,7 +5,12 @@ import { createERC721 } from '../FactoryERC721.test';
 import { Crafter__factory } from '../../../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-export default function (NFTCrafter: Crafter__factory, owner: SignerWithAddress, user: SignerWithAddress) {
+export default function (
+    NFTCrafter: Crafter__factory,
+    owner: SignerWithAddress,
+    user: SignerWithAddress,
+    burnAddress: SignerWithAddress,
+) {
     describe('Crafter.craftForRecipe(...)', async () => {
         it('ERC20 -> ERC20', async () => {
             // Create contract object
@@ -258,6 +263,85 @@ export default function (NFTCrafter: Crafter__factory, owner: SignerWithAddress,
             await expect(nftcrafter.connect(user).craftForRecipe(recipeId, [])).to.be.revertedWith(
                 'Not enough resources left for crafting!',
             );
+        });
+
+        it.only('ERC20 + ERC721 Burn Address', async () => {
+            // Create contract object
+            const nftcrafter = await NFTCrafter.deploy();
+            const [inputNFT1, inputNFT2] = await createERC721(4, 0); // create 4 tokens, mint 0 nfts
+            const [inputToken1, inputToken2, outputToken1] = await createERC20(4);
+            const recipeId = 1;
+            const craftAmount = 1;
+            await Promise.all(
+                [nftcrafter, inputNFT1, inputNFT2, inputToken1, inputToken2, outputToken1].map((c) => c.deployed()),
+            );
+
+            // Recipe data
+            const inputsERC20: Array<InputERC20> = [
+                {
+                    contractAddr: inputToken1.address,
+                    consumableType: 0,
+                    amount: '1',
+                },
+                {
+                    contractAddr: inputToken2.address,
+                    consumableType: 1,
+                    amount: '2',
+                },
+            ];
+            const inputsERC721: Array<InputERC721> = [
+                {
+                    contractAddr: inputNFT1.address,
+                    consumableType: 0,
+                },
+                {
+                    contractAddr: inputNFT2.address,
+                    consumableType: 1,
+                },
+            ];
+            const outputsERC20: Array<OutputERC20> = [
+                {
+                    contractAddr: outputToken1.address,
+                    amount: '1',
+                },
+            ];
+
+            // Create Recipe
+            await nftcrafter.createRecipe(inputsERC20, inputsERC721, outputsERC20, []);
+
+            // ERC20 transfers
+            await outputToken1.increaseAllowance(nftcrafter.address, '1');
+
+            // Attempt to deposit
+            await nftcrafter.depositForRecipe(recipeId, craftAmount, []);
+
+            // Give NFT resources / set approvals for crafting
+            await inputNFT1.connect(user).mintTokens(1);
+            await inputNFT2.connect(user).mintTokens(1);
+            // ConsumableType: Unaffected -> await input1.setApprovalForAll(nftcrafter.address, true, { from: user })
+            await inputNFT2.connect(user).setApprovalForAll(nftcrafter.address, true);
+
+            // Give ERC20 resources / set approvals for crafting
+            await inputToken1.transfer(user.address, '1');
+            await inputToken2.transfer(user.address, '2');
+            // ConsumableType: Unaffected -> await inputToken1.increaseAllowance(nftcrafter.address, '1')
+            await inputToken2.connect(user).increaseAllowance(nftcrafter.address, '2');
+
+            // Set burn addr
+            await nftcrafter.setBurnAddress(recipeId, burnAddress.address);
+
+            // Call craft
+            await expect(() => nftcrafter.connect(user).craftForRecipe(recipeId, ['1', '1'])).to.changeTokenBalance(
+                inputToken2,
+                burnAddress,
+                2,
+            );
+
+            // Assert transfers
+            assert.equal(await inputNFT2.ownerOf('1'), burnAddress.address, 'input2 NFT not transferred!');
+
+            // Assert transfers
+            assert((await inputToken2.balanceOf(burnAddress.address)).eq(2), 'input2 token bal != 0');
         });
     });
 }
