@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { CrafterMint__factory, CrafterMint, ERC721Mintable__factory, ERC721Mintable } from '../../../typechain';
+import { CrafterMint__factory, CrafterMint, ERC721Mintable__factory, ERC721Mintable } from '../../../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 enum ConsumableType {
