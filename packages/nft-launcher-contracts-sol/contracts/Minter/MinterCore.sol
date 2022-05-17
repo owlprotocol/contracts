@@ -5,6 +5,7 @@ import '@openzeppelin/contracts/utils/Counters.sol';
 import '@openzeppelin/contracts/utils/introspection/ERC165Storage.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 import './IMinterCore.sol';
 import './modules/MintGuard/IMintGuard.sol';
@@ -15,7 +16,7 @@ import '../ERC1820/ERC1820ImplementerAuthorizeAll.sol';
  * @dev Decentralized NFT Minter contract
  *
  */
-abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
+abstract contract MinterCore is Initializable, ERC165Storage, ERC1820ImplementerAuthorizeAll {
     // Data Storage
     using Counters for Counters.Counter;
     Counters.Counter private speciesIds;
@@ -59,7 +60,7 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
     }
 
     // Constructor
-    constructor() {
+    function initialize() public virtual initializer {
         // Register Private Name
         bytes32 interfaceName = keccak256('OWLProtocol://MinterCore');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);

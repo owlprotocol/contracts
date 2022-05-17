@@ -39,8 +39,11 @@ contract MinterBreeding is MinterCore {
         uint256[] mutationRates
     );
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
     // Constructor
-    constructor() {
+    function initialize() public override initializer {
         // Register ERC1820 Private Interface
         bytes32 interfaceName = keccak256('OWLProtocol://MinterBreeding');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);

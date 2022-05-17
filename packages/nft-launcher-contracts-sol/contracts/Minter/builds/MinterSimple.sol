@@ -12,8 +12,11 @@ contract MinterSimple is MinterCore {
     // Events
     event MintSpecies(uint256 indexed speciesId, address to, uint256 tokenId);
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
     // Constructor
-    constructor() {
+    function initialize() public override initializer {
         // Register ERC1820 Private Interface
         bytes32 interfaceName = keccak256('OWLProtocol://MinterSimple');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
