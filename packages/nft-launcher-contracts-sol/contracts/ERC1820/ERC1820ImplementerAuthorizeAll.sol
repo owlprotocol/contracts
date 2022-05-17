@@ -15,19 +15,17 @@ pragma solidity ^0.8.0;
  * registration to be complete.
  */
 contract ERC1820ImplementerAuthorizeAll {
-    bytes32 private constant _ERC1820_ACCEPT_MAGIC = keccak256("ERC1820_ACCEPT_MAGIC");
+    bytes32 private constant _ERC1820_ACCEPT_MAGIC = keccak256('ERC1820_ACCEPT_MAGIC');
 
     mapping(bytes32 => bool) private _supportedInterfaces;
 
     /**
      * @dev See {IERC1820Implementer-canImplementInterfaceForAddress}.
      */
-    function canImplementInterfaceForAddress(bytes32 interfaceHash, address /*account*/)
-        public
-        view
-        virtual
-        returns (bytes32)
-    {
+    function canImplementInterfaceForAddress(
+        bytes32 interfaceHash,
+        address /*account*/
+    ) public view virtual returns (bytes32) {
         return _supportedInterfaces[interfaceHash] ? _ERC1820_ACCEPT_MAGIC : bytes32(0x00);
     }
 

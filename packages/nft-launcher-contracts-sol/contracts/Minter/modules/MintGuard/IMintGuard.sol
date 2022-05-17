@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
 /**
  * @dev Allow/deny minting based on conditions.
@@ -9,18 +9,16 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
  * of mints including raffle winners, merkle trees, allowlists, etc.
  */
 interface IMintGuard is IERC165 {
-
     /**
      * @dev Only required function for mint guards
      * @param speciesId identifier
      * @param userMinting user attempting mint operation
      */
-    function allowMint(
-        uint256 speciesId,
-        address userMinting
-    ) external  returns (
-        bool // True / false -> allow minting operation to proceed.
-    );
+    function allowMint(uint256 speciesId, address userMinting)
+        external
+        returns (
+            bool // True / false -> allow minting operation to proceed.
+        );
 
     /**
      * @dev Overload allowing for Merkle verification
@@ -30,8 +28,5 @@ interface IMintGuard is IERC165 {
         address userMinting,
         bytes32 merkleRoot,
         bytes32[] calldata merkleProof
-    ) external returns (
-        bool
-    );
-
+    ) external returns (bool);
 }

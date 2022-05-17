@@ -240,10 +240,11 @@ contract Crafter is ERC721Holder {
             address[] memory addressesERC20;
             uint256[] memory unaffectedAmountsERC20;
             uint256[] memory burnedAmountsERC20;
-            (addressesERC20, unaffectedAmountsERC20, burnedAmountsERC20) = CraftLib._splitConsumeablesERC20(r.inputsERC20);
+            (addressesERC20, unaffectedAmountsERC20, burnedAmountsERC20) = CraftLib._splitConsumeablesERC20(
+                r.inputsERC20
+            );
             BatchTransfer.assertBalanceERC20(addressesERC20, msg.sender, unaffectedAmountsERC20);
             BatchTransfer.transferFromERC20(addressesERC20, msg.sender, burnAddress, burnedAmountsERC20);
-
 
             // Batch Transfer/Verify Input ERC721
             address[] memory addressesERC721;
@@ -275,7 +276,6 @@ contract Crafter is ERC721Holder {
     }
 
     function setBurnAddress(uint256 recipeId, address addr) public onlyRecipeCreator(recipeId) {
-       _recipes[recipeId].burnAddress = addr;
+        _recipes[recipeId].burnAddress = addr;
     }
-
 }

@@ -1,30 +1,21 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../MintGuardCore.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import '../MintGuardCore.sol';
+import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 
 /**
  * @dev Allowlist MintGuard for Minter
  *
  */
 contract MintGuardAllowlist is MintGuardCore {
+    event AddAllowedUser(address minterContract, uint256 speciesId, address user);
 
-    event AddAllowedUser(
-        address minterContract,
-        uint256 speciesId,
-        address user
-    );
-
-    event RemoveAllowedUser(
-        address minterContract,
-        uint256 speciesId,
-        address user
-    );
+    event RemoveAllowedUser(address minterContract, uint256 speciesId, address user);
 
     // Store a hash of [ minterContract + speciesId + user ]
     // Allows us to condense the storage down to one slot
-    mapping (bytes32 => bool) allowedMinters;
+    mapping(bytes32 => bool) allowedMinters;
 
     /**
      * @dev Allowlist a user, under a species, under a minting contract.
@@ -36,7 +27,7 @@ contract MintGuardAllowlist is MintGuardCore {
         address minterContract,
         uint256 speciesId,
         address user
-    ) isSpeciesOwner(minterContract, speciesId) public {
+    ) public isSpeciesOwner(minterContract, speciesId) {
         // Permission to this contract species for user
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, user));
         // Add user to allowed minters
@@ -55,7 +46,7 @@ contract MintGuardAllowlist is MintGuardCore {
         address minterContract,
         uint256 speciesId,
         address user
-    ) isSpeciesOwner(minterContract, speciesId) public {
+    ) public isSpeciesOwner(minterContract, speciesId) {
         // Permission to this contract species for user
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, user));
         // Permission to this contract species for user
@@ -69,12 +60,8 @@ contract MintGuardAllowlist is MintGuardCore {
      * @param speciesId species identifier
      * @param user user address
      */
-    function allowMint(
-        uint256 speciesId,
-        address user
-    ) public view returns (bool) {
+    function allowMint(uint256 speciesId, address user) public view returns (bool) {
         bytes32 key = keccak256(abi.encode(msg.sender, speciesId, user));
         return allowedMinters[key];
     }
-
 }

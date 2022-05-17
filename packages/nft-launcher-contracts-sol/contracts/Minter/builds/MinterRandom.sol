@@ -1,30 +1,25 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../MinterCore.sol";
-import "./IMinterRandom.sol";
-import "../../Utils/SourceRandom.sol";
+import '../MinterCore.sol';
+import './IMinterRandom.sol';
+import '../../Utils/SourceRandom.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
 contract MinterRandom is MinterCore {
-
     // Nonce
     uint256 private _numMinted;
 
     // Events
-    event MintSpecies(
-        uint256 indexed speciesId,
-        address to,
-        uint256 tokenId
-    );
+    event MintSpecies(uint256 indexed speciesId, address to, uint256 tokenId);
 
     // Constructor
-    constructor () {
+    constructor() {
         // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256("OWLProtocol://MinterRandom");
+        bytes32 interfaceName = keccak256('OWLProtocol://MinterRandom');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
         // Register ERC165 Interface
         ERC165Storage._registerInterface(type(IMinterRandom).interfaceId);

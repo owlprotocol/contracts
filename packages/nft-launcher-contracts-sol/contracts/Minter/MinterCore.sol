@@ -1,27 +1,26 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165Storage.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/utils/Counters.sol';
+import '@openzeppelin/contracts/utils/introspection/ERC165Storage.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import "./IMinterCore.sol";
-import "./modules/MintGuard/IMintGuard.sol";
-import "../ERC721/IERC721Mintable.sol";
-import "../ERC1820/ERC1820ImplementerAuthorizeAll.sol";
+import './IMinterCore.sol';
+import './modules/MintGuard/IMintGuard.sol';
+import '../ERC721/IERC721Mintable.sol';
+import '../ERC1820/ERC1820ImplementerAuthorizeAll.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
 abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
-
     // Data Storage
     using Counters for Counters.Counter;
     Counters.Counter private speciesIds;
 
-    mapping (uint256 => Species) internal species;
+    mapping(uint256 => Species) internal species;
 
     // Structs
     struct Species {
@@ -36,12 +35,12 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
     // Modifiers
     modifier speciesOwner(uint256 speciesId) {
         // also tests for existence with below require
-        require(msg.sender == species[speciesId].owner, "You are not the owner!");
+        require(msg.sender == species[speciesId].owner, 'You are not the owner!');
         _;
     }
     modifier speciesExists(uint256 speciesId) {
         // tests for existence
-        require(address(0) != species[speciesId].owner, "Species does not exist!");
+        require(address(0) != species[speciesId].owner, 'Species does not exist!');
         _;
     }
     modifier mintAllowed(uint256 speciesId) {
@@ -49,16 +48,20 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
         _verifyMintGuard(speciesId);
         _;
     }
-    modifier mintAllowedMerkle(uint256 speciesId, bytes32 merkleRoot, bytes32[] calldata merkleProof) {
+    modifier mintAllowedMerkle(
+        uint256 speciesId,
+        bytes32 merkleRoot,
+        bytes32[] calldata merkleProof
+    ) {
         // Verify mint guard function (WITH merkle overload)
         _verifyMintGuard(speciesId, merkleRoot, merkleProof);
         _;
     }
 
     // Constructor
-    constructor () {
+    constructor() {
         // Register Private Name
-        bytes32 interfaceName = keccak256("OWLProtocol://MinterCore");
+        bytes32 interfaceName = keccak256('OWLProtocol://MinterCore');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
         // Register ERC165 Interface
         ERC165Storage._registerInterface(type(IMinterCore).interfaceId);
@@ -113,10 +116,7 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
      * @param speciesId identifier
      * @param mintGuardAddress contract address of the mint guard
      */
-    function setMintGuard(
-        uint256 speciesId,
-        address mintGuardAddress
-    ) public {
+    function setMintGuard(uint256 speciesId, address mintGuardAddress) public {
         species[speciesId].mintGuard = mintGuardAddress;
     }
 
@@ -124,23 +124,19 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
      * @dev Returns features created for a species
      * @param speciesId species identifier
      */
-    function getSpecies(
-        uint256 speciesId
-    ) public view returns (
-        address contractAddr,
-        address owner,
-        address mintFeeToken,
-        uint256 mintFeeAmount,
-        address mintFeeAddress
-    ) {
+    function getSpecies(uint256 speciesId)
+        public
+        view
+        returns (
+            address contractAddr,
+            address owner,
+            address mintFeeToken,
+            uint256 mintFeeAmount,
+            address mintFeeAddress
+        )
+    {
         Species storage s = species[speciesId];
-        return (
-            s.contractAddr,
-            s.owner,
-            s.mintFeeToken,
-            s.mintFeeAmount,
-            s.mintFeeAddress
-        );
+        return (s.contractAddr, s.owner, s.mintFeeToken, s.mintFeeAmount, s.mintFeeAddress);
     }
 
     /**
@@ -171,7 +167,11 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
      * @param buyer who's paying the ERC20 fee / gets the ERC721 token
      * @param tokenId the token identifier to mint
      */
-    function _safeMintForFee(uint256 speciesId, address buyer, uint256 tokenId) internal {
+    function _safeMintForFee(
+        uint256 speciesId,
+        address buyer,
+        uint256 tokenId
+    ) internal {
         Species storage s = species[speciesId];
 
         // Transfer ERC20
@@ -183,17 +183,12 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
 
     // =================== Mint Guard =====================
 
-    function _verifyMintGuard(
-        uint256 speciesId
-    ) private {
+    function _verifyMintGuard(uint256 speciesId) private {
         // check mint guard
         address mintGuard = species[speciesId].mintGuard;
         if (mintGuard != address(0))
             // Verify mint guard (no merkle)
-            require(IMintGuard(mintGuard)
-                .allowMint(speciesId, msg.sender) == true,
-                "Mint denied!"
-            );
+            require(IMintGuard(mintGuard).allowMint(speciesId, msg.sender) == true, 'Mint denied!');
     }
 
     function _verifyMintGuard(
@@ -205,10 +200,9 @@ abstract contract MinterCore is ERC165Storage, ERC1820ImplementerAuthorizeAll {
         address mintGuard = species[speciesId].mintGuard;
         if (mintGuard != address(0))
             // Verify mint guard (merkle proof overload func)
-            require(IMintGuard(mintGuard)
-                .allowMint(speciesId, msg.sender, merkleRoot, merkleProof) == true,
-                "Mint denied!"
+            require(
+                IMintGuard(mintGuard).allowMint(speciesId, msg.sender, merkleRoot, merkleProof) == true,
+                'Mint denied!'
             );
     }
-
 }

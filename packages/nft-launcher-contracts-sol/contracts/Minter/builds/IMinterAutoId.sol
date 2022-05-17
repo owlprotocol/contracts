@@ -1,14 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../IMinterCore.sol";
+import '../IMinterCore.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
 interface IMinterAutoId is IMinterCore {
-
     /**
      * @dev Create a new type of species and define attributes.
      * @param speciesId address of associated NFT
@@ -31,5 +30,4 @@ interface IMinterAutoId is IMinterCore {
      * @param nextTokenId_ next token id to be minted
      */
     function setNextTokenId(uint256 speciesId, uint256 nextTokenId_) external;
-
 }
