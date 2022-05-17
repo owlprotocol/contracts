@@ -9,6 +9,8 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol';
 
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+
 import './CraftLib.sol';
 import '../Utils/BatchTransfer.sol';
 import '../Utils/BatchMint.sol';
@@ -16,7 +18,7 @@ import '../Utils/BatchMint.sol';
 /**
  * @dev Pluggable Crafting Contract
  */
-contract CrafterMint is ERC721Holder {
+contract CrafterMint is Initializable, ERC721Holder {
     using Counters for Counters.Counter;
     Counters.Counter private _recipeIds;
 
@@ -43,6 +45,11 @@ contract CrafterMint is ERC721Holder {
         require(_recipes[recipeId].owner != address(0), 'Specified recipe does not exist!');
         _;
     }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function initialize() public initializer {}
 
     /**
      * @notice Developer function

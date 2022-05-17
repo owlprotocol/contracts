@@ -6,7 +6,6 @@ pragma solidity ^0.8.0;
  *
  */
 library SourceRandom {
-
     /**
      * @notice Not truly random. Use for debugging only
      * @dev Returns a random uint256 sourced from the current time
@@ -14,7 +13,7 @@ library SourceRandom {
      */
     function getRandomDebug() internal view returns (uint256) {
         uint256 random = uint256(keccak256(abi.encode(block.timestamp)));
-        require(random != 0);  // shouldn't ever happen but just to be safe.
+        require(random != 0); // shouldn't ever happen but just to be safe.
         return random;
     }
 
@@ -23,8 +22,8 @@ library SourceRandom {
      * @return uint256 random value
      */
     function getSeededRandom(uint256 seed, uint256 nonce) internal pure returns (uint256) {
-        uint256 random = uint256(keccak256(abi.encode(seed,nonce)));
-        require(random != 0);  // shouldn't ever happen but just to be safe
+        uint256 random = uint256(keccak256(abi.encode(seed, nonce)));
+        require(random != 0); // shouldn't ever happen but just to be safe
         return random;
     }
 }

@@ -3,11 +3,9 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/utils/Counters.sol';
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol';
+
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 import './CraftLib.sol';
 import '../Utils/BatchTransfer.sol';
@@ -15,7 +13,7 @@ import '../Utils/BatchTransfer.sol';
 /**
  * @dev Pluggable Crafting Contract.
  */
-contract Crafter is ERC721Holder {
+contract Crafter is Initializable, ERC721Holder {
     // Increment Recipe IDs
     using Counters for Counters.Counter;
     Counters.Counter private _recipeIds;
@@ -46,6 +44,11 @@ contract Crafter is ERC721Holder {
         require(_recipes[recipeId].owner != address(0), 'Specified recipe does not exist!');
         _;
     }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function initialize() public initializer {}
 
     /**
      * @notice Developer function
