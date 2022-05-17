@@ -3,11 +3,9 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/utils/Counters.sol';
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol';
+
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 import './CraftLib.sol';
 import '../Utils/BatchTransfer.sol';
@@ -15,7 +13,7 @@ import '../Utils/BatchTransfer.sol';
 /**
  * @dev Pluggable Crafting Contract.
  */
-contract Crafter is ERC721Holder {
+contract Crafter is Initializable, ERC721Holder {
     // Increment Recipe IDs
     using Counters for Counters.Counter;
     Counters.Counter private _recipeIds;
@@ -46,6 +44,11 @@ contract Crafter is ERC721Holder {
         require(_recipes[recipeId].owner != address(0), 'Specified recipe does not exist!');
         _;
     }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function initialize() public initializer {}
 
     /**
      * @notice Developer function
@@ -240,10 +243,11 @@ contract Crafter is ERC721Holder {
             address[] memory addressesERC20;
             uint256[] memory unaffectedAmountsERC20;
             uint256[] memory burnedAmountsERC20;
-            (addressesERC20, unaffectedAmountsERC20, burnedAmountsERC20) = CraftLib._splitConsumeablesERC20(r.inputsERC20);
+            (addressesERC20, unaffectedAmountsERC20, burnedAmountsERC20) = CraftLib._splitConsumeablesERC20(
+                r.inputsERC20
+            );
             BatchTransfer.assertBalanceERC20(addressesERC20, msg.sender, unaffectedAmountsERC20);
             BatchTransfer.transferFromERC20(addressesERC20, msg.sender, burnAddress, burnedAmountsERC20);
-
 
             // Batch Transfer/Verify Input ERC721
             address[] memory addressesERC721;
@@ -275,7 +279,6 @@ contract Crafter is ERC721Holder {
     }
 
     function setBurnAddress(uint256 recipeId, address addr) public onlyRecipeCreator(recipeId) {
-       _recipes[recipeId].burnAddress = addr;
+        _recipes[recipeId].burnAddress = addr;
     }
-
 }

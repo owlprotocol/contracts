@@ -1,29 +1,29 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../MinterCore.sol";
-import "./IMinterAutoId.sol";
+import '../MinterCore.sol';
+import './IMinterAutoId.sol';
+
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
 contract MinterAutoId is MinterCore {
-
     // Track our next tokenId for each species
-    mapping (uint256 => uint256) private nextTokenId;
+    mapping(uint256 => uint256) private nextTokenId;
 
     // Events
-    event MintSpecies(
-        uint256 indexed speciesId,
-        address to,
-        uint256 tokenId
-    );
+    event MintSpecies(uint256 indexed speciesId, address to, uint256 tokenId);
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
 
     // Constructor
-    constructor () {
+    function initialize() public override initializer {
         // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256("OWLProtocol://MinterAutoId");
+        bytes32 interfaceName = keccak256('OWLProtocol://MinterAutoId');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
         // Register ERC165 Interface
         ERC165Storage._registerInterface(type(IMinterAutoId).interfaceId);

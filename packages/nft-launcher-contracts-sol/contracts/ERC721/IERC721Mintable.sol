@@ -28,7 +28,5 @@ interface IERC721Mintable is IERC721, IAccessControl {
      */
     function setBaseURI(string calldata baseURI_) external;
 
-
     function grantMinter(address a) external;
-
 }

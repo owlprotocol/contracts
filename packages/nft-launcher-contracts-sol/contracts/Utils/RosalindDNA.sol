@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./SourceRandom.sol";
+import './SourceRandom.sol';
 
 /**
  * @dev Library used for combining uint256-encoded genes
@@ -10,7 +10,6 @@ import "./SourceRandom.sol";
  * furthered our understanding of DNAs molecular structure.
  */
 library RosalindDNA {
-
     // First 8 bits are generation
     uint256 private constant GENERATION_MASK = 0x00000000000000FF;
 
@@ -30,10 +29,9 @@ library RosalindDNA {
     ) internal pure returns (uint256 childDNA) {
         // Loop genes
         for (uint16 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
-
             // Gene details
             uint16 geneStartIdx = genes[geneIdx];
-            uint16 geneEndIdx = geneIdx < genes.length-1? genes[geneIdx+1] : 256;
+            uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 256;
 
             // Select parent
             uint8 randomParentIdx = uint8(SourceRandom.getSeededRandom(randomSeed, geneIdx) % parents.length);
@@ -77,13 +75,11 @@ library RosalindDNA {
         uint256 randomSeed,
         uint256[] memory mutationRates
     ) internal pure returns (uint256 childDNA) {
-
         // Breed normally
         childDNA = breedDNASimple(parents, genes, randomSeed);
 
         // Add mutations
         childDNA = generateMutations(childDNA, genes, randomSeed, mutationRates);
-
     }
 
     /**
@@ -116,7 +112,7 @@ library RosalindDNA {
         uint256 mutationMask;
 
         // Loop genes, create a mutation mask
-        for (uint geneIdx = 0; geneIdx < genes.length; geneIdx++) {
+        for (uint256 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
             // Decide if we want to mutate
             uint256 geneMutationSeed = SourceRandom.getSeededRandom(randomSeed, geneIdx);
             if (geneMutationSeed > mutationRates[geneIdx])
@@ -125,7 +121,7 @@ library RosalindDNA {
 
             // Note our mutation in mutationMask
             uint16 geneStartIdx = genes[geneIdx];
-            uint16 geneEndIdx = geneIdx < genes.length-1? genes[geneIdx+1] : 255;
+            uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 255;
 
             uint256 bitmask = get256Bitmask(geneStartIdx, geneEndIdx);
             mutationMask = mutationMask | bitmask;
@@ -145,22 +141,16 @@ library RosalindDNA {
      * @param child child dna
      * @param parents array of parent dna
      */
-    function breedDNAGenCount(
-        uint256 child,
-        uint256[] calldata parents
-    ) internal pure returns (uint256) {
-
+    function breedDNAGenCount(uint256 child, uint256[] calldata parents) internal pure returns (uint256) {
         // Discover oldest parent
-        uint oldestParent;
-        for (uint i = 0; i < parents.length; i++) {
-            uint parentAge = uint8(parents[i] & GENERATION_MASK);
-            if (parentAge > oldestParent)
-                oldestParent = parentAge;
+        uint256 oldestParent;
+        for (uint256 i = 0; i < parents.length; i++) {
+            uint256 parentAge = uint8(parents[i] & GENERATION_MASK);
+            if (parentAge > oldestParent) oldestParent = parentAge;
         }
 
         // 255 == oldest generation allowed
-        if (oldestParent == type(uint8).max)
-            revert("Max generation reached!");
+        if (oldestParent == type(uint8).max) revert('Max generation reached!');
 
         // Remove any age from child
         child = child & ~GENERATION_MASK;
@@ -168,16 +158,13 @@ library RosalindDNA {
         child = child | (oldestParent + 1);
 
         return child;
-
     }
 
     /**
      * @dev Gets the generation for a specimen
      * @param child child dna to read specimen age
      */
-    function getGenCount(
-        uint256 child
-    ) internal pure returns (uint8) {
+    function getGenCount(uint256 child) internal pure returns (uint8) {
         // Returns the age of generation
         return uint8(child & GENERATION_MASK);
     }
@@ -188,10 +175,9 @@ library RosalindDNA {
      * @param endBit end of mask
      * @return bitMask combined bitmask
      */
-    function get256Bitmask(uint16 startBit, uint16 endBit) internal pure returns(uint256 bitMask) {
+    function get256Bitmask(uint16 startBit, uint16 endBit) internal pure returns (uint256 bitMask) {
         uint256 bitMaskStart = type(uint256).max << startBit;
         uint256 bitMaskEnd = type(uint256).max >> (256 - endBit);
         bitMask = bitMaskStart & bitMaskEnd;
     }
-
 }

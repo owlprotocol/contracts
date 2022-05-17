@@ -1,27 +1,22 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../MintGuardCore.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import '../MintGuardCore.sol';
+import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
+import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 
-import "hardhat/console.sol";
+import 'hardhat/console.sol';
 
 /**
  * @dev MerkleTree-based Allowlist MintGuard for Minters
  *
  */
 contract MintGuardMerkle is MintGuardCore {
-
-    event SetAllowedRoot(
-        address minterContract,
-        uint256 speciesId,
-        bytes32 merkleRoot
-    );
+    event SetAllowedRoot(address minterContract, uint256 speciesId, bytes32 merkleRoot);
 
     // Store a hash of [ minterContract + speciesId + user ]
     // Allows us to condense the storage down to one slot
-    mapping (bytes32 => bytes32) allowedMintRoots;
+    mapping(bytes32 => bytes32) allowedMintRoots;
 
     /**
      * @dev Set allowed merkle root used to verify leaves for minting.
@@ -33,7 +28,7 @@ contract MintGuardMerkle is MintGuardCore {
         address minterContract,
         uint256 speciesId,
         bytes32 merkleRoot
-    ) isSpeciesOwner(minterContract, speciesId) public {
+    ) public isSpeciesOwner(minterContract, speciesId) {
         // Permission to this contract species for user
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, merkleRoot));
         // Add user to allowed minters
@@ -52,11 +47,11 @@ contract MintGuardMerkle is MintGuardCore {
         address minterContract,
         uint256 speciesId,
         bytes32 merkleRoot
-    ) isSpeciesOwner(minterContract, speciesId) public {
+    ) public isSpeciesOwner(minterContract, speciesId) {
         // Permission to this contract species for user
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, merkleRoot));
         // Permission to this contract species for user
-        allowedMintRoots[key] = "";
+        allowedMintRoots[key] = '';
         // Emit
         emit SetAllowedRoot(minterContract, speciesId, merkleRoot);
     }
@@ -76,8 +71,7 @@ contract MintGuardMerkle is MintGuardCore {
     ) public view returns (bool) {
         bytes32 key = keccak256(abi.encode(msg.sender, speciesId, merkleRoot));
         bytes32 storedMerkleRoot = allowedMintRoots[key];
-        require(storedMerkleRoot == merkleRoot && storedMerkleRoot !=  "", "No permission set!");
+        require(storedMerkleRoot == merkleRoot && storedMerkleRoot != '', 'No permission set!');
         return MerkleProof.verify(merkleProof, merkleRoot, keccak256(abi.encode(user)));
     }
-
 }

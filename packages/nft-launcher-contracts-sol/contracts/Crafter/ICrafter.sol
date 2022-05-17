@@ -1,17 +1,15 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 
-import "./CraftLib.sol";
-
+import './CraftLib.sol';
 
 /**
  * @dev DIY NFT Crafting Contract.
  *
  */
 interface INFTCrafter is IERC721Receiver {
-
     /**
      * @notice Developer function
      * @dev Dev docs
@@ -33,16 +31,17 @@ interface INFTCrafter is IERC721Receiver {
      * @param recipeId ERC20 inputs for recipe
      * @return CraftLib.Recipe struct
      */
-    function getRecipe(
-        uint256 recipeId
-    ) external view returns (
-        CraftLib.RecipeInputERC20[] memory,
-        CraftLib.RecipeInputERC721[] memory,
-        CraftLib.RecipeOutputERC20[] memory,
-        CraftLib.RecipeOutputERC721[] memory,
-        uint256,
-        uint256
-    );
+    function getRecipe(uint256 recipeId)
+        external
+        view
+        returns (
+            CraftLib.RecipeInputERC20[] memory,
+            CraftLib.RecipeInputERC721[] memory,
+            CraftLib.RecipeOutputERC20[] memory,
+            CraftLib.RecipeOutputERC721[] memory,
+            uint256,
+            uint256
+        );
 
     /**
      * @notice Must be recipe creator
@@ -63,10 +62,7 @@ interface INFTCrafter is IERC721Receiver {
      * @param recipeId ERC20 inputs for recipe
      * @param withdrawCraftAmount How many times the craft otuputs should be withdrawn
      */
-    function withdrawForRecipe(
-        uint256 recipeId,
-        uint256 withdrawCraftAmount
-    ) external;
+    function withdrawForRecipe(uint256 recipeId, uint256 withdrawCraftAmount) external;
 
     /**
      * @dev Creates a recipe while transferring assets to allow for immediate usage
@@ -92,10 +88,5 @@ interface INFTCrafter is IERC721Receiver {
      * @param recipeId ERC20 inputs for recipe
      * @param inputERC721Ids Array of pre-approved NFTs for crafting usage
      */
-    function craftForRecipe(
-        uint256 recipeId,
-        uint256[] calldata inputERC721Ids
-    ) external;
-
+    function craftForRecipe(uint256 recipeId, uint256[] calldata inputERC721Ids) external;
 }
-

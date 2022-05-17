@@ -1,25 +1,19 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../MintGuardCore.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import '../MintGuardCore.sol';
+import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 
 /**
  * @dev Allowlist MintGuard for Minter
  *
  */
 contract MintGuardLimitedMints is MintGuardCore {
-
-    event SetAllowedMints(
-        address minterContract,
-        uint256 speciesId,
-        address user,
-        uint64 mintsAllowed
-    );
+    event SetAllowedMints(address minterContract, uint256 speciesId, address user, uint64 mintsAllowed);
 
     // Store a hash of [ minterContract + speciesId + user ]
     // Allows us to condense the storage down to one slot
-    mapping (bytes32 => uint64) allowedMints;
+    mapping(bytes32 => uint64) allowedMints;
 
     /**
      * @dev Allowlist a user, under a species, under a minting contract to
@@ -34,7 +28,7 @@ contract MintGuardLimitedMints is MintGuardCore {
         uint256 speciesId,
         address user,
         uint64 mintsAllowed
-    ) isSpeciesOwner(minterContract, speciesId) public {
+    ) public isSpeciesOwner(minterContract, speciesId) {
         // Permission to this contract species for user
         bytes32 key = keccak256(abi.encode(minterContract, speciesId, user));
         // Add user to allowed minters
@@ -48,10 +42,7 @@ contract MintGuardLimitedMints is MintGuardCore {
      * @param speciesId species identifier
      * @param user user address
      */
-    function allowMint(
-        uint256 speciesId,
-        address user
-    ) public returns (bool) {
+    function allowMint(uint256 speciesId, address user) public returns (bool) {
         bytes32 key = keccak256(abi.encode(msg.sender, speciesId, user));
         uint64 mintsAllowed = allowedMints[key];
 
@@ -63,5 +54,4 @@ contract MintGuardLimitedMints is MintGuardCore {
         // Else return false
         return false;
     }
-
 }

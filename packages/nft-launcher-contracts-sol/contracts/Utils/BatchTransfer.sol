@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
@@ -32,8 +32,14 @@ library BatchTransfer {
                 continue;
             else if (from == address(this))
                 // Transferring from this contract, don't use transferFrom
-                SafeERC20.safeTransfer(IERC20(tokenAddresses[tokenIdx]), to, amounts[tokenIdx]);
-            else SafeERC20.safeTransferFrom(IERC20(tokenAddresses[tokenIdx]), from, to, amounts[tokenIdx]);
+                SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(tokenAddresses[tokenIdx]), to, amounts[tokenIdx]);
+            else
+                SafeERC20Upgradeable.safeTransferFrom(
+                    IERC20Upgradeable(tokenAddresses[tokenIdx]),
+                    from,
+                    to,
+                    amounts[tokenIdx]
+                );
         }
     }
 
@@ -55,7 +61,7 @@ library BatchTransfer {
                 // Don't check amounts = 0
                 continue;
             require(
-                IERC20(tokenAddresses[tokenIdx]).balanceOf(account) >= amounts[tokenIdx],
+                IERC20Upgradeable(tokenAddresses[tokenIdx]).balanceOf(account) >= amounts[tokenIdx],
                 'User missing minimum token balance(s)!'
             );
         }
