@@ -26,11 +26,12 @@ describe('MinterBreeding.sol', function () {
     // Including lots of genes makes it unlikley that we'll be unlucky and
     // breed a new specimen exactly the same as an existing
     const speciesId = 1;
-    const genes = [0, 20, 36, 40, 44, 48, 52, 56, 60];
-    const baseParentGenes = [1024, 256, 0, 0, 0, 0, 0, 0, 0];
+    const genes = [0, 8, 36, 40, 44, 48, 52, 56, 60];
+    const baseParentGenes = [1, 100, 5, 0, 0, 0, 0, 0, 0];
     const parentGenes: number[][] = [];
     const encodedParents: BN[] = [];
     const numParents = 5;
+    const defaultGenerationMultiplier = 0;
 
     before(async () => {
         MinterSimpleFactory = await ethers.getContractFactory('MinterSimple');
@@ -69,7 +70,7 @@ describe('MinterBreeding.sol', function () {
             for (let geneIdx = 0; geneIdx < parentGenes[0].length; geneIdx++)
                 assert(
                     newSpecimenDNA[geneIdx].eq(parentGenes[0][geneIdx]) ||
-                        newSpecimenDNA[geneIdx].eq(parentGenes[1][geneIdx]),
+                    newSpecimenDNA[geneIdx].eq(parentGenes[1][geneIdx]),
                     `Unexpected gene created at geneIdx: ${geneIdx}`,
                 );
         });
@@ -103,7 +104,7 @@ describe('MinterBreeding.sol', function () {
 
         it('Set Required Parents', async () => {
             const minterBreeding = await setupBreederContract();
-            await minterBreeding.setBreedingRules(speciesId, 3, 0, genes, []);
+            await minterBreeding.setBreedingRules(speciesId, 3, defaultGenerationMultiplier, 0, genes, []);
             // Breed w/ 3 parents
             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1], encodedParents[2]]);
         });
@@ -111,7 +112,14 @@ describe('MinterBreeding.sol', function () {
         it('Set breeding cooldown', async () => {
             const minterBreeding = await setupBreederContract();
             const cooldownSeconds = 1;
-            await minterBreeding.setBreedingRules(speciesId, 0, cooldownSeconds, genes, []);
+            await minterBreeding.setBreedingRules(
+                speciesId,
+                0,
+                defaultGenerationMultiplier,
+                cooldownSeconds,
+                genes,
+                [],
+            );
 
             // Breed our second specimen w/ cooldown
             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]]);
@@ -128,7 +136,7 @@ describe('MinterBreeding.sol', function () {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             for (const _ of genes) mutationRates.push(toBN(2).pow(toBN(256)).sub(1)); //every gene has 100% chance to mutate
             // Set mutations
-            await minterBreeding.setBreedingRules(speciesId, 0, 0, genes, mutationRates);
+            await minterBreeding.setBreedingRules(speciesId, 0, defaultGenerationMultiplier, 0, genes, mutationRates);
 
             // Breed
             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]]);
@@ -140,8 +148,62 @@ describe('MinterBreeding.sol', function () {
             // Note mutation testing is done in `RosalindDNA.test.ts`
             assert.isFalse(
                 newSpecimenDNA[0].eq(parentGenes[0][0]) ||
-                    newSpecimenDNA[0].eq(parentGenes[1][0]) ||
-                    newSpecimenDNA[0].eq(parentGenes[2][0]),
+                newSpecimenDNA[0].eq(parentGenes[1][0]) ||
+                newSpecimenDNA[0].eq(parentGenes[2][0]),
+            );
+        });
+
+        it('Enable generation counter', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            // Enable generation counting
+            await minterBreeding.setBreedingRules(
+                speciesId, // speciesId
+                0, // requiredParents (default to 0)
+                1, // enable 1x multiplier
+                0, // breedCooldownSeconds (defaults to 7 days)
+                genes, // gene encoding placements
+                [], // mutation rates (defaults to none)
+            );
+
+            // Breed our first specimen
+            await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[4]]);
+
+            // Make sure we called our simple breed function (no mutation)
+            const newSpecimen = await getLastBredSpeciesId(minterBreeding);
+            const newSpecimenDNA = decodeGenesUint256(newSpecimen, genes);
+            expect(newSpecimenDNA[0]).to.equal(6);
+        });
+
+        it.only('Enable generational cooldowns', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            // Enable generation counting
+            await minterBreeding.setBreedingRules(
+                speciesId, // speciesId
+                0, // requiredParents (default to 0)
+                1, // enable 1x multiplier
+                1, // breedCooldownSeconds (defaults to 7 days)
+                genes, // gene encoding placements
+                [], // mutation rates (defaults to none)
+            );
+
+            // Breed our first specimen
+            await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]]);
+
+            // Sleep off first cooldown
+            await sleep(2500);
+
+            // Grab specimen data, breed w/ first parent
+            const newSpecimen = await getLastBredSpeciesId(minterBreeding);
+            await minterBreeding.breed(speciesId, [encodedParents[0], newSpecimen]);
+
+            // Same cooldown length
+            await sleep(2500);
+
+            // newSpecimen now on cooldown
+            await expect(minterBreeding.breed(speciesId, [encodedParents[0], newSpecimen])).to.be.revertedWith(
+                'NFT currently on cooldown!',
             );
         });
     });
@@ -174,6 +236,7 @@ describe('MinterBreeding.sol', function () {
         await minterBreeding.setBreedingRules(
             speciesId, // speciesId
             0, // requiredParents (default to 0)
+            defaultGenerationMultiplier,
             0, // breedCooldownSeconds (defaults to 7 days)
             genes, // gene encoding placements
             [], // mutation rates (defaults to none)
