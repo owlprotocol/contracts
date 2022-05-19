@@ -23,8 +23,9 @@ contract MinterBreeding is MinterCore {
     // Store breeding details
     struct BreedingRules {
         uint8 requiredParents;
-        uint256 breedCooldownSeconds;
+        uint16 generationCooldownMultiplier;
         uint8[] genes;
+        uint256 breedCooldownSeconds;
         uint256[] mutationRates;
         mapping(uint256 => uint256) lastBredTime;
     }
@@ -61,8 +62,14 @@ contract MinterBreeding is MinterCore {
         speciesExists(speciesId)
         returns (uint256 tokenId)
     {
+        // Check if user enabled generational species
+        bool gensEnabled = (_breedingRules[speciesId].generationCooldownMultiplier != 0);
+
         // Breed species
         tokenId = _breedSpecies(speciesId, parents, msg.sender);
+        if (gensEnabled)
+            // Add next gen to child
+            tokenId = RosalindDNA.breedDNAGenCount(tokenId, parents);
 
         // Mint Operation
         MinterCore._mintForFee(speciesId, msg.sender, tokenId);
@@ -82,8 +89,14 @@ contract MinterBreeding is MinterCore {
         speciesExists(speciesId)
         returns (uint256 tokenId)
     {
+        // Check if user enabled generational species
+        bool gensEnabled = (_breedingRules[speciesId].generationCooldownMultiplier != 0);
+
         // Breed species
         tokenId = _breedSpecies(speciesId, parents, msg.sender);
+        if (gensEnabled)
+            // Add next gen to child
+            tokenId = RosalindDNA.breedDNAGenCount(tokenId, parents);
 
         // Mint Operation
         MinterCore._safeMintForFee(speciesId, msg.sender, tokenId);
@@ -101,6 +114,7 @@ contract MinterBreeding is MinterCore {
     function setBreedingRules(
         uint256 speciesId,
         uint8 requiredParents,
+        uint16 generationCooldownMultiplier,
         uint256 breedCooldownSeconds,
         uint8[] memory genes,
         uint256[] memory mutationRates
@@ -110,6 +124,9 @@ contract MinterBreeding is MinterCore {
 
         // Set values
         r.requiredParents = requiredParents;
+        r.generationCooldownMultiplier = generationCooldownMultiplier;
+        if (generationCooldownMultiplier != 0)
+            require(genes[0] == 0 && genes[1] == 8, 'Generations requires gene[0]=8');
         r.breedCooldownSeconds = breedCooldownSeconds;
 
         // Delete arrays in case they exist
@@ -155,36 +172,42 @@ contract MinterBreeding is MinterCore {
         uint256[] calldata parents,
         address caller
     ) internal returns (uint256 tokenId) {
-        // Generate random seed
-        uint256 randomSeed = SourceRandom.getRandomDebug();
-
         // Fetch breeding rules
         uint8 requiredParents;
-        uint256 breedCooldownSeconds;
         uint8[] memory genes;
         uint256[] memory mutationRates;
+        uint256 breedCooldownSeconds;
+        uint16 generationCooldownMultiplier = _breedingRules[speciesId].generationCooldownMultiplier;
         (requiredParents, breedCooldownSeconds, genes, mutationRates) = _getBreedingRules(speciesId);
 
         // Make sure we're following rules
-        require(parents.length == requiredParents, 'Invalid number of parents!');
-        IERC721 nft = IERC721(species[speciesId].contractAddr);
-        for (uint256 i = 0; i < parents.length; i++) {
-            // Require not on cooldown
-            require(
-                breedCooldownSeconds < block.timestamp - _breedingRules[speciesId].lastBredTime[parents[i]],
-                'NFT currently on cooldown!'
-            );
-            // By updating the timestamp right after each check,
-            // we prevent the same parent from being entered twice.
-            _breedingRules[speciesId].lastBredTime[parents[i]] = block.timestamp;
+        {
+            require(parents.length == requiredParents, 'Invalid number of parents!');
+            IERC721 nft = IERC721(species[speciesId].contractAddr);
+            for (uint256 i = 0; i < parents.length; i++) {
+                uint8 parentGeneration = RosalindDNA.getGenCount(parents[i]);
+                // Require not on cooldown
+                require(
+                    breedCooldownSeconds + parentGeneration * generationCooldownMultiplier <
+                        block.timestamp - _breedingRules[speciesId].lastBredTime[parents[i]],
+                    'NFT currently on cooldown!'
+                );
+                // By updating the timestamp right after each check,
+                // we prevent the same parent from being entered twice.
+                _breedingRules[speciesId].lastBredTime[parents[i]] = block.timestamp;
 
-            // Require ownership of NFTs
-            require(caller == nft.ownerOf(parents[i]), 'You must own all parents!');
+                // Require ownership of NFTs
+                require(caller == nft.ownerOf(parents[i]), 'You must own all parents!');
+            }
         }
 
-        // Call breeding
-        if (mutationRates.length == 0) tokenId = RosalindDNA.breedDNASimple(parents, genes, randomSeed);
-        else tokenId = RosalindDNA.breedDNAWithMutations(parents, genes, randomSeed, mutationRates);
+        // Breed the NFT
+        {
+            // Generate random seed
+            uint256 randomSeed = SourceRandom.getRandomDebug();
+            if (mutationRates.length == 0) tokenId = RosalindDNA.breedDNASimple(parents, genes, randomSeed);
+            else tokenId = RosalindDNA.breedDNAWithMutations(parents, genes, randomSeed, mutationRates);
+        }
     }
 
     /**
