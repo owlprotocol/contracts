@@ -5,6 +5,7 @@
 import { HardhatUserConfig } from 'hardhat/types/config';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-truffle5';
+import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-web3';
 import '@nomiclabs/hardhat-ethers';
 
