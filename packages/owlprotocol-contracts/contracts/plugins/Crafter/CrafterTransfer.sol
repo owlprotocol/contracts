@@ -77,7 +77,9 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
      */
     function deposit(uint256 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
-        // Requires
+        //Requires
+        require(depositAmount > 0, 'depositAmount cannot be 0!');
+
         uint256 erc721Outputs = 0;
 
         for (uint256 i = 0; i < outputs.length; i++) {
@@ -195,40 +197,85 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
         // Update crafting stats (check-effects)
         craftableAmount -= craftAmount;
         craftedAmount += craftAmount;
+
+        //Track ERC721 inputs idx
+        uint256 erc721Inputs = 0;
+
         //Transfer inputs
         for (uint256 i = 0; i < inputs.length; i++) {
             CraftLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == CraftLib.TokenType.erc20) {
-                //Transfer ERC20
-                SafeERC20Upgradeable.safeTransferFrom(
-                    IERC20Upgradeable(ingredient.contractAddr),
-                    _msgSender(),
-                    burnAddress,
-                    ingredient.amounts[0] * craftAmount
-                );
-            } else if (ingredient.token == CraftLib.TokenType.erc721) {
-                //Transfer ERC721
-                require(_inputERC721Ids[i].length == craftAmount, '_inputERC721Ids[i] != craftAmount');
-                for (uint256 j = 0; j < _inputERC721Ids[i].length; j++) {
-                    IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
+                //ERC20
+                if (ingredient.consumableType == CraftLib.ConsumableType.burned) {
+                    //Transfer ERC20
+                    SafeERC20Upgradeable.safeTransferFrom(
+                        IERC20Upgradeable(ingredient.contractAddr),
                         _msgSender(),
                         burnAddress,
-                        _inputERC721Ids[i][j]
+                        ingredient.amounts[0] * craftAmount
+                    );
+                } else if (ingredient.consumableType == CraftLib.ConsumableType.unaffected) {
+                    //Check ERC20
+                    require(
+                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_msgSender()) >=
+                            ingredient.amounts[0] * craftAmount,
+                        'User missing minimum token balance(s)!'
                     );
                 }
-            } else if (ingredient.token == CraftLib.TokenType.erc1155) {
-                //Transfer ERC1155
-                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
-                for (uint256 j = 0; j < ingredient.amounts.length; j++) {
-                    amounts[j] = ingredient.amounts[j] * craftAmount;
+            } else if (ingredient.token == CraftLib.TokenType.erc721) {
+                //ERC721
+                require(_inputERC721Ids[erc721Inputs].length == craftAmount, '_inputERC721Ids[i] != craftAmount');
+                if (ingredient.consumableType == CraftLib.ConsumableType.burned) {
+                    //Transfer ERC721
+                    for (uint256 j = 0; j < _inputERC721Ids[i].length; j++) {
+                        IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
+                            _msgSender(),
+                            burnAddress,
+                            _inputERC721Ids[i][j]
+                        );
+                    }
+                } else if (ingredient.consumableType == CraftLib.ConsumableType.unaffected) {
+                    //Check ERC721
+                    for (uint256 j = 0; j < _inputERC721Ids[i].length; j++) {
+                        require(
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(_inputERC721Ids[i][j]) == _msgSender(),
+                            'User does not own token(s)!'
+                        );
+                    }
                 }
-                IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                    _msgSender(),
-                    burnAddress,
-                    ingredient.tokenIds,
-                    amounts,
-                    new bytes(0)
-                );
+                erc721Inputs += 1;
+            } else if (ingredient.token == CraftLib.TokenType.erc1155) {
+                //ERC1155
+                if (ingredient.consumableType == CraftLib.ConsumableType.burned) {
+                    //Transfer ERC1155
+                    uint256[] memory amounts = new uint256[](ingredient.amounts.length);
+                    for (uint256 j = 0; j < ingredient.amounts.length; j++) {
+                        amounts[j] = ingredient.amounts[j] * craftAmount;
+                    }
+                    IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
+                        _msgSender(),
+                        burnAddress,
+                        ingredient.tokenIds,
+                        amounts,
+                        new bytes(0)
+                    );
+                } else if (ingredient.consumableType == CraftLib.ConsumableType.unaffected) {
+                    //Check ERC1155
+                    uint256[] memory amounts = new uint256[](ingredient.amounts.length);
+                    address[] memory accounts = new address[](ingredient.amounts.length);
+                    for (uint256 j = 0; j < ingredient.amounts.length; j++) {
+                        amounts[j] = ingredient.amounts[j] * craftAmount;
+                        accounts[j] = _msgSender();
+                    }
+
+                    uint256[] memory balances = IERC1155Upgradeable(ingredient.contractAddr).balanceOfBatch(
+                        accounts,
+                        ingredient.tokenIds
+                    );
+                    for (uint256 j = 0; j < balances.length; j++) {
+                        require(balances[j] >= amounts[j], 'User missing minimum token balance(s)!');
+                    }
+                }
             }
         }
 
