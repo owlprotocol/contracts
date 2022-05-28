@@ -1,9 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-
 /**
  * @dev Basic crafting structures used through NFTCrafting contracts.
  *
@@ -27,8 +24,8 @@ library CraftLib {
         TokenType token;
         ConsumableType consumableType;
         address contractAddr;
-        uint256 amount;
-        uint256 tokenId;
+        uint256[] amounts;
+        uint256[] tokenIds;
     }
 
     struct IngredientMany {
