@@ -11,13 +11,13 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 
-import '../Crafter/CraftLib.sol';
-import '../Utils/BatchTransfer.sol';
+import './ICrafter.sol';
+import './CraftLib.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
  */
-contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
+contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeable {
     // Events
     event CreateRecipe(address indexed creator, CraftLib.Ingredient[] inputs, CraftLib.Ingredient[] outputs);
     event RecipeUpdate(uint256 craftableAmount);
@@ -45,8 +45,8 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
     function initialize(
         address _burnAddress,
         uint256 _craftableAmount,
-        CraftLib.RecipeInputERC20[] calldata _inputs,
-        CraftLib.RecipeOutputERC20[] calldata _outputs,
+        CraftLib.Ingredient[] calldata _inputs,
+        CraftLib.Ingredient[] calldata _outputs,
         uint256[][] calldata _outputsERC721Ids
     ) public initializer {
         require(_burnAddress != address(0), 'burn address must not be 0');
@@ -78,10 +78,7 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
      */
     function deposit(uint256 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
         // Requires
-        require(
-            outputsERC721.length == _outputsERC721Ids.length,
-            'Missing ERC721 output item(s)! Please include ALL outputs.'
-        );
+        uint256 erc721Outputs = 0;
 
         for (uint256 i = 0; i < outputs.length; i++) {
             CraftLib.Ingredient storage ingredient = outputs[i];
@@ -95,19 +92,23 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
                 );
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
                 //Transfer ERC721
-                require(_outputsERC721Ids[i].length == depositAmount, '_outputsERC721Ids[i] != depositAmount');
+                require(
+                    _outputsERC721Ids[erc721Outputs].length == depositAmount,
+                    '_outputsERC721Ids[i] != depositAmount'
+                );
                 for (uint256 j = 0; j < _outputsERC721Ids[i].length; j++) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         _msgSender(),
                         address(this),
-                        _outputsERC721Ids[i][j]
+                        _outputsERC721Ids[erc721Outputs][j]
                     );
                     //Update ingredient, push additional ERC721 tokenId
                     ingredient.tokenIds.push(_outputsERC721Ids[i][j]);
                 }
+                erc721Outputs += 1;
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
                 //Transfer ERC1155
-                uint256[] amounts = uint256[](ingredient.amounts.length);
+                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
                 for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                     amounts[j] = ingredient.amounts[j] * depositAmount;
                 }
@@ -115,7 +116,8 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
                     _msgSender(),
                     address(this),
                     ingredient.tokenIds,
-                    amounts
+                    amounts,
+                    new bytes(0)
                 );
             }
         }
@@ -146,7 +148,7 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
                     IERC20Upgradeable(ingredient.contractAddr),
                     address(this),
                     _msgSender(),
-                    ingredient.amounts[0] * craftAmount
+                    ingredient.amounts[0] * withdrawAmount
                 );
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
                 //Pop tokenIds from end of array
@@ -162,15 +164,16 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
                 }
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
                 //Transfer ERC1155
-                uint256[] amounts = uint256[](ingredient.amounts.length);
+                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
                 for (uint256 j = 0; j < ingredient.amounts.length; j++) {
-                    amounts[j] = ingredient.amounts[j] * craftAmount;
+                    amounts[j] = ingredient.amounts[j] * withdrawAmount;
                 }
                 IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
                     address(this),
                     _msgSender(),
                     ingredient.tokenIds,
-                    amounts
+                    amounts,
+                    new bytes(0)
                 );
             }
         }
@@ -181,8 +184,8 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
     /**
      * @notice Craft {craftAmount}
      * @dev Used to craft. Consumes inputs and transfers outputs.
-     * @param craftAmount
-     * @param inputERC721Ids Array of pre-approved NFTs for crafting usage.
+     * @param craftAmount How many times to craft
+     * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
     function craft(uint256 craftAmount, uint256[][] calldata _inputERC721Ids) public {
         // Requires
@@ -215,7 +218,7 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
                 }
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
                 //Transfer ERC1155
-                uint256[] amounts = uint256[](ingredient.amounts.length);
+                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
                 for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                     amounts[j] = ingredient.amounts[j] * craftAmount;
                 }
@@ -223,7 +226,8 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
                     _msgSender(),
                     burnAddress,
                     ingredient.tokenIds,
-                    amounts
+                    amounts,
+                    new bytes(0)
                 );
             }
         }
@@ -250,7 +254,7 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
                 }
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
                 //Transfer ERC1155
-                uint256[] amounts = uint256[](ingredient.amounts.length);
+                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
                 for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                     amounts[j] = ingredient.amounts[j] * craftAmount;
                 }
@@ -258,7 +262,8 @@ contract CrafterTransfer is ERC721HolderUpgradeable, OwnableUpgradeable {
                     address(this),
                     _msgSender(),
                     ingredient.tokenIds,
-                    amounts
+                    amounts,
+                    new bytes(0)
                 );
             }
         }
