@@ -381,6 +381,119 @@ importers:
       web3-eth-contract: 1.7.3
       web3-utils: 1.7.3
 
+  packages/owlprotocol-contracts:
+    specifiers:
+      '@ethersproject/abi': ^5.5.0
+      '@ethersproject/contracts': ^5.5.0
+      '@ethersproject/providers': ^5.5.2
+      '@nomiclabs/hardhat-ethers': ^2.0.5
+      '@nomiclabs/hardhat-etherscan': ^3.0.3
+      '@nomiclabs/hardhat-waffle': ^2.0.3
+      '@nomiclabs/hardhat-web3': ^2.0.0
+      '@openzeppelin/contracts': ^4.4.2
+      '@openzeppelin/contracts-upgradeable': ^4.6.0
+      '@openzeppelin/hardhat-upgrades': ^1.17.0
+      '@typechain/ethers-v5': ^7.2.0
+      '@typechain/hardhat': ^2.3.1
+      '@typechain/web3-v1': ^3.1.0
+      '@types/chai': ^4.3.0
+      '@types/chai-as-promised': ^7.1.4
+      '@types/crypto-js': ^4.1.1
+      '@types/glob': ^7.2.0
+      '@types/merge-images': ^1.2.1
+      '@types/mocha': ^9.0.0
+      '@types/node': ^16.11.19
+      '@typescript-eslint/eslint-plugin': ^4.33.0
+      '@typescript-eslint/parser': ^4.33.0
+      ajv: ^8.10.0
+      canvas: ^2.9.0
+      chai: ^4.3.6
+      chai-as-promised: ^7.1.1
+      cross-env: ^7.0.3
+      crypto-js: ^4.1.1
+      dotenv: ^10.0.0
+      eslint: ^7.32.0
+      eslint-config-prettier: ^8.3.0
+      eslint-plugin-import: ^2.25.4
+      eslint-plugin-prettier: ^3.4.1
+      ethereum-waffle: ^3.4.4
+      ethers: ^5.6.1
+      glob: ^7.2.0
+      hardhat: ^2.9.1
+      lint-staged: ^11.2.6
+      merkletreejs: ^0.2.31
+      npm-run-all: ^4.1.5
+      prettier: ^2.5.1
+      rimraf: ^3.0.2
+      solc-0.8: npm:solc@^0.8.12
+      solidity-docgen: ^0.5.16
+      ts-node: ^10.4.0
+      typechain: ^5.2.0
+      typedoc: ^0.21.10
+      typedoc-neo-theme: ^1.1.1
+      typescript: ^4.5.4
+      uint8arrays: ^3.0.0
+      web3: ^1.6.1
+      web3-core: ^1.6.1
+      web3-eth-contract: ^1.6.1
+      web3-utils: ^1.6.1
+    dependencies:
+      ajv: 8.11.0
+      dotenv: 10.0.0
+    devDependencies:
+      '@ethersproject/abi': 5.6.3
+      '@ethersproject/contracts': 5.6.2
+      '@ethersproject/providers': 5.6.8
+      '@nomiclabs/hardhat-ethers': 2.0.6_ethers@5.6.8+hardhat@2.9.6
+      '@nomiclabs/hardhat-etherscan': 3.0.3_hardhat@2.9.6
+      '@nomiclabs/hardhat-waffle': 2.0.3_nrhuwds6i5phlteptrjzze3ray
+      '@nomiclabs/hardhat-web3': 2.0.0_hardhat@2.9.6+web3@1.7.3
+      '@openzeppelin/contracts': 4.6.0
+      '@openzeppelin/contracts-upgradeable': 4.6.0
+      '@openzeppelin/hardhat-upgrades': 1.17.0_wa7ilqnuksdx26rx4zes2gcega
+      '@typechain/ethers-v5': 7.2.0_sh6ckmcaytigqg6sia3a4lhjze
+      '@typechain/hardhat': 2.3.1_ax3zvbxr4ndu32kotn23p3zudy
+      '@typechain/web3-v1': 3.1.0_str63c3gnscatilgfehjavjygy
+      '@types/chai': 4.3.1
+      '@types/chai-as-promised': 7.1.5
+      '@types/crypto-js': 4.1.1
+      '@types/glob': 7.2.0
+      '@types/merge-images': 1.2.1
+      '@types/mocha': 9.1.1
+      '@types/node': 16.11.36
+      '@typescript-eslint/eslint-plugin': 4.33.0_fmlnxdx5spmvsrvh6oouvgptny
+      '@typescript-eslint/parser': 4.33.0_r6wgjs2cmdapk4bysm6dglulo4
+      canvas: 2.9.1
+      chai: 4.3.6
+      chai-as-promised: 7.1.1_chai@4.3.6
+      cross-env: 7.0.3
+      crypto-js: 4.1.1
+      eslint: 7.32.0
+      eslint-config-prettier: 8.5.0_eslint@7.32.0
+      eslint-plugin-import: 2.26.0_ffi3uiz42rv3jyhs6cr7p7qqry
+      eslint-plugin-prettier: 3.4.1_evcial7aw3q6fcauxv2c7fxuoe
+      ethereum-waffle: 3.4.4_typescript@4.7.2
+      ethers: 5.6.8
+      glob: 7.2.3
+      hardhat: 2.9.6_chai@4.3.6
+      lint-staged: 11.2.6
+      merkletreejs: 0.2.31
+      npm-run-all: 4.1.5
+      prettier: 2.6.2
+      rimraf: 3.0.2
+      solc-0.8: /solc/0.8.13
+      solidity-docgen: 0.5.16
+      ts-node: 10.8.0_4vcxniz6c2zf6q742nqxy3egzi
+      typechain: 5.2.0_typescript@4.7.2
+      typedoc: 0.21.10_typescript@4.7.2
+      typedoc-neo-theme: 1.1.1_typescript@4.7.2
+      typescript: 4.7.2
+      uint8arrays: 3.0.0
+      web3: 1.7.3
+      web3-core: 1.7.3
+      web3-eth-contract: 1.7.3
+      web3-utils: 1.7.3
+
 packages:
 
   /@achingbrain/node-fetch/2.6.7:
@@ -7281,6 +7394,18 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: true
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -12664,7 +12789,7 @@ packages:
     dependencies:
       command-exists: 1.2.9
       commander: 3.0.2
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       fs-extra: 0.30.0
       js-sha3: 0.8.0
       memorystream: 0.3.1
