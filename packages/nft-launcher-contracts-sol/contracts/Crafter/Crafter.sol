@@ -1,11 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/Counters.sol';
-
-import '@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 
 import './CraftLib.sol';
 import '../Utils/BatchTransfer.sol';
@@ -13,125 +13,44 @@ import '../Utils/BatchTransfer.sol';
 /**
  * @dev Pluggable Crafting Contract.
  */
-contract Crafter is Initializable, ERC721Holder {
-    // Increment Recipe IDs
-    using Counters for Counters.Counter;
-    Counters.Counter private _recipeIds;
-
-    // Store Recipes Locally
-    mapping(uint256 => CraftLib.Recipe) private _recipes;
+contract Crafter is Initializable, OwnableUpgradeable, ERC721HolderUpgradeable, ERC1155HolderUpgradeable, CraftLib {
+    // Core Recipe Variables
+    bool public frozen;
+    address public owner;
+    address public burnAddress;
+    uint256 public craftableAmount;
+    uint256 public craftedAmount;
+    IngredientMany[] public ingredients;
 
     // Events
-    event CreateRecipe(
-        uint256 recipeId,
-        address indexed owner,
-        CraftLib.RecipeInputERC20[] inputsERC20,
-        CraftLib.RecipeInputERC721[] inputsERC721,
-        CraftLib.RecipeOutputERC20[] outputsERC20,
-        CraftLib.RecipeOutputERC721[] outputsERC721
-    );
-    event RecipeUpdate(uint256 indexed recipeId, uint256 craftableAmount);
-    event RecipeCraft(uint256 indexed recipeId, uint256 craftedAmount, uint256 craftableAmount, address indexed user);
-
-    // Modifiers
-    modifier onlyRecipeCreator(uint256 recipeId) {
-        require(_recipes[recipeId].owner != address(0), 'Specified recipe does not exist!');
-        require(_recipes[recipeId].owner == msg.sender, 'Only recipe owners can call this!');
-        _;
-    }
-
-    modifier recipeExists(uint256 recipeId) {
-        require(_recipes[recipeId].owner != address(0), 'Specified recipe does not exist!');
-        _;
-    }
+    event Craft(address indexed user);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize() public initializer {}
-
-    /**
-     * @notice Developer function
-     * @dev Dev docs
-     * @param inputsERC20 ERC20 inputs for recipe
-     * @param inputsERC721 ERC721 inputs for recipe
-     * @param outputsERC20 ERC20 outputs for recipe crafting
-     * @param outputsERC721 ERC721 outputs for recipe crafting
-     */
-    function createRecipe(
-        CraftLib.RecipeInputERC20[] calldata inputsERC20,
-        CraftLib.RecipeInputERC721[] calldata inputsERC721,
-        CraftLib.RecipeOutputERC20[] calldata outputsERC20,
-        CraftLib.RecipeOutputERC721[] calldata outputsERC721
-    ) public {
-        // Requires
-        require(inputsERC20.length > 0 || inputsERC721.length > 0, 'A crafting input must be given!');
-        require(outputsERC20.length > 0 || outputsERC721.length > 0, 'A crafting output must be given!');
-
-        // Push ID
-        _recipeIds.increment();
-        uint256 id = _recipeIds.current();
-
-        // Storage pointer
-        CraftLib.Recipe storage r = _recipes[id];
-
-        // Store owner
-        r.owner = msg.sender;
-
-        // ERC20 Inputs
-        for (uint256 i = 0; i < inputsERC20.length; i++) r.inputsERC20.push(inputsERC20[i]);
-        // ERC721 Inputs
-        for (uint256 i = 0; i < inputsERC721.length; i++) r.inputsERC721.push(inputsERC721[i]);
-        // ERC20 Outputs
-        for (uint256 i = 0; i < outputsERC20.length; i++) r.outputsERC20.push(outputsERC20[i]);
-        // ERC721 Outputs
-        for (uint256 i = 0; i < outputsERC721.length; i++) {
-            require(
-                outputsERC721[i].ids.length == 0,
-                'Do not include IDs in initialization. Use `createRecipeWithDeposit`.'
-            );
-            r.outputsERC721.push(outputsERC721[i]);
-        }
-
-        emit CreateRecipe(id, r.owner, inputsERC20, inputsERC721, outputsERC20, outputsERC721);
-    }
-
-    /**
-     * @notice
-     * @dev Used to grab recipe details from contract
-     * @param recipeId ERC20 inputs for recipe
-     * @return inputsERC20 inputsERC721 outputsERC20 outputsERC721 craftableAmount craftedAmount
-     */
-    function getRecipe(uint256 recipeId)
-        public
-        view
-        recipeExists(recipeId)
-        returns (
-            CraftLib.RecipeInputERC20[] memory inputsERC20,
-            CraftLib.RecipeInputERC721[] memory inputsERC721,
-            CraftLib.RecipeOutputERC20[] memory outputsERC20,
-            CraftLib.RecipeOutputERC721[] memory outputsERC721,
-            uint256 craftableAmount,
-            uint256 craftedAmount
-        )
-    {
-        CraftLib.Recipe storage r = _recipes[recipeId];
-
-        return (r.inputsERC20, r.inputsERC721, r.outputsERC20, r.outputsERC721, r.craftableAmount, r.craftedAmount);
+    function initialize(
+        address _burnAddress,
+        IngredientMany[] memory _ingredients,
+        uint256 _initialCraftable
+    ) public initializer {
+        owner = msg.sender;
+        burnAddress = _burnAddress;
+        // TODO - verify starting amount + ids
+        for (uint256 i; i < _ingredients.length; i++) ingredients.push(_ingredients[i]);
     }
 
     /**
      * @notice Must be recipe creator
      * @dev Used to deposit recipe outputs
      * @param recipeId ERC20 inputs for recipe
-     * @param craftAmount How many times the recipe should be craftable
-     * @param outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     * @param _ingredients ERC20/ERC721/ERC1155 ingredients depositing (token ids)
+     * @param _craftAmount How many times the recipe should be craftable
      */
-    function depositForRecipe(
+    function depositIngredients(
         uint256 recipeId,
-        uint256 craftAmount,
-        uint256[][] calldata outputsERC721Ids
-    ) public onlyRecipeCreator(recipeId) {
+        IngredientMany[] memory _ingredients,
+        uint256 _craftAmount
+    ) public onlyOwner {
         // Recipe Pointer
         CraftLib.Recipe storage r = _recipes[recipeId];
 
@@ -166,18 +85,15 @@ contract Crafter is Initializable, ERC721Holder {
     /**
      * @notice Must be recipe creator
      * @dev Used to withdraw recipe outputs
-     * @param recipeId ERC20 inputs for recipe
-     * @param withdrawCraftAmount How many times the craft otuputs should be withdrawn
+     * @param _craftAmount number of ingredient sets to withdraw
      */
-    function withdrawForRecipe(uint256 recipeId, uint256 withdrawCraftAmount) public onlyRecipeCreator(recipeId) {
+    function withdrawIngredients(uint256 _craftAmount) public onlyOwner {
         // Recipe Pointer
         CraftLib.Recipe storage r = _recipes[recipeId];
 
         // Requires
         require(withdrawCraftAmount > 0, 'withdrawCraftAmount cannot be 0!');
         require(withdrawCraftAmount <= r.craftableAmount, 'Not enough resources to withdraw!');
-        // Increase craftableAmount (check-effects)
-        r.craftableAmount -= withdrawCraftAmount;
 
         // Batch Transfer ERC20
         address[] memory tokenAddresses;
@@ -191,36 +107,10 @@ contract Crafter is Initializable, ERC721Holder {
         (nftAddresses, nftIds) = CraftLib._buildBatchTransferERC721(r.outputsERC721, withdrawCraftAmount);
         BatchTransfer.transferFromERC721(nftAddresses, address(this), msg.sender, nftIds);
 
+        // Increase craftableAmount (check-effects)
+        r.craftableAmount -= withdrawCraftAmount;
+
         emit RecipeUpdate(recipeId, r.craftableAmount);
-    }
-
-    /**
-     * @dev Creates a recipe while transferring assets to allow for immediate usage
-     * @param inputsERC20 ERC20 inputs for recipe
-     * @param inputsERC721 ERC721 inputs for recipe
-     * @param outputsERC20 ERC20 outputs for recipe crafting
-     * @param outputsERC721 ERC721 outputs for recipe crafting
-     * @param craftAmount How many times the recipe should be craftable
-     * @param outputsERC721Ids 2D-array of ERC721 tokens used in crafting
-     */
-    function createRecipeWithDeposit(
-        CraftLib.RecipeInputERC20[] calldata inputsERC20,
-        CraftLib.RecipeInputERC721[] calldata inputsERC721,
-        CraftLib.RecipeOutputERC20[] calldata outputsERC20,
-        CraftLib.RecipeOutputERC721[] calldata outputsERC721,
-        uint256 craftAmount,
-        uint256[][] calldata outputsERC721Ids
-    ) public {
-        require(craftAmount != 0, '`craftAmount` must be larger than 0!');
-
-        createRecipe(inputsERC20, inputsERC721, outputsERC20, outputsERC721);
-
-        uint256 recipeId = _recipeIds.current();
-
-        depositForRecipe(recipeId, craftAmount, outputsERC721Ids);
-
-        // Update our owner since it defaulted to function caller (this contract)
-        _recipes[recipeId].owner = msg.sender;
     }
 
     /**
@@ -229,7 +119,7 @@ contract Crafter is Initializable, ERC721Holder {
      * @param recipeId ERC20 inputs for recipe
      * @param inputERC721Ids Array of pre-approved NFTs for crafting usage
      */
-    function craftForRecipe(uint256 recipeId, uint256[] calldata inputERC721Ids) public recipeExists(recipeId) {
+    function craft(IngredientMany[] memory _ingredients, uint256 _craftAmount) public {
         // Recipe Pointer
         CraftLib.Recipe storage r = _recipes[recipeId];
         address burnAddress = r.burnAddress != address(0) ? r.burnAddress : address(this);
@@ -276,9 +166,5 @@ contract Crafter is Initializable, ERC721Holder {
         }
 
         emit RecipeCraft(recipeId, r.craftedAmount, r.craftableAmount, msg.sender);
-    }
-
-    function setBurnAddress(uint256 recipeId, address addr) public onlyRecipeCreator(recipeId) {
-        _recipes[recipeId].burnAddress = addr;
     }
 }
