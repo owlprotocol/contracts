@@ -26,6 +26,13 @@ library CraftLib {
         ConsumableType consumableType;
     }
 
+    struct RecipeInputERC1155 {
+        address contractAddr;
+        ConsumableType consumableType;
+        uint256 id;
+        uint256 amount;
+    }
+
     struct RecipeOutputERC20 {
         address contractAddr;
         uint256 amount;
@@ -34,6 +41,12 @@ library CraftLib {
     struct RecipeOutputERC721 {
         address contractAddr;
         uint256[] ids;
+    }
+
+    struct RecipeOutputERC1155 {
+        address contractAddr;
+        uint256 id;
+        uint256 amount;
     }
 
     // Recipe
