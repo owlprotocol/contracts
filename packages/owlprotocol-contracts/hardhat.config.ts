@@ -19,7 +19,7 @@ const config: HardhatUserConfig = {
         // },
         rinkeby: {
             url: process.env.ROPSTEN_URL || '',
-            accounts: []//[process.env.PRIVATE_KEY || ''],
+            accounts: [],
         },
     },
     //@ts-ignore
