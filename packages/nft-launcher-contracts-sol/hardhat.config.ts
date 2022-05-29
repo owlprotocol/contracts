@@ -9,6 +9,7 @@ import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-etherscan';
 import '@openzeppelin/hardhat-upgrades';
+import { utils } from 'ethers';
 // TODO - auto doc generation
 
 const config: HardhatUserConfig = {
@@ -19,7 +20,7 @@ const config: HardhatUserConfig = {
         // },
         rinkeby: {
             url: process.env.ROPSTEN_URL || '',
-            accounts: [process.env.PRIVATE_KEY || ''],
+            accounts: [process.env.PRIVATE_KEY || utils.hexZeroPad(utils.hexlify(0), 32)],
         },
     },
     //@ts-ignore
@@ -29,7 +30,7 @@ const config: HardhatUserConfig = {
     },
     etherscan: {
         apiKey: process.env.ETHERSCAN_API_KEY,
-    }
+    },
 };
 
 export default config;
