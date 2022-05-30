@@ -27,11 +27,4 @@ library CraftLib {
         uint256[] amounts;
         uint256[] tokenIds;
     }
-
-    struct IngredientMany {
-        ConsumableType consumableType;
-        address contractAddr;
-        uint256 amountEach;
-        uint256[] tokenIds;
-    }
 }
