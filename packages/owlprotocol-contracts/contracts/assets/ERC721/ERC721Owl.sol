@@ -29,7 +29,7 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
-        setBaseURI(baseURI_);
+        baseURI = baseURI_;
     }
 
     /**

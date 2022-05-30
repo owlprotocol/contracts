@@ -25,7 +25,8 @@
     "lint": "eslint src test",
     "lint:fix": "eslint src test --fix",
     "lint:staged": "lint-staged",
-    "prepublishOnly": "npm run test"
+    "prepublishOnly": "npm run test",
+    "ganache": "ganache-cli -b 1 --networkId 1337 --chainId 1337"
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^4.6.0"

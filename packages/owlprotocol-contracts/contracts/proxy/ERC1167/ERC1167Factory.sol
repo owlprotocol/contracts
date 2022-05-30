@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Clones} from '@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol';
+import {ClonesUpgradeable} from '@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol';
+import {ContextUpgradeable} from '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
 /**
- * @dev EIP1167 Minimal Proxy Factory
+ * @dev ERC1167 Minimal Proxy Factory
  */
-contract EIP1167Factory {
+contract ERC1167Factory is ContextUpgradeable {
     event NewClone(address instance, address implementation, bytes32 salt);
 
     function clone(address implementation, bytes memory data) public returns (address instance) {
-        instance = Clones.clone(implementation);
+        instance = ClonesUpgradeable.clone(implementation);
 
         //data is optional
         if (data.length > 0) callInitializer(instance, data);
@@ -24,9 +25,8 @@ contract EIP1167Factory {
         bytes memory data
     ) public returns (address instance) {
         //Salt init data
-        if (data.length > 0) salt = keccak25(abi.encodePacked(salt, data));
-
-        instance = Clones.cloneDeterministic(implementation, salt);
+        salt = keccak256(abi.encodePacked(salt, _msgSender(), data));
+        instance = ClonesUpgradeable.cloneDeterministic(implementation, salt);
 
         //data is optional
         if (data.length > 0) callInitializer(instance, data);
@@ -39,7 +39,13 @@ contract EIP1167Factory {
         require(s, 'Create2CloneFactory: Failed to call the proxy');
     }
 
-    function predictDeterministicAddress(address implementation, bytes32 salt) public view returns (address predicted) {
-        return Clones.predictDeterministicAddress(implementation, salt);
+    function predictDeterministicAddress(
+        address implementation,
+        bytes32 salt,
+        bytes memory data
+    ) public view returns (address predicted) {
+        //Salt init data
+        salt = keccak256(abi.encodePacked(salt, _msgSender(), data));
+        predicted = ClonesUpgradeable.predictDeterministicAddress(implementation, salt);
     }
 }
