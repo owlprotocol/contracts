@@ -43,6 +43,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
      * @param _outputs outputs for recipe
      */
     function initialize(
+        address _admin,
         address _burnAddress,
         uint256 _craftableAmount,
         CraftLib.Ingredient[] calldata _inputs,
@@ -55,6 +56,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
         require(_outputs.length > 0, 'A crafting output must be given!');
 
         __Ownable_init();
+        _transferOwnership(_admin);
 
         burnAddress = _burnAddress;
 

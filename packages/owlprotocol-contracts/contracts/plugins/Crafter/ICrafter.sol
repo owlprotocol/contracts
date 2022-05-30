@@ -9,11 +9,13 @@ interface ICrafter {
     /**
      * @notice Create recipe
      * @dev Configures crafting recipe with inputs/outputs
+     * @param _admin Admin address to intialize ownership
      * @param _burnAddress Burn address for burn inputs
      * @param _inputs inputs for recipe
      * @param _outputs outputs for recipe
      */
     function initialize(
+        address _admin,
         address _burnAddress,
         uint256 _craftableAmount,
         CraftLib.Ingredient[] calldata _inputs,
