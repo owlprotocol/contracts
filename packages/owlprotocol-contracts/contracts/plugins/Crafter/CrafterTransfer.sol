@@ -10,6 +10,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 import './ICrafter.sol';
 import './CraftLib.sol';
@@ -49,8 +50,8 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
         CraftLib.Ingredient[] calldata _outputs,
         uint256[][] calldata _outputsERC721Ids
     ) public initializer {
-        require(_burnAddress != address(0), 'burn address must not be 0');
         // Requires
+        require(_burnAddress != address(0), 'burn address must not be 0');
         require(_inputs.length > 0, 'A crafting input must be given!');
         require(_outputs.length > 0, 'A crafting output must be given!');
 
@@ -58,16 +59,24 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
 
         burnAddress = _burnAddress;
 
-        //TODO: Is nested array getting copied?
-        //TODO: Do NOT update ERC721 token ids
+        // NOTE - deep copies arrays
         // Inputs
-        for (uint256 i = 0; i < _inputs.length; i++) inputs.push(_inputs[i]);
+        for (uint256 i = 0; i < _inputs.length; i++) {
+            inputs.push(_inputs[i]);
+            // Reject start ids
+            require(_inputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+        }
         // Outputs
-        for (uint256 i = 0; i < _outputs.length; i++) outputs.push(_outputs[i]);
+        for (uint256 i = 0; i < _outputs.length; i++) {
+            outputs.push(_outputs[i]);
+            // Reject start ids
+            require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+        }
 
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
 
-        deposit(_craftableAmount, _outputsERC721Ids);
+        // Cannot deploy + authorize in the same tx
+        // if (_craftableAmount > 0) deposit(_craftableAmount, _outputsERC721Ids);
     }
 
     /**
@@ -98,14 +107,14 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
                     _outputsERC721Ids[erc721Outputs].length == depositAmount,
                     '_outputsERC721Ids[i] != depositAmount'
                 );
-                for (uint256 j = 0; j < _outputsERC721Ids[i].length; j++) {
+                for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         _msgSender(),
                         address(this),
                         _outputsERC721Ids[erc721Outputs][j]
                     );
                     //Update ingredient, push additional ERC721 tokenId
-                    ingredient.tokenIds.push(_outputsERC721Ids[i][j]);
+                    ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
                 }
                 erc721Outputs += 1;
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
@@ -137,7 +146,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
     function withdraw(uint256 withdrawAmount) public onlyOwner {
         // Requires
         require(withdrawAmount > 0, 'withdrawAmount cannot be 0!');
-        require(withdrawAmount <= craftableAmount, 'Not enough resources to withdraw!');
+        require(withdrawAmount <= craftableAmount, 'Not enough resources!');
 
         // Decrease craftableAmount (check-effects)
         craftableAmount -= withdrawAmount;
@@ -146,9 +155,8 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
             CraftLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == CraftLib.TokenType.erc20) {
                 //Transfer ERC20
-                SafeERC20Upgradeable.safeTransferFrom(
+                SafeERC20Upgradeable.safeTransfer(
                     IERC20Upgradeable(ingredient.contractAddr),
-                    address(this),
                     _msgSender(),
                     ingredient.amounts[0] * withdrawAmount
                 );
@@ -203,7 +211,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
 
         //Transfer inputs
         for (uint256 i = 0; i < inputs.length; i++) {
-            CraftLib.Ingredient storage ingredient = outputs[i];
+            CraftLib.Ingredient storage ingredient = inputs[i];
             if (ingredient.token == CraftLib.TokenType.erc20) {
                 //ERC20
                 if (ingredient.consumableType == CraftLib.ConsumableType.burned) {
@@ -227,18 +235,19 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
                 require(_inputERC721Ids[erc721Inputs].length == craftAmount, '_inputERC721Ids[i] != craftAmount');
                 if (ingredient.consumableType == CraftLib.ConsumableType.burned) {
                     //Transfer ERC721
-                    for (uint256 j = 0; j < _inputERC721Ids[i].length; j++) {
+                    for (uint256 j = 0; j < _inputERC721Ids[erc721Inputs].length; j++) {
                         IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                             _msgSender(),
                             burnAddress,
-                            _inputERC721Ids[i][j]
+                            _inputERC721Ids[erc721Inputs][j]
                         );
                     }
                 } else if (ingredient.consumableType == CraftLib.ConsumableType.unaffected) {
                     //Check ERC721
-                    for (uint256 j = 0; j < _inputERC721Ids[i].length; j++) {
+                    for (uint256 j = 0; j < _inputERC721Ids[erc721Inputs].length; j++) {
                         require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(_inputERC721Ids[i][j]) == _msgSender(),
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(_inputERC721Ids[erc721Inputs][j]) ==
+                                _msgSender(),
                             'User does not own token(s)!'
                         );
                     }
@@ -284,21 +293,25 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
             CraftLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == CraftLib.TokenType.erc20) {
                 //Transfer ERC20
-                SafeERC20Upgradeable.safeTransferFrom(
+                SafeERC20Upgradeable.safeTransfer(
                     IERC20Upgradeable(ingredient.contractAddr),
-                    address(this),
                     _msgSender(),
                     ingredient.amounts[0] * craftAmount
                 );
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
                 //Transfer ERC721, tokenIds from [craftedAmount ... craftedAmount+craftAmount] have already been transferred.
-                for (uint256 j = craftedAmount; j < ingredient.tokenIds.length; j++) {
+                // NOTE - this could cause index issues when items are withdrawn from the crafter
+                // Also causes issues with check-effects, craftedAmount is already offset
+                // I'm switching this to reverse indexing based on the available ids
+                for (uint256 j = ingredient.tokenIds.length; j > ingredient.tokenIds.length - craftAmount; j--) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         address(this),
                         _msgSender(),
-                        ingredient.tokenIds[j]
+                        ingredient.tokenIds[j - 1]
                     );
                 }
+                //Update ingredient, remove withdrawn tokenId
+                ingredient.tokenIds.pop();
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
                 //Transfer ERC1155
                 uint256[] memory amounts = new uint256[](ingredient.amounts.length);
