@@ -36,7 +36,7 @@ mouthTraits = new SpecieTrait('Mouth', 'Image', [blueMouth, redMouth, pinkMouth]
 //Order in array matters
 metadata = new SpecieMetadata([bodyTraits, eyeTraits, mouthTraits]);
 const json = metadata.getJsonMetadata();
-writeFileSync('./metadata.json', JSON.stringify(json));
+writeFileSync('./metadataLH.json', JSON.stringify(json));
 
 export default async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -79,7 +79,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
             Image,
         });
 
-        const instance = { metadata: tokenMetadata, img: mergedImg };
+        const instance = { attributes: tokenMetadata, image: mergedImg };
         writeFileSync(`./cache/${specieMetadata}/tokens/${tokenId}.json`, JSON.stringify(instance));
 
         res.status(200).send(instance);

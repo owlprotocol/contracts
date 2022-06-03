@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
-import createError, { HttpError, NotFound } from 'http-errors';
+import { HttpError, NotFound } from 'http-errors';
+import { existsSync, mkdir } from 'fs';
 import { metadataRouter } from './routes';
+import path from 'path';
 
 //App config
 const app = express();
@@ -18,6 +20,10 @@ app.use('/metadata', metadataRouter);
 app.use(async (req, res, next) => {
     next(new NotFound());
 });
+
+const cacheDir = path.join(__dirname, '..', '..', '..', 'cache');
+//create cache
+if (!existsSync(cacheDir)) mkdir('./cache', () => {});
 
 //Error handling middleware
 app.use((err: HttpError, req: Request, res: Response, next: NextFunction) => {

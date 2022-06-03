@@ -1,20 +1,18 @@
-import { fromString } from 'uint8arrays/from-string';
-import { Canvas, Image as _Image } from 'canvas';
-import { SpecieTrait, SpecieMetadata } from './metadata';
-import { ERC721Metadata, MetadataList } from './types';
-import { merge, uploadImage, uploadERC721Many } from './images';
+import { assert, expect } from 'chai';
+import SpecieMetadata, { validateSchema } from './SpecieMetadata';
+import SpecieTrait from './SpecieTrait';
+import { generateAllInstances, instanceMetadata8 } from './test-results';
 
-describe('E2E Test', () => {
+describe('metadata.integration', () => {
     let orangeBody, yellowBody, greenBody;
 
     let smallEyes, mediumEyes, largeEyes;
 
     let blueMouth, redMouth, pinkMouth;
 
-    let bodyTraits, eyeTraits, mouthTraits;
+    let bodyTraits: SpecieTrait, eyeTraits: SpecieTrait, mouthTraits: SpecieTrait;
 
     let metadata: SpecieMetadata;
-    let allM: MetadataList;
 
     before(() => {
         orangeBody = { value_name: 'orange', image: __dirname + '/testimages/body/orange_body.png' };
@@ -35,42 +33,98 @@ describe('E2E Test', () => {
 
         //Order in array matters
         metadata = new SpecieMetadata([bodyTraits, eyeTraits, mouthTraits]);
-        allM = metadata.generateAllInstances();
     });
 
-    it.skip('UploadERC721Many', async function () {
-        this.timeout(60000);
-        const list: ERC721Metadata[] = [];
+    describe('SpecieMetadata.ts', () => {
+        it('getSpecieMetadata', () => {
+            assert.deepEqual(metadata.generateAllInstances(), generateAllInstances);
+        });
 
-        for (const dna in allM) {
-            console.log(dna);
-            const mergedImage = await merge(allM[dna], metadata, {
-                Canvas,
-                Image: _Image,
-            });
+        it('getMaxBitSize', () => {
+            const bodyBitSize = Math.ceil(Math.log2(bodyTraits.getAmountofTraits()));
+            const eyeBitSize = Math.ceil(Math.log2(eyeTraits.getAmountofTraits()));
+            const mouthBitSize = Math.ceil(Math.log2(mouthTraits.getAmountofTraits()));
+            assert.equal(metadata.getMaxBitSize(), bodyBitSize + eyeBitSize + mouthBitSize);
+        });
 
-            // remove "data:image/png;base64,"
-            const imgBinary = fromString(mergedImage.substring(mergedImage.indexOf(',') + 1), 'base64');
+        it('dnaToMetadata', () => {
+            expect(() => metadata.dnaToMetadata(7)).to.throw('Invalid Dna for this SpecieMetadata');
+            assert.deepEqual(instanceMetadata8, metadata.dnaToMetadata(8));
+        });
 
-            //upload each image manually
-            const { path } = await uploadImage(imgBinary);
+        it('metadataToDna', () => {
+            assert.equal(8, metadata.metadataToDna(instanceMetadata8));
+        });
+    });
 
-            const token: ERC721Metadata = {
-                name: `${dna}`,
-                image: `ipfs://${path}`,
-                attributes: allM[dna],
-            };
+    describe('validate', () => {
+        let json: any;
 
-            list.push(token);
-        }
+        beforeEach(() => {
+            json = metadata.getJsonMetadata();
+        });
 
-        const r = [];
-        for await (const data of await uploadERC721Many(list, 'name')) {
-            r.push(data);
-        }
-        const { cid } = r[r.length - 1];
-        console.log(list);
-        console.log('path:', cid);
-        // check if ipfs://[cid] has all files in list
+        it('missing maxBitSize', () => {
+            json = { traits: json.traits };
+            // eslint-disable-next-line quotes
+            expect(() => validateSchema(json)).to.throw("must have required property 'maxBitSize'");
+        });
+
+        it('missing traits', () => {
+            json = { maxBitSize: json.maxBitSize };
+            // eslint-disable-next-line quotes
+            expect(() => validateSchema(json)).to.throw("must have required property 'traits'");
+        });
+
+        it('fields not defined in schema should still pass', () => {
+            json = { ...json, hello: 'bye' };
+            assert.equal(validateSchema(json), true);
+        });
+
+        //traits schema
+        it('traits is not array', () => {
+            json.traits = '';
+            expect(() => validateSchema(json)).to.throw('must be array');
+        });
+
+        it('object in value_options array not having value or image', () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].value_options[0] = { value_name: 'Eyes' };
+            expect(() => validateSchema(json2)).to.throw(
+                // eslint-disable-next-line quotes
+                "must have required property 'image', must have required property 'value', must match exactly one schema in oneOf",
+            );
+        });
+
+        // eslint-disable-next-line quotes
+        it("type is not 'enum, 'image', or 'value'", () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].type = 'asdsad';
+            expect(() => validateSchema(json2)).to.throw('must be equal to one of the allowed values');
+        });
+
+        it('empty value_options array', () => {
+            json.traits[0].value_options = [];
+            expect(() => validateSchema(json)).to.throw('must NOT have fewer than 1 items');
+        });
+
+        it('value_bit_size between 0 and 256', () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].value_bit_size = -1;
+            expect(() => validateSchema(json2)).to.throw('must be >= 0');
+            json2.traits[0].value_bit_size = 257;
+            expect(() => validateSchema(json2)).to.throw('must be <= 256');
+        });
+    });
+
+    describe('SpecieTrait.ts', () => {
+        it('bit size', () => {
+            const bodyBitSize = Math.ceil(Math.log2(bodyTraits.getAmountofTraits()));
+            assert.equal(bodyTraits.getBitSize(), bodyBitSize);
+            const eyeBitSize = Math.ceil(Math.log2(eyeTraits.getAmountofTraits()));
+            assert.equal(eyeTraits.getBitSize(), eyeBitSize);
+            const mouthBitSize = Math.ceil(Math.log2(mouthTraits.getAmountofTraits()));
+            assert.equal(mouthTraits.getBitSize(), mouthBitSize);
+        });
     });
 });
