@@ -59,6 +59,10 @@ class SpecieTrait {
     getAmountofTraits() {
         return this.value_options.length;
     }
+
+    getType() {
+        return this.type;
+    }
 }
 
 export default SpecieTrait;

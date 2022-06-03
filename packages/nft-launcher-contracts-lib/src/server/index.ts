@@ -3,6 +3,8 @@ import { HttpError, NotFound } from 'http-errors';
 import { existsSync, mkdir } from 'fs';
 import { metadataRouter } from './routes';
 import path from 'path';
+import dotenv from 'dotenv';
+dotenv.config();
 
 //App config
 const app = express();
