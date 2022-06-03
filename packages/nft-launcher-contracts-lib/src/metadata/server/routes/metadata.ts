@@ -3,6 +3,6 @@ import { getMetadata } from '../controllers';
 
 const router = express.Router();
 
-router.get('/:tokenId', getMetadata);
+router.get('/:specieMetadata/:tokenId', getMetadata);
 
 export default router;
