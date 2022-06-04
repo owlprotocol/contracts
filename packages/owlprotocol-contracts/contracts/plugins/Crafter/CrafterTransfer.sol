@@ -15,11 +15,16 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import './ICrafter.sol';
 import './CraftLib.sol';
 
+import 'hardhat/console.sol';
+
 /**
  * @dev Pluggable Crafting Contract.
  */
 contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeable {
-    // Events
+    /**********************
+             Types
+    **********************/
+
     event CreateRecipe(address indexed creator, CraftLib.Ingredient[] inputs, CraftLib.Ingredient[] outputs);
     event RecipeUpdate(uint256 craftableAmount);
     event RecipeCraft(uint256 craftedAmount, uint256 craftableAmount, address indexed user);
@@ -28,8 +33,12 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
     uint256 public craftableAmount;
     uint256 public craftedAmount;
 
-    CraftLib.Ingredient[] public inputs;
-    CraftLib.Ingredient[] public outputs;
+    CraftLib.Ingredient[] private inputs;
+    CraftLib.Ingredient[] private outputs;
+
+    /**********************
+        Initialization
+    **********************/
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -57,7 +66,6 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
         require(_outputs.length > 0, 'A crafting output must be given!');
 
         __Ownable_init();
-        _transferOwnership(_admin);
 
         burnAddress = _burnAddress;
 
@@ -77,8 +85,92 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
 
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
 
-        // Cannot deploy + authorize in the same tx
-        // if (_craftableAmount > 0) deposit(_craftableAmount, _outputsERC721Ids);
+        if (_craftableAmount > 0) deposit(_craftableAmount, _outputsERC721Ids, _admin);
+
+        // Transfer ownership *AFTER* depositing (to pass `onlyOwner`)
+        _transferOwnership(_admin);
+    }
+
+    /**********************
+            Getters
+    **********************/
+
+    /**
+     * @dev Returns all inputs (without `amounts` or `tokenIds`)
+     */
+    function getInputs() public view returns (CraftLib.Ingredient[] memory _inputs) {
+        return inputs;
+    }
+
+    /**
+     * @dev Returns all outputs (without `amounts` or `tokenIds`)
+     */
+    function getOutputs() public view returns (CraftLib.Ingredient[] memory _outputs) {
+        return outputs;
+    }
+
+    /**
+     * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
+     * @param index ingredient index to return details for
+     * @return token token type
+     * @return consumableType consumable type
+     * @return contractAddr token contract address
+     * @return amounts amount of each token
+     * @return tokenIds token ids
+     */
+    function getInputIngredient(uint256 index)
+        public
+        view
+        returns (
+            CraftLib.TokenType token,
+            CraftLib.ConsumableType consumableType,
+            address contractAddr,
+            uint256[] memory amounts,
+            uint256[] memory tokenIds
+        )
+    {
+        CraftLib.Ingredient storage i = inputs[index];
+
+        return (i.token, i.consumableType, i.contractAddr, i.amounts, i.tokenIds);
+    }
+
+    /**
+     * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
+     * @param index ingredient index to return details for
+     * @return token token type
+     * @return consumableType consumable type
+     * @return contractAddr token contract address
+     * @return amounts amount of each token
+     * @return tokenIds token ids
+     */
+    function getOutputIngredient(uint256 index)
+        public
+        view
+        returns (
+            CraftLib.TokenType token,
+            CraftLib.ConsumableType consumableType,
+            address contractAddr,
+            uint256[] memory amounts,
+            uint256[] memory tokenIds
+        )
+    {
+        CraftLib.Ingredient storage i = outputs[index];
+
+        return (i.token, i.consumableType, i.contractAddr, i.amounts, i.tokenIds);
+    }
+
+    /**********************
+         Interaction
+    **********************/
+
+    /**
+     * @notice Must be recipe creator. Automatically sends from `msg.sender`
+     * @dev Used to deposit recipe outputs.
+     * @param depositAmount How many times the recipe should be craftable
+     * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     */
+    function deposit(uint256 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
+        deposit(depositAmount, _outputsERC721Ids, _msgSender());
     }
 
     /**
@@ -86,8 +178,13 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
      * @dev Used to deposit recipe outputs
      * @param depositAmount How many times the recipe should be craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     * @param from address to transfer tokens from
      */
-    function deposit(uint256 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
+    function deposit(
+        uint256 depositAmount,
+        uint256[][] calldata _outputsERC721Ids,
+        address from
+    ) public onlyOwner {
         //Requires
         require(depositAmount > 0, 'depositAmount cannot be 0!');
 
@@ -99,7 +196,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
                 //Transfer ERC20
                 SafeERC20Upgradeable.safeTransferFrom(
                     IERC20Upgradeable(ingredient.contractAddr),
-                    _msgSender(),
+                    from,
                     address(this),
                     ingredient.amounts[0] * depositAmount
                 );
@@ -111,7 +208,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
                 );
                 for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                        _msgSender(),
+                        from,
                         address(this),
                         _outputsERC721Ids[erc721Outputs][j]
                     );
@@ -126,7 +223,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
                     amounts[j] = ingredient.amounts[j] * depositAmount;
                 }
                 IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                    _msgSender(),
+                    from,
                     address(this),
                     ingredient.tokenIds,
                     amounts,

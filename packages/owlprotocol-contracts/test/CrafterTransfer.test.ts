@@ -5,6 +5,8 @@ import { CrafterTransfer, CrafterTransfer__factory, FactoryERC20, FactoryERC721 
 import { createERC20 } from './Helpers/FactoryERC20.test';
 import { createERC721 } from './Helpers/FactoryERC721.test';
 import { BigNumberish } from 'ethers';
+import { ERC1167Factory__factory } from '../typechain/factories/ERC1167Factory__factory';
+import { ERC1167Factory } from '../typechain/ERC1167Factory';
 
 enum ConsumableType {
     unaffected,
@@ -31,20 +33,55 @@ describe('Crafter.sol', function () {
     this.timeout(10000);
 
     let owner: SignerWithAddress;
-    let user: SignerWithAddress;
     let burnAddress: SignerWithAddress;
 
     let CrafterTransferFactory: CrafterTransfer__factory;
+    let CrafterTransferImplementation: CrafterTransfer;
+
+    let ERC1167FactoryFactory: ERC1167Factory__factory;
+    let ERC1167Factory: ERC1167Factory;
+
+    let nonce = 0;
 
     before(async () => {
+        // Launch Crafter + implementation
         CrafterTransferFactory = await ethers.getContractFactory('CrafterTransfer');
-        [owner, user, burnAddress] = await ethers.getSigners();
+        CrafterTransferImplementation = await CrafterTransferFactory.deploy();
+
+        // Launch ERC1167 Factory
+        ERC1167FactoryFactory = await ethers.getContractFactory('ERC1167Factory');
+        ERC1167Factory = await ERC1167FactoryFactory.deploy();
+
+        await Promise.all([ERC1167Factory.deployed(), CrafterTransferImplementation.deployed()]);
+
+        // Get users
+        [owner, burnAddress] = await ethers.getSigners();
     });
 
     async function getCrafter(inputs: Ingredient[], outputs: Ingredient[]) {
-        // Get Crafter
-        const crafter = await CrafterTransferFactory.deploy();
-        await crafter.initialize(burnAddress.address, 0, [...inputs], [...outputs], []);
+        // Get Crafter (salt with nonce)
+        const salt = ethers.utils.formatBytes32String(String(nonce++));
+
+        // Setup crafter data
+        const CrafterTransferData = CrafterTransferImplementation.interface.encodeFunctionData('initialize', [
+            owner.address,
+            burnAddress.address,
+            0,
+            inputs,
+            outputs,
+            [],
+        ]);
+
+        // Predict address
+        const CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
+            CrafterTransferImplementation.address,
+            salt,
+            CrafterTransferData,
+        );
+
+        // Clone deterministic
+        await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
+        const crafter = await ethers.getContractAt('CrafterTransfer', CrafterTransferAddress);
 
         return crafter;
     }
@@ -68,6 +105,7 @@ describe('Crafter.sol', function () {
             amounts: [],
             tokenIds: [],
         }));
+
         // Pass back ingredients
         return {
             tokens: { erc20: tokensERC20, erc721: tokensERC721 },
@@ -80,27 +118,53 @@ describe('Crafter.sol', function () {
             erc20: FactoryERC20[];
             erc721: FactoryERC721[];
         },
-        crafter: CrafterTransfer,
+        crafterAddress: string,
         amountPerCraft = 10,
         crafts = 1,
     ) {
         // Await for all approvals
         await Promise.all([
-            ...tokens.erc20.map((token) => token.approve(crafter.address, amountPerCraft * crafts)),
-            ...tokens.erc721.map((token) => token.setApprovalForAll(crafter.address, true)),
+            ...tokens.erc20.map((token) => token.approve(crafterAddress, amountPerCraft * crafts)),
+            ...tokens.erc721.map((token) => token.setApprovalForAll(crafterAddress, true)),
         ]);
     }
 
     describe('Crafter.initialize(...)', async () => {
-        it('Normal Initialization', async () => {
+        it('Initialization with ingredients', async () => {
             // Unpack inputs/outputs
             const { tokens, ingredients } = await getIngredients();
             // Unpack ingredients
             const [[inputERC20, outputERC20], [inputERC721, outputERC721]] = ingredients;
-            const crafter = await CrafterTransferFactory.deploy();
+            // Get Crafter (salt with nonce)
+            const salt = ethers.utils.formatBytes32String(String(nonce++));
+            // Setup crafter data
+            const CrafterTransferData = CrafterTransferImplementation.interface.encodeFunctionData('initialize', [
+                owner.address,
+                burnAddress.address,
+                1,
+                [inputERC20, inputERC721],
+                [outputERC20, outputERC721],
+                [[1]],
+            ]);
+
+            // Predict address
+            const CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
+                CrafterTransferImplementation.address,
+                salt,
+                CrafterTransferData,
+            );
+
+            // Auth transfers
+            await authorizeTransfers(tokens, CrafterTransferAddress);
+
+            // Clone deterministic
+            const crafter = await ethers.getContractAt('CrafterTransfer', CrafterTransferAddress);
             await expect(
-                crafter.initialize(burnAddress.address, 0, [inputERC20, inputERC721], [outputERC20, outputERC721], []),
+                ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData)
             ).to.emit(crafter, 'CreateRecipe');
+
+            // Assert transferred
+            expect(await tokens.erc721[1].ownerOf(1)).to.equal(crafter.address);
         });
     });
 
@@ -113,10 +177,10 @@ describe('Crafter.sol', function () {
             // Setup Crafter
             const crafter = await getCrafter([inputERC20, inputERC721], [outputERC20, outputERC721]);
             // Auth transfers
-            await authorizeTransfers(tokens, crafter);
+            await authorizeTransfers(tokens, crafter.address);
 
             // Deposit + check token balances
-            await expect(() => crafter.deposit(1, [[1]])).to.changeTokenBalance(tokens.erc20[1], crafter, 10);
+            await expect(() => crafter['deposit(uint256,uint256[][])'](1, [[1]])).to.changeTokenBalance(tokens.erc20[1], crafter, 10);
             expect(await tokens.erc721[1].ownerOf(1)).to.equal(crafter.address);
 
             // Withdraw + check token balances
@@ -134,10 +198,10 @@ describe('Crafter.sol', function () {
             // Setup Crafter
             const crafter = await getCrafter([inputERC20, inputERC721], [outputERC20, outputERC721]);
             // Auth transfers
-            await authorizeTransfers(tokens, crafter);
+            await authorizeTransfers(tokens, crafter.address);
 
             // Make craftable
-            await crafter.deposit(1, [[1]]);
+            await crafter['deposit(uint256,uint256[][])'](1, [[1]]);
 
             // Allowance
             await tokens.erc20[0].approve(crafter.address, 1000);
@@ -164,10 +228,10 @@ describe('Crafter.sol', function () {
             // Setup Crafter
             const crafter = await getCrafter([inputERC20, inputERC721], [outputERC20, outputERC721]);
             // Auth transfers
-            await authorizeTransfers(tokens, crafter);
+            await authorizeTransfers(tokens, crafter.address);
 
             // Make craftable
-            await crafter.deposit(1, [[1]]);
+            await crafter['deposit(uint256,uint256[][])'](1, [[1]]);
 
             // Allowance
             await tokens.erc20[0].approve(crafter.address, 1000);
