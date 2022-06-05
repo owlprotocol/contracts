@@ -12,7 +12,7 @@ let squareTraits: SpecieTrait, triangleTraits: SpecieTrait;
 
 let metadata: SpecieMetadata;
 
-redSquare = { value_name: 'red', image: 'http://localhost:3000/body/square.svg' };
+redSquare = { value_name: 'red', image: 'http://localhost:3000/square.svg' };
 blueTriangle = { value_name: 'blue', image: 'http://localhost:3000/triangle.svg' };
 
 squareTraits = new SpecieTrait('Square', 'Image', [redSquare]);

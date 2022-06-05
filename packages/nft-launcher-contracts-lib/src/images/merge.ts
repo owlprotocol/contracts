@@ -16,6 +16,7 @@ function merge(layers: Value[], specieMetadata: SpecieMetadata, mergeOptions?: M
     });
     const images = imageMapping.filter((res) => res.image !== undefined).map((res) => res.image);
 
+    console.log(images);
     //@ts-ignore
     const combinedBinary = mergeImages(images, mergeOptions);
     return combinedBinary; //returns promise
