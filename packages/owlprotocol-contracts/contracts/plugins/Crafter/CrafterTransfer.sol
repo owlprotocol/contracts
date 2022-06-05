@@ -8,6 +8,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol'
 import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol';
 
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
@@ -20,7 +21,7 @@ import 'hardhat/console.sol';
 /**
  * @dev Pluggable Crafting Contract.
  */
-contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeable {
+contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable {
     /**********************
              Types
     **********************/
@@ -74,13 +75,15 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, OwnableUpgradeabl
         for (uint256 i = 0; i < _inputs.length; i++) {
             inputs.push(_inputs[i]);
             // Reject start ids
-            require(_inputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+            if (_outputs[i].token == CraftLib.TokenType.erc721)
+                require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
         }
         // Outputs
         for (uint256 i = 0; i < _outputs.length; i++) {
             outputs.push(_outputs[i]);
             // Reject start ids
-            require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+            if (_outputs[i].token == CraftLib.TokenType.erc721)
+                require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
         }
 
         emit CreateRecipe(_msgSender(), _inputs, _outputs);

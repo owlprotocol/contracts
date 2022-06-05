@@ -1,9 +1,10 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { CrafterTransfer, CrafterTransfer__factory, FactoryERC20, FactoryERC721 } from '../typechain';
+import { CrafterTransfer, CrafterTransfer__factory, FactoryERC1155, FactoryERC20, FactoryERC721 } from '../typechain';
 import { createERC20 } from './Helpers/FactoryERC20.test';
 import { createERC721 } from './Helpers/FactoryERC721.test';
+import { createERC1155 } from './Helpers/FactoryERC1155.test';
 import { BigNumberish } from 'ethers';
 import { ERC1167Factory__factory } from '../typechain/factories/ERC1167Factory__factory';
 import { ERC1167Factory } from '../typechain/ERC1167Factory';
@@ -89,6 +90,7 @@ describe('Crafter.sol', function () {
     async function getIngredients(consumableType = ConsumableType.burned) {
         const tokensERC20 = await createERC20(2);
         const tokensERC721 = await createERC721(2);
+        const tokensERC1155 = await createERC1155(2);
         // const [inputERC1155, outputERC1155] = await createERC1155(2);
         // TODO - ERC1155
         const IngredientsERC20: Ingredient[] = tokensERC20.map((token) => ({
@@ -105,11 +107,18 @@ describe('Crafter.sol', function () {
             amounts: [],
             tokenIds: [],
         }));
+        const IngredientsERC1155: Ingredient[] = tokensERC1155.map((token) => ({
+            token: TokenType.erc1155,
+            consumableType: consumableType,
+            contractAddr: token.address,
+            amounts: [10, 20],
+            tokenIds: [1, 2],
+        }));
 
         // Pass back ingredients
         return {
-            tokens: { erc20: tokensERC20, erc721: tokensERC721 },
-            ingredients: [IngredientsERC20, IngredientsERC721],
+            tokens: { erc20: tokensERC20, erc721: tokensERC721, erc1155: tokensERC1155 },
+            ingredients: [IngredientsERC20, IngredientsERC721, IngredientsERC1155],
         };
     }
 
@@ -117,6 +126,7 @@ describe('Crafter.sol', function () {
         tokens: {
             erc20: FactoryERC20[];
             erc721: FactoryERC721[];
+            erc1155: FactoryERC1155[];
         },
         crafterAddress: string,
         amountPerCraft = 10,
@@ -126,6 +136,7 @@ describe('Crafter.sol', function () {
         await Promise.all([
             ...tokens.erc20.map((token) => token.approve(crafterAddress, amountPerCraft * crafts)),
             ...tokens.erc721.map((token) => token.setApprovalForAll(crafterAddress, true)),
+            ...tokens.erc1155.map((token) => token.setApprovalForAll(crafterAddress, true)),
         ]);
     }
 
@@ -134,7 +145,7 @@ describe('Crafter.sol', function () {
             // Unpack inputs/outputs
             const { tokens, ingredients } = await getIngredients();
             // Unpack ingredients
-            const [[inputERC20, outputERC20], [inputERC721, outputERC721]] = ingredients;
+            const [[inputERC20, outputERC20], [inputERC721, outputERC721], [inputERC1155, outputERC1155]] = ingredients;
             // Get Crafter (salt with nonce)
             const salt = ethers.utils.formatBytes32String(String(nonce++));
             // Setup crafter data
@@ -142,8 +153,8 @@ describe('Crafter.sol', function () {
                 owner.address,
                 burnAddress.address,
                 1,
-                [inputERC20, inputERC721],
-                [outputERC20, outputERC721],
+                [inputERC20, inputERC721, inputERC1155],
+                [outputERC20, outputERC721, outputERC1155],
                 [[1]],
             ]);
 
@@ -164,7 +175,10 @@ describe('Crafter.sol', function () {
             ).to.emit(crafter, 'CreateRecipe');
 
             // Assert transferred
+            expect(await tokens.erc20[1].balanceOf(crafter.address)).to.equal(10);
             expect(await tokens.erc721[1].ownerOf(1)).to.equal(crafter.address);
+            expect(await tokens.erc1155[1].balanceOf(crafter.address, 1)).to.equal(10);
+            expect(await tokens.erc1155[1].balanceOf(crafter.address, 2)).to.equal(20);
         });
     });
 
@@ -173,19 +187,28 @@ describe('Crafter.sol', function () {
             // Unpack inputs/outputs
             const { tokens, ingredients } = await getIngredients();
             // Unpack ingredients
-            const [[inputERC20, outputERC20], [inputERC721, outputERC721]] = ingredients;
+            const [[inputERC20, outputERC20], [inputERC721, outputERC721], [inputERC1155, outputERC1155]] = ingredients;
             // Setup Crafter
-            const crafter = await getCrafter([inputERC20, inputERC721], [outputERC20, outputERC721]);
+            const crafter = await getCrafter(
+                [inputERC20, inputERC721, inputERC1155],
+                [outputERC20, outputERC721, outputERC1155],
+            );
             // Auth transfers
             await authorizeTransfers(tokens, crafter.address);
 
             // Deposit + check token balances
-            await expect(() => crafter['deposit(uint256,uint256[][])'](1, [[1]])).to.changeTokenBalance(tokens.erc20[1], crafter, 10);
+            await expect(() => crafter['deposit(uint256,uint256[][])'](1, [[1]])).to.changeTokenBalance(
+                tokens.erc20[1],
+                crafter,
+                10,
+            );
             expect(await tokens.erc721[1].ownerOf(1)).to.equal(crafter.address);
 
             // Withdraw + check token balances
             await expect(() => crafter.withdraw(1)).to.changeTokenBalance(tokens.erc20[1], owner, 10);
             expect(await tokens.erc721[1].ownerOf(1)).to.equal(owner.address);
+            expect(await tokens.erc1155[1].balanceOf(crafter.address, 1)).to.equal(0);
+            expect(await tokens.erc1155[1].balanceOf(crafter.address, 2)).to.equal(0);
         });
     });
 
@@ -194,9 +217,12 @@ describe('Crafter.sol', function () {
             // Unpack inputs/outputs
             const { tokens, ingredients } = await getIngredients();
             // Unpack ingredients
-            const [[inputERC20, outputERC20], [inputERC721, outputERC721]] = ingredients;
+            const [[inputERC20, outputERC20], [inputERC721, outputERC721], [inputERC1155, outputERC1155]] = ingredients;
             // Setup Crafter
-            const crafter = await getCrafter([inputERC20, inputERC721], [outputERC20, outputERC721]);
+            const crafter = await getCrafter(
+                [inputERC20, inputERC721, inputERC1155],
+                [outputERC20, outputERC721, outputERC1155],
+            );
             // Auth transfers
             await authorizeTransfers(tokens, crafter.address);
 
@@ -214,19 +240,26 @@ describe('Crafter.sol', function () {
             // Assert inputs transferred
             expect(await tokens.erc20[0].balanceOf(burnAddress.address)).to.equal(10);
             expect(await tokens.erc721[0].ownerOf(1)).to.equal(burnAddress.address);
+            expect(await tokens.erc1155[0].balanceOf(burnAddress.address, 1)).to.equal(10);
+            expect(await tokens.erc1155[0].balanceOf(burnAddress.address, 2)).to.equal(20);
 
             // Assert crafted elements
             expect(await tokens.erc20[1].balanceOf(crafter.address)).to.equal(0); // erc20 transferred
             expect(await tokens.erc721[1].ownerOf(1)).to.equal(owner.address); // erc721 transferred
+            expect(await tokens.erc1155[1].balanceOf(crafter.address, 1)).to.equal(0);
+            expect(await tokens.erc1155[1].balanceOf(crafter.address, 2)).to.equal(0);
         });
 
         it('Unconsumed Crafting', async () => {
             // Unpack inputs/outputs
             const { tokens, ingredients } = await getIngredients(ConsumableType.unaffected);
             // Unpack ingredients
-            const [[inputERC20, outputERC20], [inputERC721, outputERC721]] = ingredients;
+            const [[inputERC20, outputERC20], [inputERC721, outputERC721], [inputERC1155, outputERC1155]] = ingredients;
             // Setup Crafter
-            const crafter = await getCrafter([inputERC20, inputERC721], [outputERC20, outputERC721]);
+            const crafter = await getCrafter(
+                [inputERC20, inputERC721, inputERC1155],
+                [outputERC20, outputERC721, outputERC1155],
+            );
             // Auth transfers
             await authorizeTransfers(tokens, crafter.address);
 
@@ -244,6 +277,8 @@ describe('Crafter.sol', function () {
             // Assert inputs not transferred
             expect(await tokens.erc20[0].balanceOf(burnAddress.address)).to.equal(0);
             expect(await tokens.erc721[0].ownerOf(1)).to.equal(owner.address);
+            expect(await tokens.erc1155[0].balanceOf(owner.address, 1)).to.equal(100);
+            expect(await tokens.erc1155[0].balanceOf(owner.address, 2)).to.equal(100);
         });
     });
 });
