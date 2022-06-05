@@ -115,6 +115,16 @@ describe('metadata.integration', () => {
             json2.traits[0].value_bit_size = 257;
             expect(() => validateSchema(json2)).to.throw('must be <= 256');
         });
+
+        it("format should be allowed on type 'Image' but not on types 'number' and 'enum'", () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].format = true;
+            expect(validateSchema(json2)).to.equal(true);
+            json2.traits[0].type = 'number';
+            expect(() => validateSchema(json2)).to.throw('must NOT be valid');
+            json2.traits[0].type = 'enum';
+            expect(() => validateSchema(json2)).to.throw('must NOT be valid');
+        });
     });
 
     describe('SpecieTrait.ts', () => {

@@ -59,6 +59,10 @@
                         },
                         "minItems": 1
                     },
+                    "format": {
+                        "type": "boolean",
+                        "description": "Whether or not this trait is paramterized"
+                    },
                     "value_bit_size": {
                         "type": "number",
                         "description": "The amount of bits required to encapsulate all possible instances of this trait",
@@ -80,7 +84,33 @@
                         "description": "Description of atrribute, as per EIP-721"
                     }
                 },
-                "required": ["trait_type", "type", "value_options", "value_bit_size"]
+                "required": ["trait_type", "type", "value_options", "value_bit_size"],
+                "allOf": [
+                    {
+                        "if": {
+                            "properties": {
+                                "type": {
+                                    "const": "number"
+                                }
+                            }
+                        },
+                        "then": {
+                            "not": { "required": ["format"] }
+                        }
+                    },
+                    {
+                        "if": {
+                            "properties": {
+                                "type": {
+                                    "const": "enum"
+                                }
+                            }
+                        },
+                        "then": {
+                            "not": { "required": ["format"] }
+                        }
+                    }
+                ]
             }
         },
         "maxBitSize": {
