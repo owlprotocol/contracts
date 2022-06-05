@@ -50,10 +50,8 @@ contract CrafterMint is ERC721HolderUpgradeable, OwnableUpgradeable {
     function initialize(
         address _admin,
         address _burnAddress,
-        uint256 _craftableAmount,
         CraftLib.Ingredient[] calldata _inputs,
-        CraftLib.Ingredient[] calldata _outputs,
-        uint256[][] calldata _outputsERC721Ids
+        CraftLib.Ingredient[] calldata _outputs
     ) public initializer {
         // Requires
         require(_burnAddress != address(0), 'burn address must not be 0');
@@ -70,19 +68,18 @@ contract CrafterMint is ERC721HolderUpgradeable, OwnableUpgradeable {
         for (uint256 i = 0; i < _inputs.length; i++) {
             inputs.push(_inputs[i]);
             // Reject start ids
-            require(_inputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+            if (_outputs[i].token == CraftLib.TokenType.erc721)
+                require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
         }
         // Outputs
         for (uint256 i = 0; i < _outputs.length; i++) {
             outputs.push(_outputs[i]);
             // Reject start ids
-            require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+            if (_outputs[i].token == CraftLib.TokenType.erc721)
+                require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
         }
 
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
-
-        // Cannot deploy + authorize in the same tx
-        // if (_craftableAmount > 0) deposit(_craftableAmount, _outputsERC721Ids);
     }
 
     /**
