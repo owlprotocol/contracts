@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build
 
 # Run Image
-FROM node:16-alpine
+FROM node:16
 WORKDIR /usr/src/app
 ENV NODE_ENV production
 
@@ -21,4 +21,4 @@ COPY --from=0 package.json .
 # RUN pnpm i --ignore-scripts
 RUN npm i
 COPY --from=0 lib lib
-CMD ["npm", "startServer"]
+CMD ["npm", "run", "startServer"]

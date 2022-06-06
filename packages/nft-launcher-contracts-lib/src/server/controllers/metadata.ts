@@ -1,13 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { SpecieMetadata, validateAndGetSchema, validateSchema } from '../../metadata';
+import { SpecieMetadata, validateAndGetSchema } from '../../metadata';
 import { BadRequest } from 'http-errors';
-import { writeFileSync, existsSync, mkdir, createWriteStream, readFileSync, mkdirSync } from 'fs';
+import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import axios, { AxiosError } from 'axios';
 import { merge } from '../../images';
 import { Canvas, Image } from 'canvas';
 import { toBN } from 'web3-utils';
-import { ValueOption } from '../../types';
 
 export default async (req: Request, res: Response, next: NextFunction) => {
     try {
