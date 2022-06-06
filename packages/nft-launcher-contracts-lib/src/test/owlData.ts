@@ -7,14 +7,38 @@ const client = ipfsHttpClient({
     url: 'https://ipfs.infura.io:5001/api/v0',
 });
 
-const owlEyes = { value_name: 'eyes', image: 'http://localhost:3000/Eyes.svg' };
-const owlBeak = { value_name: 'beak', image: 'http://localhost:3000/Beak.svg' };
-const owlFace = { value_name: 'face', image: 'http://localhost:3000/Face.svg' };
-const owlHead = { value_name: 'head', image: 'http://localhost:3000/Head.svg' };
-const owlEars = { value_name: 'ears', image: 'http://localhost:3000/Ears.svg' };
-const owlWings = { value_name: 'wings', image: 'http://localhost:3000/Wings.svg' };
-const owlFeathers = { value_name: 'feathers', image: 'http://localhost:3000/Feathers.svg' };
-const owlBg = { value_name: 'background', image: 'http://localhost:3000/Background.svg' };
+const owlEyes = {
+    value_name: 'eyes',
+    image: 'https://raw.githubusercontent.com/owlprotocol/owls/master/800x800/templates/Eyes.svg',
+};
+const owlBeak = {
+    value_name: 'beak',
+    image: 'https://raw.githubusercontent.com/owlprotocol/owls/master/800x800/templates/Beak.svg',
+};
+const owlFace = {
+    value_name: 'face',
+    image: 'https://raw.githubusercontent.com/owlprotocol/owls/master/800x800/templates/Face.svg',
+};
+const owlHead = {
+    value_name: 'head',
+    image: 'https://raw.githubusercontent.com/owlprotocol/owls/master/800x800/templates/Head.svg',
+};
+const owlEars = {
+    value_name: 'ears',
+    image: 'https://raw.githubusercontent.com/owlprotocol/owls/master/800x800/templates/Ears.svg',
+};
+const owlWings = {
+    value_name: 'wings',
+    image: 'https://raw.githubusercontent.com/owlprotocol/owls/master/800x800/templates/Wings.svg',
+};
+const owlFeathers = {
+    value_name: 'feathers',
+    image: 'https://raw.githubusercontent.com/owlprotocol/owls/master/800x800/templates/Feathers.svg',
+};
+const owlBg = {
+    value_name: 'background',
+    image: 'https://raw.githubusercontent.com/owlprotocol/owls/master/800x800/templates/Background.svg',
+};
 
 const eyesTrait = new SpecieTrait('Eyes', 'Image', [
     owlEyes,
