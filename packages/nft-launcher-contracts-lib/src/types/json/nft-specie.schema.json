@@ -24,7 +24,7 @@
                     },
                     "type": {
                         "type": "string",
-                        "enum": ["Image", "number", "enum", "color"],
+                        "enum": ["Image", "number", "enum", "color", "colormap"],
                         "description": "This is what the data encodes. Usually, will refer to items in value_options array",
                         "examples": ["number", "enum", "Image"]
                     },

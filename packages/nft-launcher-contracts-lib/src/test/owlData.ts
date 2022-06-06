@@ -179,31 +179,34 @@ const feathersColor2 = new SpecieTrait('feathers_color_2', 'color', colorRange);
 const feathersColor3 = new SpecieTrait('feathers_color_3', 'color', colorRange);
 const bgColor = new SpecieTrait('bg_color', 'color', colorRange);
 
-const metadata = new SpecieMetadata([
-    bgTrait,
-    feathersTrait,
-    wingsTrait,
-    earsTrait,
-    headTrait,
-    faceTrait,
-    beakTrait,
-    eyesTrait,
-    strokeColor,
-    bgColor,
-    feathersColor1,
-    feathersColor2,
-    feathersColor3,
-    wingLeftColor,
-    wingRightColor,
-    earLeftColor,
-    earRightColor,
-    headColor,
-    faceLeftColor,
-    faceRightColor,
-    beakColor,
-    eyeLeftColor,
-    eyeRightColor,
-]);
+const metadata = new SpecieMetadata(
+    [
+        bgTrait,
+        feathersTrait,
+        wingsTrait,
+        earsTrait,
+        headTrait,
+        faceTrait,
+        beakTrait,
+        eyesTrait,
+        strokeColor,
+        bgColor,
+        feathersColor1,
+        feathersColor2,
+        feathersColor3,
+        wingLeftColor,
+        wingRightColor,
+        earLeftColor,
+        earRightColor,
+        headColor,
+        faceLeftColor,
+        faceRightColor,
+        beakColor,
+        eyeLeftColor,
+        eyeRightColor,
+    ],
+    true,
+);
 
 writeFileSync('./src/owlMetadata.json', JSON.stringify(metadata.getJsonMetadata()));
 
@@ -212,4 +215,4 @@ writeFileSync('./src/owlMetadata.json', JSON.stringify(metadata.getJsonMetadata(
     console.log(cid);
 })();
 
-const uploadedIPFSHash = 'QmQqQapxfJUfLd3z4vVqqufDDya29xWq94co1gMFUraLvr';
+const uploadedIPFSHash = 'QmahQhdNjTaCucoR5H3dd2fGRYUKzSKdsP6MMvEf4CB8sH';

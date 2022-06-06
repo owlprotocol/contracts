@@ -23,26 +23,14 @@ export default async (req: Request, res: Response, next: NextFunction) => {
             throw err;
         }
 
+        if (specieMetadata === null) throw new BadRequest('Invalid SpecieMetadata');
+
         const cachePath = path.join(__dirname, '..', '..', '..', 'cache', specieMetadataHash);
 
         //creating cache entry if doesn't exist
         if (!existsSync(cachePath)) {
             mkdirSync(cachePath);
-            mkdirSync(cachePath + '/layers');
             mkdirSync(cachePath + '/tokens');
-            if (specieMetadata === null) throw new BadRequest();
-            specieMetadata.getSpecieMetadata().forEach(async (e) => {
-                if (e.getType() === 'Image') {
-                    if (!existsSync(cachePath + '/layers/' + e.getTraitType()))
-                        await mkdir(cachePath + `/layers/${e.getTraitType()}`, () => {});
-                    (e.getValueOptions() as ValueOption[]).forEach(async (o: ValueOption) => {
-                        const imgLink = o.image;
-                        if (imgLink === undefined)
-                            throw new BadRequest("A trait_value of trait_type 'Image' is missing 'image' field");
-                        await downloadFile(imgLink, `${cachePath}/layers/${e.getTraitType()}/${o.value_name}.png`);
-                    });
-                }
-            });
         }
 
         if (!/^[0-9]+$/.test(tokenId)) throw new BadRequest('tokenId is not a number');
@@ -51,50 +39,18 @@ export default async (req: Request, res: Response, next: NextFunction) => {
         //@ts-ignore
         if (existsSync(tokenPath)) return res.status(200).send(JSON.parse(readFileSync(tokenPath)));
 
-        // console.log(specieMetadata);
         const tokenMetadata = specieMetadata.dnaToMetadata(toBN(tokenId));
-        // console.log('tik', tokenMetadata);
+
         const mergedImg = await merge(tokenMetadata, specieMetadata, {
             Canvas,
             Image,
-            format: 'image/jpeg',
         });
 
         const instance = { attributes: tokenMetadata, image: mergedImg };
         writeFileSync(`./cache/${specieMetadataHash}/tokens/${tokenId}.json`, JSON.stringify(instance));
-        console.log(instance.image);
+        // console.log(instance.image);
         res.status(200).send(instance);
     } catch (err) {
         next(err);
     }
-};
-
-const downloadFile = async (url: string, path: string) => {
-    if (url.startsWith('ipfs://')) url = `https://ipfs.io/${url.replace('ipfs://', '')}`;
-    const writer = createWriteStream(path);
-
-    return axios({
-        method: 'get',
-        url,
-        responseType: 'stream',
-    }).then((response) => {
-        //ensure that the user can call `then()` only when the file has
-        //been downloaded entirely.
-
-        return new Promise((resolve, reject) => {
-            response.data.pipe(writer);
-            let error: Error | null = null;
-            writer.on('error', (err) => {
-                error = err;
-                writer.close();
-                reject(err);
-            });
-            writer.on('close', () => {
-                if (!error) resolve(true);
-
-                //no need to call the reject here, as it will have been called in the
-                //'error' stream;
-            });
-        });
-    });
 };

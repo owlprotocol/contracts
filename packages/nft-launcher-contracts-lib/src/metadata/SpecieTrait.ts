@@ -1,7 +1,7 @@
 import ValueOption, { ValueRange } from '../types/ValueOption';
 
 export type DisplayType = 'number' | 'boost_number' | 'boost_percentage' | 'date';
-export type SpecieTraitType = 'number' | 'enum' | 'Image' | 'color';
+export type SpecieTraitType = 'number' | 'enum' | 'Image' | 'color' | 'colormap';
 
 class SpecieTrait {
     private trait_type: string;

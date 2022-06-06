@@ -1,1 +1,0 @@
-{"traits":[{"trait_type":"Square","type":"Image","value_options":[{"value_name":"red","image":"http://localhost:3000/square.svg"}],"value_bit_size":1},{"trait_type":"Triangle","type":"Image","value_options":[{"value_name":"blue","image":"http://localhost:3000/triangle.svg"}],"value_bit_size":1}],"maxBitSize":2}

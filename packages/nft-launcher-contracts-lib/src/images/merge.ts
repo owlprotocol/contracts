@@ -3,12 +3,6 @@ import { SpecieMetadata } from '../metadata';
 import mergeImages, { Options as MergeOptions } from 'merge-images';
 import axios from 'axios';
 import colormap from 'colormap';
-const colors = colormap({
-    colormap: 'cool',
-    nshades: 256,
-    format: 'hex',
-    alpha: 1,
-});
 
 async function merge(layers: Value[], specieMetadata: SpecieMetadata, mergeOptions?: MergeOptions): Promise<string> {
     const imageMapping = layers.map((layer) => {
@@ -18,13 +12,23 @@ async function merge(layers: Value[], specieMetadata: SpecieMetadata, mergeOptio
         if (option.getType() !== 'Image') return layer;
         //@ts-ignore
         const imageMapping = option.getValueOptions().find((valueOptions) => valueOptions.value_name === layer.value);
-        // console.log(imageMapping);
+
         if (!imageMapping)
             throw new Error(
                 `Value "${layer.value}" not found in provided specie metadata for trait_type "${layer.value}"`,
             );
         return imageMapping;
     });
+
+    const colMap: string = imageMapping.find((e) => e.trait_type === 'colormap').value;
+
+    const colors = colormap({
+        colormap: colMap || 'jet',
+        nshades: 256,
+        format: 'hex',
+        alpha: 1,
+    });
+
     const images = imageMapping.filter((res) => 'image' in res && res.image !== undefined);
     const nonImages = imageMapping.filter((res) => !('image' in res));
 
@@ -35,7 +39,6 @@ async function merge(layers: Value[], specieMetadata: SpecieMetadata, mergeOptio
                     responseType: 'text',
                 })
             ).data;
-
             nonImages.forEach(({ trait_type, value }) => {
                 imgVal = imgVal.replaceAll(`{${trait_type}}`, `${colors[value]}`);
             });
@@ -44,10 +47,6 @@ async function merge(layers: Value[], specieMetadata: SpecieMetadata, mergeOptio
         }),
     );
 
-    // console.log('img', imageMapping);
-    // console.log(images);
-    // console.log(nonImages);
-    // console.log(imgFetch);
     //@ts-ignore
     const combinedBinary = mergeImages(imgFetch, mergeOptions);
     return combinedBinary; //returns promise

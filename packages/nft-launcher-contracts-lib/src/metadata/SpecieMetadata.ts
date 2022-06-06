@@ -3,6 +3,9 @@ import web3 from 'web3';
 import Ajv from 'ajv';
 import { Value, SpecieMetadataSchema, MetadataList, ValueRange } from '../types';
 import BN from 'bn.js';
+import colormaps from './colormaps';
+
+const colorMap: SpecieTrait = new SpecieTrait('colormap', 'colormap', colormaps);
 
 export interface Metadata {
     [key: string]: Value[];
@@ -12,7 +15,9 @@ class SpecieMetadata {
     private traits: SpecieTrait[];
     private maxBitSize: number;
 
-    constructor(traits: SpecieTrait[]) {
+    constructor(traits: SpecieTrait[], includeColorMap?: boolean) {
+        if (includeColorMap) traits.push(colorMap);
+
         this.traits = traits;
         this.maxBitSize = traits.reduce((total, trait) => total + trait.getBitSize(), 0);
     }
@@ -52,14 +57,11 @@ class SpecieMetadata {
     dnaToMetadata(n: BN): Value[] {
         if (!n.lt(bn(2).pow(bn(this.maxBitSize))) || n.lt(bn(0))) throw new Error('Dna out of metadata range');
         const bin = n.toString(2, this.maxBitSize);
-        // const bin =
-        // '10111011101010001111110011000101000101010101010100100101000110101101010101111100010101010011001000111110001000010001110000000000000000000000000000000000';
         const bitsList: number[] = this.traits.map((trait) => trait.getBitSize());
         const metadata: Value[] = [];
 
         let pos = 0;
-        console.log(bin);
-        console.log(n, n.toString);
+
         for (let i = 0; i < bitsList.length; i++) {
             let bits;
 
@@ -80,7 +82,6 @@ class SpecieMetadata {
                     : ((options as ValueRange).min + valueIndex).toString();
 
             metadata.push({ trait_type: currTrait.getTraitType(), value });
-            console.log({ trait_type: currTrait.getTraitType(), value, bits });
 
             pos += bitsList[i]; //update pointer
         }
