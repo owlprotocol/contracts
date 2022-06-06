@@ -6,13 +6,13 @@ import path from 'path';
 import axios, { AxiosError } from 'axios';
 import { merge } from '../../images';
 import { Canvas, Image } from 'canvas';
-import exMetadata from '../../exMetadata.json';
+import { toBN } from 'web3-utils';
 import { ValueOption } from '../../types';
 
 export default async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { specieMetadataHash, tokenId: idString } = req.params;
-        const tokenId: number = parseInt(idString);
+        const tokenId: string = idString;
         let specieMetadata: SpecieMetadata | null = null;
 
         try {
@@ -45,22 +45,24 @@ export default async (req: Request, res: Response, next: NextFunction) => {
             });
         }
 
-        if (isNaN(tokenId)) throw new BadRequest('tokenId is not a number');
+        if (!/^[0-9]+$/.test(tokenId)) throw new BadRequest('tokenId is not a number');
 
         const tokenPath = `${cachePath}/tokens/${tokenId}.json`;
         //@ts-ignore
         if (existsSync(tokenPath)) return res.status(200).send(JSON.parse(readFileSync(tokenPath)));
 
-        console.log(specieMetadata);
-        const tokenMetadata = specieMetadata.dnaToMetadata(tokenId);
-        console.log('tik', tokenMetadata);
+        // console.log(specieMetadata);
+        const tokenMetadata = specieMetadata.dnaToMetadata(toBN(tokenId));
+        // console.log('tik', tokenMetadata);
         const mergedImg = await merge(tokenMetadata, specieMetadata, {
             Canvas,
             Image,
+            format: 'image/jpeg',
         });
 
         const instance = { attributes: tokenMetadata, image: mergedImg };
         writeFileSync(`./cache/${specieMetadataHash}/tokens/${tokenId}.json`, JSON.stringify(instance));
+        console.log(instance.image);
         res.status(200).send(instance);
     } catch (err) {
         next(err);

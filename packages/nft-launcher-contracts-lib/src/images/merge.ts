@@ -4,7 +4,7 @@ import mergeImages, { Options as MergeOptions } from 'merge-images';
 import axios from 'axios';
 import colormap from 'colormap';
 const colors = colormap({
-    colormap: '',
+    colormap: 'cool',
     nshades: 256,
     format: 'hex',
     alpha: 1,
@@ -18,7 +18,7 @@ async function merge(layers: Value[], specieMetadata: SpecieMetadata, mergeOptio
         if (option.getType() !== 'Image') return layer;
         //@ts-ignore
         const imageMapping = option.getValueOptions().find((valueOptions) => valueOptions.value_name === layer.value);
-        console.log(imageMapping);
+        // console.log(imageMapping);
         if (!imageMapping)
             throw new Error(
                 `Value "${layer.value}" not found in provided specie metadata for trait_type "${layer.value}"`,
@@ -44,10 +44,10 @@ async function merge(layers: Value[], specieMetadata: SpecieMetadata, mergeOptio
         }),
     );
 
-    console.log('img', imageMapping);
-    console.log(images);
-    console.log(nonImages);
-    console.log(imgFetch);
+    // console.log('img', imageMapping);
+    // console.log(images);
+    // console.log(nonImages);
+    // console.log(imgFetch);
     //@ts-ignore
     const combinedBinary = mergeImages(imgFetch, mergeOptions);
     return combinedBinary; //returns promise

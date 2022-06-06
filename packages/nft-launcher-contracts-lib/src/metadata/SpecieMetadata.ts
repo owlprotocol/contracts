@@ -2,6 +2,7 @@ import SpecieTrait from './SpecieTrait';
 import web3 from 'web3';
 import Ajv from 'ajv';
 import { Value, SpecieMetadataSchema, MetadataList, ValueRange } from '../types';
+import BN from 'bn.js';
 
 export interface Metadata {
     [key: string]: Value[];
@@ -31,9 +32,9 @@ class SpecieMetadata {
 
     generateAllInstances(): MetadataList {
         const instances: MetadataList = {};
-        for (let i = 0; i < 2 ** this.maxBitSize; i++) {
+        for (let i = 0; bn(i).lt(bn(2).pow(bn(this.maxBitSize))); i++) {
             try {
-                instances[i] = this.dnaToMetadata(i);
+                instances[i] = this.dnaToMetadata(bn(i));
             } catch (err) {
                 //ignores invalid dnas (some undefined trait(s))
                 if ((err as Error).name === 'InvalidDnaError') continue;
@@ -48,21 +49,21 @@ class SpecieMetadata {
     }
 
     //left most bits represent top most traits in triats list
-    dnaToMetadata(n: number): Value[] {
-        if (!(n < 2 ** this.maxBitSize) || n < 0) throw new Error('Dna out of metadata range');
-
-        const bin = web3.utils.padLeft(n.toString(2), this.maxBitSize);
+    dnaToMetadata(n: BN): Value[] {
+        if (!n.lt(bn(2).pow(bn(this.maxBitSize))) || n.lt(bn(0))) throw new Error('Dna out of metadata range');
+        const bin = n.toString(2, this.maxBitSize);
+        // const bin =
+        // '10111011101010001111110011000101000101010101010100100101000110101101010101111100010101010011001000111110001000010001110000000000000000000000000000000000';
         const bitsList: number[] = this.traits.map((trait) => trait.getBitSize());
         const metadata: Value[] = [];
 
+        let pos = 0;
+        console.log(bin);
+        console.log(n, n.toString);
         for (let i = 0; i < bitsList.length; i++) {
             let bits;
 
-            const prevSum = bitsList.slice(0, i).reduce((p, n) => p + n, 0);
-            const currSum = bitsList.slice(0, i + 1).reduce((p, n) => p + n, 0);
-
-            if (i == 0) bits = bin.substring(0, bitsList[0]);
-            else bits = bin.substring(prevSum, currSum);
+            bits = bin.substring(bin.length - pos, bin.length - pos - bitsList[i]);
 
             const currTrait = this.traits[i];
             const options = currTrait.getValueOptions();
@@ -79,12 +80,15 @@ class SpecieMetadata {
                     : ((options as ValueRange).min + valueIndex).toString();
 
             metadata.push({ trait_type: currTrait.getTraitType(), value });
+            console.log({ trait_type: currTrait.getTraitType(), value, bits });
+
+            pos += bitsList[i]; //update pointer
         }
 
         return metadata;
     }
 
-    metadataToDna(metadata: Value[]): number {
+    metadataToDna(metadata: Value[]): BN {
         let finalBin = '';
         metadata.forEach((value: Value) => {
             const trait = this.traits.find(
@@ -106,8 +110,12 @@ class SpecieMetadata {
             finalBin += web3.utils.padLeft(index.toString(2), trait.getBitSize());
         });
 
-        return parseInt(finalBin, 2);
+        return bn(parseInt(finalBin, 2));
     }
+}
+
+export function bn(i: number) {
+    return new BN(i);
 }
 
 export function validateSchema(object: any): boolean {

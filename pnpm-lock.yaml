@@ -151,6 +151,7 @@ importers:
       '@typechain/truffle-v5': ^5.1.0
       '@typechain/web3-v1': ^3.1.0
       '@types/axios': ^0.14.0
+      '@types/big-integer': ^0.0.31
       '@types/chai': ^4.3.0
       '@types/chai-as-promised': ^7.1.4
       '@types/colormap': ^2.3.1
@@ -165,6 +166,7 @@ importers:
       ajv: ^8.10.0
       axios: ^0.27.2
       bignumber.js: ^9.0.2
+      bn.js: ^5.2.1
       canvas: ^2.9.0
       chai: ^4.3.4
       chai-as-promised: ^7.1.1
@@ -210,6 +212,7 @@ importers:
     dependencies:
       ajv: 8.11.0
       axios: 0.27.2
+      bn.js: 5.2.1
       colormap: 2.3.2
       dotenv: 10.0.0
       express: 4.18.1
@@ -231,6 +234,7 @@ importers:
       '@typechain/truffle-v5': 5.1.0_truffle@5.4.14+typechain@5.2.0
       '@typechain/web3-v1': 3.1.0_af3b01623be4a11a7977401fe98d47ad
       '@types/axios': 0.14.0
+      '@types/big-integer': 0.0.31
       '@types/chai': 4.3.1
       '@types/chai-as-promised': 7.1.5
       '@types/colormap': 2.3.1
@@ -2533,6 +2537,13 @@ packages:
       - debug
     dev: true
 
+  /@types/big-integer/0.0.31:
+    resolution: {integrity: sha512-nYrYenHwC07vTBXoQ8jUUi6sednNYHGQxh0ecvfWm46n3djgxxbe7AZIJVaGjzQaEQVEcH6KmB6VMt//vAP0AA==}
+    deprecated: This is a stub types definition for BigInteger.js (https://github.com/peterolson/BigInteger.js). BigInteger.js provides its own type definitions, so you don't need @types/big-integer installed!
+    dependencies:
+      big-integer: 1.6.36
+    dev: true
+
   /@types/bignumber.js/5.0.0:
     resolution: {integrity: sha512-0DH7aPGCClywOFaxxjE6UwpN2kQYe9LwuDQMv+zYA97j5GkOMo8e66LYT+a8JYU7jfmUFRZLa9KycxHDsKXJCA==}
     deprecated: This is a stub types definition for bignumber.js (https://github.com/MikeMcl/bignumber.js/). bignumber.js provides its own type definitions, so you don't need @types/bignumber.js installed!
@@ -4247,7 +4258,6 @@ packages:
 
   /bn.js/5.2.1:
     resolution: {integrity: sha512-eXRvHzWyYPBuB4NBy0cmYQjGitUrtqwbvlzP3G6VFnNRbsZQIxQ10PbKKHt8gZ/HW/D/747aDl+QkDqg3KQLMQ==}
-    dev: true
 
   /body-parser/1.20.0:
     resolution: {integrity: sha512-DfJ+q6EPcGKZD1QWUjSpqp+Q7bDQTsQIF4zfUAtZ6qk+H/3/QRhg9CEp39ss+/T2vw0+HaidC0ecJj/DRLIaKg==}

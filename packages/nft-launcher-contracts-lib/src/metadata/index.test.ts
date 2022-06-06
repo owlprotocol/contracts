@@ -2,6 +2,7 @@ import { assert, expect } from 'chai';
 import SpecieMetadata, { validateSchema } from './SpecieMetadata';
 import SpecieTrait from './SpecieTrait';
 import { generateAllInstances, instanceMetadata8 } from './test-results';
+import { BN } from 'bn.js';
 
 describe('metadata.integration', () => {
     let orangeBody, yellowBody, greenBody;
@@ -48,12 +49,12 @@ describe('metadata.integration', () => {
         });
 
         it('dnaToMetadata', () => {
-            expect(() => metadata.dnaToMetadata(7)).to.throw('Invalid Dna for this SpecieMetadata');
-            assert.deepEqual(instanceMetadata8, metadata.dnaToMetadata(8));
+            expect(() => metadata.dnaToMetadata(bn(7))).to.throw('Invalid Dna for this SpecieMetadata');
+            assert.deepEqual(instanceMetadata8, metadata.dnaToMetadata(bn(8)));
         });
 
         it('metadataToDna', () => {
-            assert.equal(8, metadata.metadataToDna(instanceMetadata8));
+            assert.equal(8, metadata.metadataToDna(instanceMetadata8).toNumber());
         });
     });
 
@@ -138,3 +139,7 @@ describe('metadata.integration', () => {
         });
     });
 });
+
+function bn(i: number) {
+    return new BN(i);
+}
