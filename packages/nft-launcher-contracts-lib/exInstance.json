@@ -1,0 +1,16 @@
+{
+    "attributes": [
+        {
+            "trait_type": "mouth",
+            "value": "beak"
+        },
+        {
+            "trait_type": "beak_color",
+            "value": "10"
+        },
+        {
+            "trait_type": "stroke_color",
+            "value": "50"
+        }
+    ]
+}

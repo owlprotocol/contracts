@@ -1,6 +1,7 @@
 import { SpecieMetadata, SpecieTrait } from '../metadata';
 import { create as ipfsHttpClient } from 'ipfs-http-client';
 import { writeFileSync } from 'fs';
+import exMetadata from '../exMetadata.json';
 
 const client = ipfsHttpClient({
     url: 'https://ipfs.infura.io:5001/api/v0',
@@ -29,3 +30,5 @@ writeFileSync('./src/metadataSVG.json', JSON.stringify(json));
 })();
 
 const uploadedIPFSHash = 'QmRLe5ar7aizCTaHuC9d8b8QgmSf8LMsP6cvGunQ6twKtY';
+
+const exMetadataIPFS = 'Qmf7gUJunZVdxGpZC8YNYjWkvjric8aWMHN6rqAWh78t8u';

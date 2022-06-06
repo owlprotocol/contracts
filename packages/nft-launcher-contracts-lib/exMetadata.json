@@ -1,0 +1,21 @@
+{
+    "traits": [
+        {
+            "trait_type": "mouth",
+            "type": "Image",
+            "value_options": [{ "value_name": "beak", "image": "http://localhost:3000/Beak.svg" }],
+            "format": true
+        },
+        {
+            "trait_type": "beak_color",
+            "type": "color",
+            "value_options": { "min": 0, "max": 256 }
+        },
+        {
+            "trait_type": "stroke_color",
+            "type": "color",
+            "value_options": { "min": 0, "max": 256 }
+        }
+    ],
+    "maxBitSize": 17
+}

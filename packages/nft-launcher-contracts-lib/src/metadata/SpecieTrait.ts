@@ -1,4 +1,4 @@
-import ValueOption from '../types/ValueOption';
+import ValueOption, { ValueRange } from '../types/ValueOption';
 
 export type DisplayType = 'number' | 'boost_number' | 'boost_percentage' | 'date';
 export type SpecieTraitType = 'number' | 'enum' | 'Image';
@@ -6,7 +6,7 @@ export type SpecieTraitType = 'number' | 'enum' | 'Image';
 class SpecieTrait {
     private trait_type: string;
     private type: SpecieTraitType;
-    private value_options: ValueOption[];
+    private value_options: ValueOption[] | ValueRange;
     private value_bit_size: number;
     private display_type?: DisplayType;
     private max_value?: number;
@@ -15,21 +15,26 @@ class SpecieTrait {
     constructor(
         trait_type: string,
         type: SpecieTraitType,
-        value_options: ValueOption[],
+        value_options: ValueOption[] | ValueRange,
         display_type?: DisplayType,
         max_value?: number,
         description?: string,
     ) {
+        this.value_options = value_options;
+
+        if (Array.isArray(this.value_options)) {
+            if (this.value_options.length === 0) throw new Error('value_options array cannot be empty');
+            if (this.value_options.length === 1) this.value_bit_size = 1;
+            else this.value_bit_size = Math.ceil(Math.log2(this.value_options.length));
+        } else
+            this.value_bit_size = Math.ceil(
+                Math.log2((value_options as ValueRange).max - (value_options as ValueRange).min),
+            );
         this.trait_type = trait_type;
         this.type = type;
-        this.value_options = value_options;
         this.display_type = display_type;
         this.max_value = max_value;
         this.description = description;
-
-        if (this.value_options.length === 0) throw new Error('value_options array cannot be empty');
-        if (this.value_options.length === 1) this.value_bit_size = 1;
-        else this.value_bit_size = Math.ceil(Math.log2(value_options.length));
     }
 
     getJsonFormat() {
@@ -57,7 +62,8 @@ class SpecieTrait {
     }
 
     getAmountofTraits() {
-        return this.value_options.length;
+        if (Array.isArray(this.value_options)) return this.value_options.length;
+        return this.value_options.max - this.value_options.min;
     }
 
     getType() {

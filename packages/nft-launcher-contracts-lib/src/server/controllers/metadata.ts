@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { SpecieMetadata, SpecieTrait, validateAndGetSchema } from '../../metadata';
+import { SpecieMetadata, validateAndGetSchema, validateSchema } from '../../metadata';
 import { BadRequest } from 'http-errors';
 import { writeFileSync, existsSync, mkdir, createWriteStream, readFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import axios, { AxiosError } from 'axios';
 import { merge } from '../../images';
 import { Canvas, Image } from 'canvas';
+import exMetadata from '../../exMetadata.json';
 import { ValueOption } from '../../types';
 
 export default async (req: Request, res: Response, next: NextFunction) => {
@@ -34,7 +35,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
                 if (e.getType() === 'Image') {
                     if (!existsSync(cachePath + '/layers/' + e.getTraitType()))
                         await mkdir(cachePath + `/layers/${e.getTraitType()}`, () => {});
-                    e.getValueOptions().forEach(async (o: ValueOption) => {
+                    (e.getValueOptions() as ValueOption[]).forEach(async (o: ValueOption) => {
                         const imgLink = o.image;
                         if (imgLink === undefined)
                             throw new BadRequest("A trait_value of trait_type 'Image' is missing 'image' field");
@@ -47,9 +48,12 @@ export default async (req: Request, res: Response, next: NextFunction) => {
         if (isNaN(tokenId)) throw new BadRequest('tokenId is not a number');
 
         const tokenPath = `${cachePath}/tokens/${tokenId}.json`;
-        if (existsSync(tokenPath)) return res.status(200).send(readFileSync(tokenPath));
+        //@ts-ignore
+        if (existsSync(tokenPath)) return res.status(200).send(JSON.parse(readFileSync(tokenPath)));
 
+        console.log(specieMetadata);
         const tokenMetadata = specieMetadata.dnaToMetadata(tokenId);
+        console.log('tik', tokenMetadata);
         const mergedImg = await merge(tokenMetadata, specieMetadata, {
             Canvas,
             Image,

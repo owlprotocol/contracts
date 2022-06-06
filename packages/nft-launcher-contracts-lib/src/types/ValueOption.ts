@@ -4,4 +4,9 @@ interface ValueOption {
     value?: 'number' & 'enum';
 }
 
+export interface ValueRange {
+    min: number;
+    max: number;
+}
+
 export default ValueOption;

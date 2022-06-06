@@ -1,7 +1,7 @@
 import SpecieTrait from './SpecieTrait';
 import web3 from 'web3';
 import Ajv from 'ajv';
-import { Value, SpecieMetadataSchema, MetadataList } from '../types';
+import { Value, SpecieMetadataSchema, MetadataList, ValueRange } from '../types';
 
 export interface Metadata {
     [key: string]: Value[];
@@ -61,15 +61,22 @@ class SpecieMetadata {
             const prevSum = bitsList.slice(0, i).reduce((p, n) => p + n, 0);
             const currSum = bitsList.slice(0, i + 1).reduce((p, n) => p + n, 0);
 
-            if (i == 0) bits = bin.substring(0, bitsList[1]);
+            if (i == 0) bits = bin.substring(0, bitsList[0]);
             else bits = bin.substring(prevSum, currSum);
 
             const currTrait = this.traits[i];
             const options = currTrait.getValueOptions();
             const valueIndex = parseInt(bits, 2);
-            let value;
-            if (valueIndex >= options.length) throw new InvalidDnaError();
-            else value = options[valueIndex].value_name;
+            let value: string;
+            if (
+                valueIndex >=
+                (Array.isArray(options) ? options.length : (options as ValueRange).max - (options as ValueRange).min)
+            )
+                throw new InvalidDnaError();
+            else
+                value = Array.isArray(options)
+                    ? options[valueIndex].value_name
+                    : ((options as ValueRange).min + valueIndex).toString();
 
             metadata.push({ trait_type: currTrait.getTraitType(), value });
         }
@@ -86,7 +93,11 @@ class SpecieMetadata {
             if (!trait)
                 throw new InvalidMetadataError(`Invalid trait ${value.trait_type} not found in this SpecieMetadata`);
 
-            const index = trait.getValueOptions().findIndex((option) => value.value === option.value_name);
+            const options = trait.getValueOptions();
+            let index;
+            if (Array.isArray(options)) index = options.findIndex((option) => value.value === option.value_name);
+            else index = (options as ValueRange).max - (options as ValueRange).min;
+
             if (index === -1)
                 throw new InvalidMetadataError(
                     `Value ${value.value} for trait_type ${value.trait_type} not found in this SpecieMetadata `,

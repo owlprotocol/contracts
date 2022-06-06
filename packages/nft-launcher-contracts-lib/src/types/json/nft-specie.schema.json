@@ -24,40 +24,9 @@
                     },
                     "type": {
                         "type": "string",
-                        "enum": ["Image", "number", "enum"],
+                        "enum": ["Image", "number", "enum", "color"],
                         "description": "This is what the data encodes. Usually, will refer to items in value_options array",
                         "examples": ["number", "enum", "Image"]
-                    },
-                    "value_options": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "value_name": {
-                                    "type": "string",
-                                    "description": "An instance of a trait_type",
-                                    "examples": ["Blue", "Big", "Square"]
-                                },
-                                "image": {
-                                    "type": "string",
-                                    "description": "Image of the value"
-                                },
-                                "value": {
-                                    "type": "string",
-                                    "description": "Value referred to by value_name"
-                                }
-                            },
-                            "required": ["value_name"],
-                            "oneOf": [
-                                {
-                                    "required": ["image"]
-                                },
-                                {
-                                    "required": ["value"]
-                                }
-                            ]
-                        },
-                        "minItems": 1
                     },
                     "format": {
                         "type": "boolean",
@@ -90,12 +59,70 @@
                         "if": {
                             "properties": {
                                 "type": {
+                                    "const": "Image"
+                                }
+                            }
+                        },
+                        "then": {
+                            "properties": {
+                                "value_options": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "value_name": {
+                                                "type": "string",
+                                                "description": "An instance of a trait_type",
+                                                "examples": ["Blue", "Big", "Square"]
+                                            },
+                                            "image": {
+                                                "type": "string",
+                                                "description": "Image of the value"
+                                            }
+                                        },
+                                        "required": ["value_name"],
+                                        "oneOf": [
+                                            {
+                                                "required": ["image"]
+                                            },
+                                            {
+                                                "required": ["value"]
+                                            }
+                                        ]
+                                    },
+                                    "minItems": 1
+                                }
+                            }
+                        },
+                        "else": {
+                            "not": { "required": ["format"] }
+                        }
+                    },
+                    {
+                        "if": {
+                            "properties": {
+                                "type": {
                                     "const": "number"
                                 }
                             }
                         },
                         "then": {
-                            "not": { "required": ["format"] }
+                            "properties": {
+                                "value_options": {
+                                    "type": "object",
+                                    "properties": {
+                                        "min": {
+                                            "type": "number",
+                                            "description": "minimum in range inclusive"
+                                        },
+                                        "max": {
+                                            "type": "number",
+                                            "description": "maxmimum in range exclusive"
+                                        }
+                                    },
+                                    "required": ["min", "max"]
+                                }
+                            }
                         }
                     },
                     {
@@ -107,7 +134,54 @@
                             }
                         },
                         "then": {
-                            "not": { "required": ["format"] }
+                            "properties": {
+                                "value_options": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "value_name": {
+                                                "type": "string",
+                                                "description": "An instance of a trait_type",
+                                                "examples": ["Blue", "Big", "Square"]
+                                            },
+                                            "value": {
+                                                "type": "string",
+                                                "description": "Value referred to by value_name"
+                                            }
+                                        },
+                                        "required": ["value_name", "value"]
+                                    },
+                                    "minItems": 1
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "if": {
+                            "properties": {
+                                "type": {
+                                    "const": "color"
+                                }
+                            }
+                        },
+                        "then": {
+                            "properties": {
+                                "value_options": {
+                                    "type": "object",
+                                    "properties": {
+                                        "min": {
+                                            "type": "number",
+                                            "description": "minimum in range inclusive"
+                                        },
+                                        "max": {
+                                            "type": "number",
+                                            "description": "maxmimum in range exclusive"
+                                        }
+                                    },
+                                    "required": ["min", "max"]
+                                }
+                            }
                         }
                     }
                 ]

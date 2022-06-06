@@ -28,11 +28,12 @@
     "dependencies": {
         "ajv": "^8.10.0",
         "axios": "^0.27.2",
+        "colormap": "^2.3.2",
         "dotenv": "^10.0.0",
-        "ipfs-http-client": "^56.0.1",
-        "merge-images": "^2.0.0",
+        "express": "^4.18.1",
         "http-errors": "^2.0.0",
-        "express": "^4.18.1"
+        "ipfs-http-client": "^56.0.1",
+        "merge-images": "^2.0.0"
     },
     "peerDependencies": {
         "@ethersproject/abi": "^5.4.0",
@@ -69,12 +70,13 @@
         "@types/axios": "^0.14.0",
         "@types/chai": "^4.3.0",
         "@types/chai-as-promised": "^7.1.4",
+        "@types/colormap": "^2.3.1",
         "@types/crypto-js": "^4.1.1",
         "@types/glob": "^7.2.0",
+        "@types/http-errors": "^1.8.2",
         "@types/merge-images": "^1.2.1",
         "@types/mocha": "^9.0.0",
         "@types/node": "^16.11.19",
-        "@types/http-errors": "^1.8.2",
         "@typescript-eslint/eslint-plugin": "^4.33.0",
         "@typescript-eslint/parser": "^4.33.0",
         "bignumber.js": "^9.0.2",
