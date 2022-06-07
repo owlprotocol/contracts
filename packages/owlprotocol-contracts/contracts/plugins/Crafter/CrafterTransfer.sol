@@ -58,8 +58,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
         address _burnAddress,
         uint256 _craftableAmount,
         CraftLib.Ingredient[] calldata _inputs,
-        CraftLib.Ingredient[] calldata _outputs,
-        uint256[][] calldata _outputsERC721Ids
+        CraftLib.Ingredient[] calldata _outputs
     ) public initializer {
         // Requires
         require(_burnAddress != address(0), 'burn address must not be 0');
@@ -67,31 +66,63 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
         require(_outputs.length > 0, 'A crafting output must be given!');
 
         __Ownable_init();
+        _transferOwnership(_admin);
 
         burnAddress = _burnAddress;
 
         // NOTE - deep copies arrays
-        // Inputs
+        // Inputs validations
         for (uint256 i = 0; i < _inputs.length; i++) {
             inputs.push(_inputs[i]);
-            // Reject start ids
-            if (_outputs[i].token == CraftLib.TokenType.erc721)
-                require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+            if (_inputs[i].token == CraftLib.TokenType.erc20) {
+                require(_inputs[i].tokenIds.length == 0, 'tokenids.length != 0');
+                require(_inputs[i].amounts.length == 1, 'amounts.length != 1');
+            }
+            if (_inputs[i].token == CraftLib.TokenType.erc721) {
+                //accept all token ids as inputs
+                require(_inputs[i].tokenIds.length == 0, 'tokenids.length != 0');
+                require(_inputs[i].amounts.length == 0, 'amounts.length != 0');
+            }
+            if (_inputs[i].token == CraftLib.TokenType.erc1155) {
+                require(_inputs[i].tokenIds.length == _inputs[i].amounts.length, 'tokenids.length != amounts.length');
+            }
         }
-        // Outputs
+
+        uint256 erc721amount = 0;
+
+        // Outputs validations
         for (uint256 i = 0; i < _outputs.length; i++) {
-            outputs.push(_outputs[i]);
-            // Reject start ids
-            if (_outputs[i].token == CraftLib.TokenType.erc721)
-                require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+            outputs.push(_inputs[i]);
+            if (_inputs[i].token == CraftLib.TokenType.erc20) {
+                require(_outputs[i].tokenIds.length == 0, 'tokenids.length != 0');
+                require(_outputs[i].amounts.length == 1, 'amounts.length != 1');
+            }
+            if (_outputs[i].token == CraftLib.TokenType.erc721) {
+                require(_outputs[i].tokenIds.length == _craftableAmount, 'tokenids.length != _craftableAmount');
+                require(_outputs[i].amounts.length == 0, 'amounts.length != 0');
+                erc721amount++;
+            }
+            if (_outputs[i].token == CraftLib.TokenType.erc1155) {
+                require(_outputs[i].tokenIds.length == _outputs[i].amounts.length, 'tokenids.length != amounts.length');
+            }
         }
 
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
 
-        if (_craftableAmount > 0) deposit(_craftableAmount, _outputsERC721Ids, _admin);
+        uint256[][] memory _outputsERC721Ids = new uint256[][](erc721amount);
+        uint256 outputERC721index = 0;
 
-        // Transfer ownership *AFTER* depositing (to pass `onlyOwner`)
-        _transferOwnership(_admin);
+        for (uint256 i = 0; i < _outputs.length; i++) {
+            if (_outputs[i].token == CraftLib.TokenType.erc721) {
+                _outputsERC721Ids[outputERC721index] = new uint256[](_craftableAmount);
+                for (uint256 j = 0; j < _craftableAmount; j++) {
+                    _outputsERC721Ids[outputERC721index][j] = _outputs[i].tokenIds[j];
+                }
+                outputERC721index++;
+            }
+        }
+
+        if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids, _admin);
     }
 
     /**********************
@@ -173,7 +204,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
      */
     function deposit(uint256 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
-        deposit(depositAmount, _outputsERC721Ids, _msgSender());
+        _deposit(depositAmount, _outputsERC721Ids, _msgSender());
     }
 
     /**
@@ -183,11 +214,11 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
      * @param from address to transfer tokens from
      */
-    function deposit(
+    function _deposit(
         uint256 depositAmount,
-        uint256[][] calldata _outputsERC721Ids,
+        uint256[][] memory _outputsERC721Ids,
         address from
-    ) public onlyOwner {
+    ) internal {
         //Requires
         require(depositAmount > 0, 'depositAmount cannot be 0!');
 
@@ -245,7 +276,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
      * @dev Used to withdraw recipe outputs. Reverse logic as deposit().
      * @param withdrawAmount How many times the craft outputs should be withdrawn
      */
-    function withdraw(uint256 withdrawAmount) public onlyOwner {
+    function withdraw(uint256 withdrawAmount) external onlyOwner {
         // Requires
         require(withdrawAmount > 0, 'withdrawAmount cannot be 0!');
         require(withdrawAmount <= craftableAmount, 'Not enough resources!');

@@ -27,9 +27,9 @@ const config: HardhatUserConfig = {
         outDir: 'typechain', //default
         target: 'ethers-v5', //All options: ethers-v5, web3-v1, truffle-v5
     },
-    etherscan: {
-        apiKey: process.env.ETHERSCAN_API_KEY,
-    }
+    // etherscan: {
+    //     apiKey: process.env.ETHERSCAN_API_KEY || '',
+    // },
 };
 
 export default config;
