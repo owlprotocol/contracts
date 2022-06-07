@@ -1,3 +1,4 @@
 packages:
   - "packages/nft-launcher-contracts-lib"
-  #- "packages/nft-launcher-contracts-sol"
+  - "packages/nft-launcher-contracts-sol"
+  - "packages/owlprotocol-contracts"
