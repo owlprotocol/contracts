@@ -239,4 +239,4 @@ writeFileSync('./src/owlMetadata.json', JSON.stringify(metadata.getJsonMetadata(
     console.log(cid);
 })();
 
-const uploadedIPFSHash = 'QmahQhdNjTaCucoR5H3dd2fGRYUKzSKdsP6MMvEf4CB8sH';
+const uploadedIPFSHash = 'QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM';

@@ -4,7 +4,12 @@ import mergeImages, { Options as MergeOptions } from 'merge-images';
 import axios from 'axios';
 import colormap from 'colormap';
 
-async function merge(layers: Value[], specieMetadata: SpecieMetadata, mergeOptions?: MergeOptions): Promise<string> {
+async function merge(
+    layers: Value[],
+    specieMetadata: SpecieMetadata,
+    // ipfsHash: string,
+    mergeOptions?: MergeOptions,
+): Promise<string> {
     const imageMapping = layers.map((layer) => {
         const option = specieMetadata.getSpecieMetadata().find((option) => option.getTraitType() === layer.trait_type);
 
