@@ -1,1 +1,1 @@
-export { default as getMetadata } from './metadata';
+export { getMetadata, getImage } from './metadata';

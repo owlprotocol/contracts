@@ -8,53 +8,69 @@ import { merge } from '../../images';
 import { Canvas, Image } from 'canvas';
 import { toBN } from 'web3-utils';
 
-export default async (req: Request, res: Response, next: NextFunction) => {
+export async function getMetadata(req: Request, res: Response, next: NextFunction) {
     try {
         const { specieMetadataHash, tokenId } = req.params;
 
-        if (!/^[0-9]+$/.test(tokenId)) throw new BadRequest('tokenId is not a number');
+        const instance = await getInstance(specieMetadataHash, tokenId);
 
-        let specieMetadata: SpecieMetadata | null = null;
-
-        const cachePath = path.join(__dirname, '..', '..', '..', 'cache', specieMetadataHash);
-
-        //creating cache entry if doesn't exist
-        if (!existsSync(cachePath)) {
-            mkdir(cachePath + '/tokens', { recursive: true }, () => {});
-        }
-
-        //token cache
-        const tokenCacheHit = hitTokenCache(cachePath, tokenId);
-        if (tokenCacheHit !== null) {
-            console.log(tokenCacheHit.attributes);
-            return res.status(200).send(tokenCacheHit);
-        }
-
-        //specieMetadata cache
-        const specieMetadataCacheHit = hitSpecieMetadataCache(cachePath);
-
-        if (specieMetadataCacheHit !== null) specieMetadata = specieMetadataCacheHit;
-        else specieMetadata = await fetchSpecieMetadata(cachePath, specieMetadataHash);
-
-        //layers cache
-
-        if (specieMetadata === null) throw new BadRequest('Invalid SpecieMetadata');
-
-        const tokenMetadata = specieMetadata.dnaToMetadata(toBN(tokenId));
-
-        const mergedImg = await merge(tokenMetadata, specieMetadata, specieMetadataHash, {
-            Canvas,
-            Image,
-        });
-
-        const instance = { attributes: tokenMetadata, image: mergedImg };
         writeFileSync(`./cache/${specieMetadataHash}/tokens/${tokenId}.json`, JSON.stringify(instance));
         console.log(instance.attributes);
         res.status(200).send(instance);
     } catch (err) {
         next(err);
     }
-};
+}
+
+export async function getImage(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { specieMetadataHash, tokenId } = req.params;
+
+        const instance = await getInstance(specieMetadataHash, tokenId);
+
+        writeFileSync(`./cache/${specieMetadataHash}/tokens/${tokenId}.json`, JSON.stringify(instance));
+        console.log(instance.attributes);
+        res.status(200).send(`<img src="${instance.image}" />`);
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function getInstance(ipfsHash: string, tokenId: string) {
+    if (!/^[0-9]+$/.test(tokenId)) throw new BadRequest('tokenId is not a number');
+
+    let specieMetadata: SpecieMetadata | null = null;
+
+    const cachePath = path.join(__dirname, '..', '..', '..', 'cache', ipfsHash);
+
+    //creating cache entry if doesn't exist
+    if (!existsSync(cachePath)) {
+        mkdir(cachePath + '/tokens', { recursive: true }, () => {});
+    }
+
+    //token cache
+    const tokenCacheHit = hitTokenCache(cachePath, tokenId);
+    if (tokenCacheHit !== null) return tokenCacheHit;
+
+    //specieMetadata cache
+    const specieMetadataCacheHit = hitSpecieMetadataCache(cachePath);
+
+    if (specieMetadataCacheHit !== null) specieMetadata = specieMetadataCacheHit;
+    else specieMetadata = await fetchSpecieMetadata(cachePath, ipfsHash);
+
+    //layers cache
+
+    if (specieMetadata === null) throw new BadRequest('Invalid SpecieMetadata');
+
+    const tokenMetadata = specieMetadata.dnaToMetadata(toBN(tokenId));
+
+    const mergedImg = await merge(tokenMetadata, specieMetadata, ipfsHash, {
+        Canvas,
+        Image,
+    });
+
+    return { attributes: tokenMetadata, image: mergedImg };
+}
 
 export function hitTokenCache(cachePath: string, tokenId: string): any | null {
     const tokenPath = `${cachePath}/tokens/${tokenId}.json`;

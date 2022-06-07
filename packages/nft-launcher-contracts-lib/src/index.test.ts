@@ -44,7 +44,7 @@ describe('E2E Test', () => {
 
         for (const dna in allM) {
             console.log(dna);
-            const mergedImage = await merge(allM[dna], metadata, {
+            const mergedImage = await merge(allM[dna], metadata, '', {
                 Canvas,
                 Image: _Image,
             });
