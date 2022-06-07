@@ -70,11 +70,10 @@ async function merge(
 }
 
 export async function cacheImg(ipfsHash: string, imgPath: string, imgBuffer: Buffer) {
-    const cachePath = path.join(__dirname, '..', '..', '..', 'cache', ipfsHash);
+    const cachePath = path.join(__dirname, '..', '..', 'cache', ipfsHash);
 
     mkdir(cachePath + '/layers', { recursive: true }, (err) => {
         if (err) throw err;
-
         writeFileSync(imgPath, imgBuffer);
     });
 }
