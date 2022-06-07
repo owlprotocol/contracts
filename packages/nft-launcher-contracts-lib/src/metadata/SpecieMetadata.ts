@@ -1,7 +1,11 @@
 import SpecieTrait from './SpecieTrait';
 import web3 from 'web3';
 import Ajv from 'ajv';
-import { Value, SpecieMetadataSchema, MetadataList } from '../types';
+import { Value, SpecieMetadataSchema, MetadataList, ValueRange } from '../types';
+import BN from 'bn.js';
+import colormaps from './colormaps';
+
+const colorMap: SpecieTrait = new SpecieTrait('colormap', 'colormap', colormaps);
 
 export interface Metadata {
     [key: string]: Value[];
@@ -11,7 +15,9 @@ class SpecieMetadata {
     private traits: SpecieTrait[];
     private maxBitSize: number;
 
-    constructor(traits: SpecieTrait[]) {
+    constructor(traits: SpecieTrait[], includeColorMap?: boolean) {
+        if (includeColorMap) traits.push(colorMap);
+
         this.traits = traits;
         this.maxBitSize = traits.reduce((total, trait) => total + trait.getBitSize(), 0);
     }
@@ -31,9 +37,9 @@ class SpecieMetadata {
 
     generateAllInstances(): MetadataList {
         const instances: MetadataList = {};
-        for (let i = 0; i < 2 ** this.maxBitSize; i++) {
+        for (let i = 0; bn(i).lt(bn(2).pow(bn(this.maxBitSize))); i++) {
             try {
-                instances[i] = this.dnaToMetadata(i);
+                instances[i] = this.dnaToMetadata(bn(i));
             } catch (err) {
                 //ignores invalid dnas (some undefined trait(s))
                 if ((err as Error).name === 'InvalidDnaError') continue;
@@ -48,36 +54,42 @@ class SpecieMetadata {
     }
 
     //left most bits represent top most traits in triats list
-    dnaToMetadata(n: number): Value[] {
-        if (!(n < 2 ** this.maxBitSize) || n < 0) throw new Error('Dna out of metadata range');
-
-        const bin = web3.utils.padLeft(n.toString(2), this.maxBitSize);
+    dnaToMetadata(n: BN): Value[] {
+        if (!n.lt(bn(2).pow(bn(this.maxBitSize))) || n.lt(bn(0))) throw new Error('Dna out of metadata range');
+        const bin = n.toString(2, this.maxBitSize);
         const bitsList: number[] = this.traits.map((trait) => trait.getBitSize());
         const metadata: Value[] = [];
+
+        let pos = 0;
 
         for (let i = 0; i < bitsList.length; i++) {
             let bits;
 
-            const prevSum = bitsList.slice(0, i).reduce((p, n) => p + n, 0);
-            const currSum = bitsList.slice(0, i + 1).reduce((p, n) => p + n, 0);
-
-            if (i == 0) bits = bin.substring(0, bitsList[1]);
-            else bits = bin.substring(prevSum, currSum);
+            bits = bin.substring(bin.length - pos, bin.length - pos - bitsList[i]);
 
             const currTrait = this.traits[i];
             const options = currTrait.getValueOptions();
             const valueIndex = parseInt(bits, 2);
-            let value;
-            if (valueIndex >= options.length) throw new InvalidDnaError();
-            else value = options[valueIndex].value_name;
+            let value: string;
+            if (
+                valueIndex >=
+                (Array.isArray(options) ? options.length : (options as ValueRange).max - (options as ValueRange).min)
+            )
+                throw new InvalidDnaError();
+            else
+                value = Array.isArray(options)
+                    ? options[valueIndex].value_name
+                    : ((options as ValueRange).min + valueIndex).toString();
 
             metadata.push({ trait_type: currTrait.getTraitType(), value });
+
+            pos += bitsList[i]; //update pointer
         }
 
         return metadata;
     }
 
-    metadataToDna(metadata: Value[]): number {
+    metadataToDna(metadata: Value[]): BN {
         let finalBin = '';
         metadata.forEach((value: Value) => {
             const trait = this.traits.find(
@@ -86,7 +98,11 @@ class SpecieMetadata {
             if (!trait)
                 throw new InvalidMetadataError(`Invalid trait ${value.trait_type} not found in this SpecieMetadata`);
 
-            const index = trait.getValueOptions().findIndex((option) => value.value === option.value_name);
+            const options = trait.getValueOptions();
+            let index;
+            if (Array.isArray(options)) index = options.findIndex((option) => value.value === option.value_name);
+            else index = (options as ValueRange).max - (options as ValueRange).min;
+
             if (index === -1)
                 throw new InvalidMetadataError(
                     `Value ${value.value} for trait_type ${value.trait_type} not found in this SpecieMetadata `,
@@ -95,8 +111,12 @@ class SpecieMetadata {
             finalBin += web3.utils.padLeft(index.toString(2), trait.getBitSize());
         });
 
-        return parseInt(finalBin, 2);
+        return bn(parseInt(finalBin, 2));
     }
+}
+
+export function bn(i: number) {
+    return new BN(i);
 }
 
 export function validateSchema(object: any): boolean {

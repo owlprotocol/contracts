@@ -2,6 +2,7 @@ import { assert, expect } from 'chai';
 import SpecieMetadata, { validateSchema } from './SpecieMetadata';
 import SpecieTrait from './SpecieTrait';
 import { generateAllInstances, instanceMetadata8 } from './test-results';
+import { BN } from 'bn.js';
 
 describe('metadata.integration', () => {
     let orangeBody, yellowBody, greenBody;
@@ -48,12 +49,12 @@ describe('metadata.integration', () => {
         });
 
         it('dnaToMetadata', () => {
-            expect(() => metadata.dnaToMetadata(7)).to.throw('Invalid Dna for this SpecieMetadata');
-            assert.deepEqual(instanceMetadata8, metadata.dnaToMetadata(8));
+            expect(() => metadata.dnaToMetadata(bn(7))).to.throw('Invalid Dna for this SpecieMetadata');
+            assert.deepEqual(instanceMetadata8, metadata.dnaToMetadata(bn(8)));
         });
 
         it('metadataToDna', () => {
-            assert.equal(8, metadata.metadataToDna(instanceMetadata8));
+            assert.equal(8, metadata.metadataToDna(instanceMetadata8).toNumber());
         });
     });
 
@@ -115,6 +116,16 @@ describe('metadata.integration', () => {
             json2.traits[0].value_bit_size = 257;
             expect(() => validateSchema(json2)).to.throw('must be <= 256');
         });
+
+        it("format should be allowed on type 'Image' but not on types 'number' and 'enum'", () => {
+            const json2 = JSON.parse(JSON.stringify(json));
+            json2.traits[0].format = true;
+            expect(validateSchema(json2)).to.equal(true);
+            json2.traits[0].type = 'number';
+            expect(() => validateSchema(json2)).to.throw('must NOT be valid');
+            json2.traits[0].type = 'enum';
+            expect(() => validateSchema(json2)).to.throw('must NOT be valid');
+        });
     });
 
     describe('SpecieTrait.ts', () => {
@@ -128,3 +139,7 @@ describe('metadata.integration', () => {
         });
     });
 });
+
+function bn(i: number) {
+    return new BN(i);
+}
