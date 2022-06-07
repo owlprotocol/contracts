@@ -3,13 +3,17 @@ import { SpecieMetadata } from '../metadata';
 import mergeImages, { Options as MergeOptions } from 'merge-images';
 import axios from 'axios';
 import colormap from 'colormap';
+import { existsSync, mkdir, readFileSync, writeFileSync } from 'fs';
+import path from 'path';
 
 async function merge(
     layers: Value[],
     specieMetadata: SpecieMetadata,
-    // ipfsHash: string,
+    ipfsHash: string,
     mergeOptions?: MergeOptions,
 ): Promise<string> {
+    const cachePath = path.join(__dirname, '..', '..', '..', 'cache', ipfsHash);
+
     const imageMapping = layers.map((layer) => {
         const option = specieMetadata.getSpecieMetadata().find((option) => option.getTraitType() === layer.trait_type);
 
@@ -39,6 +43,12 @@ async function merge(
 
     const imgFetch = await Promise.all(
         images.map(async (img) => {
+            const { value_name, image } = img;
+            const imgPath = `./cache/${ipfsHash}/layers/${value_name}.${image.split('.').pop()}`;
+
+            //hit layers cache
+            if (existsSync(imgPath)) return readFileSync(imgPath);
+
             let imgVal: string = (
                 await axios.get(img.image, {
                     responseType: 'text',
@@ -48,13 +58,25 @@ async function merge(
                 imgVal = imgVal.replaceAll(`{${trait_type}}`, `${colors[value]}`);
             });
 
-            return Buffer.from(imgVal);
+            const imgBuffer = Buffer.from(imgVal);
+            cacheImg(ipfsHash, imgPath, imgBuffer);
+            return imgBuffer;
         }),
     );
 
     //@ts-ignore
     const combinedBinary = mergeImages(imgFetch, mergeOptions);
     return combinedBinary; //returns promise
+}
+
+export async function cacheImg(ipfsHash: string, imgPath: string, imgBuffer: Buffer) {
+    const cachePath = path.join(__dirname, '..', '..', '..', 'cache', ipfsHash);
+
+    mkdir(cachePath + '/layers', { recursive: true }, (err) => {
+        if (err) throw err;
+
+        writeFileSync(imgPath, imgBuffer);
+    });
 }
 
 export default merge;

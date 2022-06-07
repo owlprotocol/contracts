@@ -42,7 +42,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
 
         const tokenMetadata = specieMetadata.dnaToMetadata(toBN(tokenId));
 
-        const mergedImg = await merge(tokenMetadata, specieMetadata, {
+        const mergedImg = await merge(tokenMetadata, specieMetadata, specieMetadataHash, {
             Canvas,
             Image,
         });
@@ -75,11 +75,12 @@ export async function fetchSpecieMetadata(
     specieMetadataHash: string,
 ): Promise<SpecieMetadata | null> {
     return new Promise((resolve, reject) =>
-        mkdir(cachePath + '/specieMetadata', { recursive: true }, async () => {
-            let specieMetadata: SpecieMetadata | null = null;
+        mkdir(cachePath + '/specieMetadata', { recursive: true }, async (err) => {
+            if (err) reject(err);
+
             try {
                 const { data } = await axios.get(`${process.env.IPFS_GATEWAY}/${specieMetadataHash}`);
-                specieMetadata = validateAndGetSchema(data);
+                const specieMetadata = validateAndGetSchema(data);
                 writeFileSync(
                     `./cache/${specieMetadataHash}/specieMetadata/specieMetadata.json`,
                     JSON.stringify(specieMetadata),
