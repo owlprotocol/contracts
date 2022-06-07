@@ -45,22 +45,22 @@ async function merge(
         images.map(async (img) => {
             const { value_name, image } = img;
             const imgPath = `./cache/${ipfsHash}/layers/${value_name}.${image.split('.').pop()}`;
-
+            let imgVal: string;
             //hit layers cache
-            if (existsSync(imgPath)) return readFileSync(imgPath);
+            if (existsSync(imgPath)) imgVal = readFileSync(imgPath).toString();
+            else
+                imgVal = (
+                    await axios.get(img.image, {
+                        responseType: 'text',
+                    })
+                ).data;
 
-            let imgVal: string = (
-                await axios.get(img.image, {
-                    responseType: 'text',
-                })
-            ).data;
+            cacheImg(ipfsHash, imgPath, Buffer.from(imgVal));
             nonImages.forEach(({ trait_type, value }) => {
                 imgVal = imgVal.replaceAll(`{${trait_type}}`, `${colors[value]}`);
             });
 
-            const imgBuffer = Buffer.from(imgVal);
-            cacheImg(ipfsHash, imgPath, imgBuffer);
-            return imgBuffer;
+            return Buffer.from(imgVal);
         }),
     );
 
