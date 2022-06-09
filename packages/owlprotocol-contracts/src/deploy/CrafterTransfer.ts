@@ -1,56 +1,103 @@
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 import { ERC1155, ERC1167Factory, ERC1167Factory__factory, Initializable } from '../../typechain';
 
+const tokenIds = [
+    '15532881770934585726362572820003503218105251610',
+    '22669120234464385131654002667250978900018984730',
+    '11251138692816706083187714911655017808957011738',
+    '5542147921992866558954571033857037263426025242',
+    '23739556003993855042447717144338100252306044698',
+    '23025931936180581485115997338265290227201491226',
+    '29448546774817694566680861022136080797837031194',
+    '35157537545641534090914004899934061343368017690',
+    '40866528316465373615147148777732041888899004186',
+    '45861895240936232901745540205708751110725437210',
+];
+
+const ERC1115Amounts = [2, 2, 2, 1, 1, 1, 2];
+const ERC1155Ids = [0, 1, 2, 3, 4, 5, 6];
+
+const salt = ethers.utils.formatBytes32String('0');
+
+let ProxyFactoryAddress = '0x890C7216f127864942288Ed67Ed5b5fAa0e1560A';
 (async () => {
+    if (network.name === 'hardhat') {
+        const ERC1167FactoryFactory = await ethers.getContractFactory('ERC1167Factory');
+        const ERC1167Factory = await ERC1167FactoryFactory.deploy();
+
+        ProxyFactoryAddress = ERC1167Factory.address;
+    } else {
+        //validate that ProxyFactoryAddress is a real address
+        ethers.utils.getAddress(ProxyFactoryAddress);
+    }
+
     const [admin] = await ethers.getSigners();
 
-    const ERC1167FactoryFactory = await ethers.getContractFactory('ERC1167Factory');
-    const ERC1167Factory = await ERC1167FactoryFactory.deploy();
+    const ERC1167Factory = await ethers.getContractAt('ERC1167Factory', ProxyFactoryAddress);
+    // const ERC1167Factory = await ERC1167FactoryFactory.deploy();
 
     //DEPLOY ERC721
     const ERC721Factory = await ethers.getContractFactory('ERC721Owl');
-    const ERC721Implementation = await ERC721Factory.deploy();
+    // const ERC721Implementation = await ERC721Factory.deploy();
+    const ERC721Implementation = await ethers.getContractAt('ERC721Owl', '0xe28D22CCBe42760028f40Ad0c93b862d3e992542');
+
+    //DEPLOY ERC1155
+    const ERC1155Factory = await ethers.getContractFactory('ERC1155Owl');
+    // const ERC1155Implementation = await ERC1155Factory.deploy();
+    const ERC1155Implementation = await ethers.getContractAt(
+        'ERC1155Owl',
+        '0xdBd2BaCe25998F67781aA087cEaF8f2a45B5f9B4',
+    );
 
     const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
 
-    await Promise.all([ERC1167Factory.deployed(), ERC721Implementation.deployed()]);
+    // await Promise.all([ERC1167Factory.deployed(), ERC721Implementation.deployed()]);
 
     console.debug({
         ERC1167Factory: ERC1167Factory.address,
-        ERC721: ERC721Implementation.address,
+        ERC721Implementation: ERC721Implementation.address,
+        ERC1155Implementation: ERC1155Implementation.address,
     });
 
-    const salt = ethers.utils.formatBytes32String('0');
-
+    //Deploy ERC721 Instance through proxy
     const ERC721Data = ERC721Implementation.interface.encodeFunctionData('initialize', [
         admin.address,
         'CryptoOwls',
         'OWL',
-        'https://api.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM',
+        'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM',
     ]);
     const ERC721InstanceAddress = await ERC1167Factory.predictDeterministicAddress(
         ERC721Implementation.address,
         salt,
         ERC721Data,
     );
-    await ERC1167Factory.cloneDeterministic(ERC721Implementation.address, salt, ERC721Data);
+    // const deployERC721 = await ERC1167Factory.cloneDeterministic(ERC721Implementation.address, salt, ERC721Data);
+    // await deployERC721.wait();
+    const cryptoOwlsContr = await ethers.getContractAt('ERC721Owl', ERC721InstanceAddress);
+    //mint token ids
+    // tokenIds.forEach(async (id) => {
+    //     const mintTx = await cryptoOwlsContr.mint(admin.address, id);
+    //     await mintTx.wait();
+    // });
 
-    //DEPLOY ERC1155
-    const ERC1155OwlFactory = await ethers.getContractFactory('ERC1155Owl');
-    const ERC1155OwlImplementaiton = await ERC1155OwlFactory.deploy();
-    await ERC1155OwlImplementaiton.deployed();
-
-    const ERC1155OwlData = ERC1155OwlImplementaiton.interface.encodeFunctionData('initialize', [
+    //Deploy ERC1155 Instance through proxy
+    const ERC1155Data = ERC1155Implementation.interface.encodeFunctionData('initialize', [
         admin.address,
-        'https://api.owlprotocol.xyz/...',
+        'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu',
     ]);
 
-    const ERC1155OwlAddress = await ERC1167Factory.predictDeterministicAddress(
-        ERC1155OwlImplementaiton.address,
+    const ERC1155InstanceAddress = await ERC1167Factory.predictDeterministicAddress(
+        ERC1155Implementation.address,
         salt,
-        ERC1155OwlData,
+        ERC1155Data,
     );
-    await ERC1167Factory.cloneDeterministic(ERC1155OwlImplementaiton.address, salt, ERC1155OwlData);
+
+    const deployERC1155 = await ERC1167Factory.cloneDeterministic(ERC1155Implementation.address, salt, ERC1155Data);
+    await deployERC1155.wait();
+    const cryptoOwlsPartsContr = await ethers.getContractAt('ERC1155Owl', ERC1155InstanceAddress);
+    //mint ERC1155 tokens
+    const mintTx = await cryptoOwlsPartsContr.mintBatch(admin.address, ERC1155Ids, ERC1115Amounts, '0x');
+    await mintTx.wait();
 
     //DEPLOY CRAFTER TRANSFER
     const CrafterTransferFactory = await ethers.getContractFactory('CrafterTransfer');
@@ -60,14 +107,14 @@ import { ERC1155, ERC1167Factory, ERC1167Factory__factory, Initializable } from 
     const CrafterTransferData = CrafterTransferImplementation.interface.encodeFunctionData('initialize', [
         admin.address,
         ONE_ADDRESS,
-        11,
+        10,
         [
             {
                 token: 2,
                 consumableType: 1,
-                contractAddr: ERC1155OwlAddress,
-                amounts: [2, 2, 2, 1, 1, 1, 2],
-                tokenIds: [0, 1, 2, 3, 4, 5, 6],
+                contractAddr: ERC1155InstanceAddress,
+                amounts: ERC1115Amounts,
+                tokenIds: ERC1155Ids,
             },
         ],
         [
@@ -76,33 +123,26 @@ import { ERC1155, ERC1167Factory, ERC1167Factory__factory, Initializable } from 
                 consumableType: 0,
                 contractAddr: ERC721InstanceAddress,
                 amounts: [],
-                tokenIds: [
-                    '15532881770934585726362572820003503218105251610',
-                    '22669120234464385131654002667250978900018984730',
-                    '11251138692816706083187714911655017808957011738',
-                    '5542147921992866558954571033857037263426025242',
-                    '23739556003993855042447717144338100252306044698',
-                    '23025931936180581485115997338265290227201491226',
-                    '29448546774817694566680861022136080797837031194',
-                    '35157537545641534090914004899934061343368017690',
-                    '40866528316465373615147148777732041888899004186',
-                    '45861895240936232901745540205708751110725437210',
-                    '45861895019475939582048572849457212409325437210',
-                ],
+                tokenIds,
             },
         ],
-        [],
     ]);
+
     const CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
         CrafterTransferImplementation.address,
         salt,
         CrafterTransferData,
     );
+
+    //approve
+    await cryptoOwlsContr.connect(admin).setApprovalForAll(CrafterTransferAddress, true);
+    await cryptoOwlsPartsContr.connect(admin).setApprovalForAll(CrafterTransferAddress, true);
+
     await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
 
     console.debug({
         ERC721Instance: ERC721InstanceAddress,
-        ERC1155Instnace: ERC1155OwlAddress,
+        ERC1155Instnace: ERC1155InstanceAddress,
         CrafterTransferInstance: CrafterTransferAddress,
     });
 })();

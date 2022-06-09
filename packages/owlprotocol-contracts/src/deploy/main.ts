@@ -52,7 +52,6 @@ async function main() {
         0,
         [],
         [],
-        [],
     ]);
     const CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
         CrafterTransferImplementation.address,
@@ -63,7 +62,7 @@ async function main() {
 
     console.debug({
         ERC721Instance: ERC721InstanceAddress,
-        CrafterTransfer: CrafterTransferAddress
+        CrafterTransfer: CrafterTransferAddress,
     });
 }
 

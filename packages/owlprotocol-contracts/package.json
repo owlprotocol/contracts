@@ -99,5 +99,8 @@
     "contracts",
     "typechain"
   ],
-  "types": "./typechain/index.d.ts"
+  "types": "./typechain/index.d.ts",
+  "dependencies": {
+    "dotenv": "^16.0.1"
+  }
 }
