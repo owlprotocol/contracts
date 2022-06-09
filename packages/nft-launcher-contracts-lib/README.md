@@ -14,7 +14,7 @@ TODO: @Hrik Add additional docs on metadata, SVG Generation, Colormaps (8bit -> 
 
 ## Metadata
 
-# The Concept
+### The Concept and Overview
 
 The metadata standard is designed to be a map from the tokenId to the attributes of that tokenId. The binary representation of that tokenId encodes all the type of traits, and which specific type is to be used on that tokenId. Here's an example:
 
@@ -30,7 +30,7 @@ The animal attribute can be encoded into 3 bits (ceil(log2(5)) = 3) and the colo
 
 The 0 tokenId will be represented by 0000 in binary. The library is desgined to read from right to left so 0*000* will represent an index in the animal array and *0*000 will represent and index in the color array.
 
-For example, tokenId 4 converted to binary would be 100 but padded until the maximum bit size would be 0100.
+For example, tokenId 4 converted to binary would be 100 but padded until the maximum bit size would be 0100. 0*100* represents the index in the Animal options array and *0*100 represents the index in the Color options array. 0 in decimal is 0 and 100 in decimal is 4 so this tokenId represent and nft with a Red Rabbit.
 
 \*\*SpecieMetadata & SpecieTrait classes
 
