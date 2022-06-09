@@ -13,5 +13,9 @@ TODO: @Hrik Add additional docs on metadata, SVG Generation, Colormaps (8bit -> 
 ## Demo Data
 As an example, we can use the Crypto Owls demo collection's spec that is stored on IPFS at `QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM`.
 
+**Localhost**
 http://localhost:8000/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/15532881770934585726362572820003503218105251610
 http://localhost:8000/metadata/getImage/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/15532881770934585726362572820003503218105251610
+
+**Deployed API**
+https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/15532881770934585726362572820003503218105251610
