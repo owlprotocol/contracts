@@ -5,6 +5,11 @@ import { json } from 'stream/consumers';
 
 const client = ipfsHttpClient({
     url: 'https://ipfs.infura.io:5001/api/v0',
+    headers: {
+        Authorization: `Basic ${Buffer.from('24sx5RWzYCzRK8rKIkxyTw4jAIP:9b8fa3e12bc3b1f146f1463412e90f8c').toString(
+            'base64',
+        )}`,
+    },
 });
 
 const owlEyes = {
