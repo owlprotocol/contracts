@@ -1,0 +1,35 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 4,
+    "total": 4,
+    "workspacePrefix": "/home/VulcanLinkProjects/nft-launcher-contracts"
+  },
+  "1 info pnpm": {
+    "message": "Recreating /home/VulcanLinkProjects/nft-launcher-contracts/packages/owlprotocol-contracts/node_modules",
+    "prefix": "/home/VulcanLinkProjects/nft-launcher-contracts/packages/owlprotocol-contracts"
+  },
+  "2 info pnpm": {
+    "message": "Recreating /home/VulcanLinkProjects/nft-launcher-contracts/node_modules",
+    "prefix": "/home/VulcanLinkProjects/nft-launcher-contracts"
+  },
+  "3 info pnpm": {
+    "message": "Recreating /home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib/node_modules",
+    "prefix": "/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib"
+  },
+  "4 info pnpm": {
+    "message": "Recreating /home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-sol/node_modules",
+    "prefix": "/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-sol"
+  },
+  "5 error pnpm": {
+    "errno": -13,
+    "code": "EACCES",
+    "syscall": "rmdir",
+    "path": "/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib/node_modules/.bin",
+    "err": {
+      "name": "pnpm",
+      "message": "EACCES: permission denied, rmdir '/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib/node_modules/.bin'",
+      "code": "EACCES",
+      "stack": "pnpm: EACCES: permission denied, rmdir '/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib/node_modules/.bin'"
+    }
+  }
+}

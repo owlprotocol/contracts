@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { ERC1155, ERC1167Factory, ERC1167Factory__factory, Initializable } from '../../typechain';
+import { ERC1155, ERC1167Factory, ERC1167Factory__factory, Initializable } from '../typechain';
 
 (async () => {
     const [admin] = await ethers.getSigners();

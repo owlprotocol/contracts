@@ -1,5 +1,5 @@
 import { ethers, network } from 'hardhat';
-import { ERC1155, ERC1167Factory, ERC1167Factory__factory, Initializable } from '../../typechain';
+import { ERC1155, ERC1167Factory, ERC1167Factory__factory, Initializable } from '../typechain';
 
 const tokenIds = [
     '15532881770934585726362572820003503218105251610',
