@@ -64,7 +64,7 @@ let ProxyFactoryAddress = '0x890C7216f127864942288Ed67Ed5b5fAa0e1560A';
         admin.address,
         'CryptoOwls',
         'OWL',
-        'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM',
+        'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
     ]);
     const ERC721InstanceAddress = await ERC1167Factory.predictDeterministicAddress(
         ERC721Implementation.address,
