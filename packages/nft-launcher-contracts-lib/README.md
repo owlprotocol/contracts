@@ -10,7 +10,7 @@ Combining these uses cases, developers can launch a truly generative collection 
 
 The NFT Decoder middleware server works as a backwards compatibility solution with regular exchanges that rely on the `tokenURI` method as opposed to encoding data directly into the tokenId. The middleware server is decentralized as it does not store any data and simply feches data from IPFS to convert a given tokenId to more readable JSON metadata.
 
-TODO: @Hrik Add additional docs on metadata, SVG Generation, Colormaps (8bit -> 24bit).
+TODO: @Hrik Add additional docs on SVG Generation, Colormaps (8bit -> 24bit).
 
 ## Metadata
 
