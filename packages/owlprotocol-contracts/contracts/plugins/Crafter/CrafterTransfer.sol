@@ -43,7 +43,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
-        _disableInitializers();
+        // _disableInitializers();
     }
 
     /**
@@ -242,7 +242,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
                     '_outputsERC721Ids[i] != depositAmount'
                 );
                 for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
-                    console.log('erc115', _outputsERC721Ids[erc721Outputs][j]);
+                    console.log('erc115', from, address(this), _outputsERC721Ids[erc721Outputs][j]);
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         from,
                         address(this),

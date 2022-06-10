@@ -134,7 +134,29 @@ const config: HardhatUserConfig = {
         target: 'ethers-v5', //All options: ethers-v5, web3-v1, truffle-v5
     },
     etherscan: {
-        apiKey: process.env.ETHERSCAN_API_KEY || '',
+        apiKey: {
+            mainnet: process.env.MAINNET_API_KEY,
+            polygon: process.env.POLYGON_API_KEY,
+            // binance: process.env.BINANCE_API_KEY,
+            // arbitrum: process.env.ARBITRUM_API_KEY,
+            // optimism: process.env.OPTIMISM_API_KEY,
+            avalanche: process.env.AVAX_API_KEY,
+            // fantom: process.env.FANTOM_API_KEY,
+            aurora: process.env.AURORA_API_KEY,
+            moonriver: process.env.MOONRIVER_API_KEY,
+            moonbeam: process.env.MOONBEAM_API_KEY,
+        },
+        //@ts-ignore
+        customChains: [
+            {
+                network: 'polygon',
+                chainId: 137,
+                urls: {
+                    apiURL: 'https://api.polygonscan.com/',
+                    browserURL: 'https://polygonscan.com',
+                },
+            },
+        ],
     },
 };
 
