@@ -19,6 +19,7 @@ async function merge(
 
         if (!option) throw new Error(`${layer.trait_type} not found in provided specie metadata`);
         if (option.getType() !== 'Image') return layer;
+        
         //@ts-ignore
         const imageMapping = option.getValueOptions().find((valueOptions) => valueOptions.value_name === layer.value);
 
@@ -29,7 +30,7 @@ async function merge(
         return imageMapping;
     });
 
-    const colMap: string = imageMapping.find((e) => e.trait_type === 'colormap').value;
+    const colMap: string = imageMapping.find((e) => e.trait_type === 'colormap')?.value;
 
     const colors = colormap({
         colormap: colMap || 'jet',
