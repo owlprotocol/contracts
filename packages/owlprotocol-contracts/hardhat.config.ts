@@ -37,6 +37,7 @@ const config: HardhatUserConfig = {
             //@ts-ignore
             accounts: [{ balance: '1000000000000000000', privateKey: process.env.PRIV_KEY }],
         },
+        /*
         rinkeby: {
             from: process.env.PRIV_KEY,
             url: process.env.RINKEBY_URL || 'https://rinkeby.infura.io/v3/fee5821234524325b482f04d51c75878',
@@ -127,6 +128,7 @@ const config: HardhatUserConfig = {
         //     //@ts-ignore will not be undefined
         //     accounts: [process.env.PRIV_KEY],
         // },
+        */
     },
     //@ts-ignore
     typechain: {
