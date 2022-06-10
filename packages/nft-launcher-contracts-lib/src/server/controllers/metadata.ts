@@ -62,12 +62,14 @@ export async function getInstance(ipfsHash: string, tokenId: string) {
 
     if (specieMetadata === null) throw new BadRequest('Invalid SpecieMetadata');
 
+
     const tokenMetadata = specieMetadata.dnaToMetadata(toBN(tokenId));
 
     const mergedImg = await merge(tokenMetadata, specieMetadata, ipfsHash, {
         Canvas,
         Image,
     });
+
 
     return { attributes: tokenMetadata, image: mergedImg };
 }
