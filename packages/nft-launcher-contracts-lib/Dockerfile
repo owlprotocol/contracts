@@ -21,4 +21,7 @@ COPY --from=0 package.json .
 # RUN pnpm i --ignore-scripts
 RUN npm i
 COPY --from=0 lib lib
+
+ENV IPFS_GATEWAY=https://ipfs.io/ipfs
+EXPOSE 8000
 CMD ["npm", "run", "startServer"]
