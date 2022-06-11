@@ -3,11 +3,13 @@ const { utils } = ethers;
 const { commify, formatEther, parseUnits } = utils;
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { CrafterTransfer, CrafterTransfer__factory } from '../typechain';
+import { pick } from 'lodash'
+import { CrafterTransfer, CrafterTransfer__factory, ERC20 } from '../typechain';
 import { createERC20, createERC721, createERC1155 } from './utils';
 
 import { ERC1167Factory__factory } from '../typechain/factories/ERC1167Factory__factory';
 import { ERC1167Factory } from '../typechain/ERC1167Factory';
+import { BigNumber } from 'ethers';
 
 enum ConsumableType {
     unaffected,
@@ -48,71 +50,145 @@ describe('Crafter.sol', function () {
         [owner] = await ethers.getSigners();
     });
 
-    it('1 ERC20 -> 1 ERC20', async () => {
-        //Deploy ERC20
-        //Mints 1,000,000,000 by default
-        const [inputERC20, outputERC20] = await createERC20(2);
-        //Crafter Data
+    describe('1 ERC20 -> 1 ERC20', () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
-        const CrafterTransferData = CrafterTransferImplementation.interface.encodeFunctionData('initialize', [
-            owner.address,
-            burnAddress,
-            1,
-            [
-                {
-                    token: TokenType.erc20,
-                    consumableType: ConsumableType.burned,
-                    contractAddr: inputERC20.address,
-                    amounts: [1],
-                    tokenIds: [],
-                },
-            ],
-            //Output specific token id, output unaffected
-            [
-                {
-                    token: TokenType.erc20,
-                    consumableType: ConsumableType.unaffected,
-                    contractAddr: outputERC20.address,
-                    amounts: [1],
-                    tokenIds: [],
-                },
-            ],
-        ]);
 
-        //Predict address
-        const salt = ethers.utils.formatBytes32String('');
-        const CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
-            CrafterTransferImplementation.address,
-            salt,
-            CrafterTransferData,
-        );
+        let inputERC20: ERC20;
+        let outputERC20: ERC20;
+        let crafter: CrafterTransfer;
 
-        //Set Approval ERC20 Output
-        await outputERC20.connect(owner).approve(CrafterTransferAddress, 1);
+        let CrafterTransferAddress: string;
+        let originalInputBalance: BigNumber;
+        let originalOutputBalance: BigNumber;
 
-        //Deploy Crafter craftableAmount=1
-        //Check balances
-        //Clone deterministic
-        await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
-        const crafter = await ethers.getContractAt('CrafterTransfer', CrafterTransferAddress);
-        //Storage tests
-        //Assert transferred
-        const originalInputBalance = parseUnits('1000000000.0', 'ether');
-        const originalOutputBalance = parseUnits('1000000000.0', 'ether');
+        beforeEach(async () => {
+            //Deploy ERC20
+            //Mints 1,000,000,000 by default
+            [inputERC20, outputERC20] = await createERC20(2);
+            //Crafter Data
+            const CrafterTransferData = CrafterTransferImplementation.interface.encodeFunctionData('initialize', [
+                owner.address,
+                burnAddress,
+                1,
+                [
+                    {
+                        token: TokenType.erc20,
+                        consumableType: ConsumableType.burned,
+                        contractAddr: inputERC20.address,
+                        amounts: [1],
+                        tokenIds: [],
+                    },
+                ],
+                //Output specific token id, output unaffected
+                [
+                    {
+                        token: TokenType.erc20,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: outputERC20.address,
+                        amounts: [1],
+                        tokenIds: [],
+                    },
+                ],
+            ]);
 
-        expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance);
-        expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance.sub(1));
-        expect(await outputERC20.balanceOf(crafter.address)).to.equal(1);
+            //Predict address
+            const salt = ethers.utils.formatBytes32String('');
+            CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
+                CrafterTransferImplementation.address,
+                salt,
+                CrafterTransferData,
+            );
 
-        //Craft 1
-        await inputERC20.connect(owner).approve(CrafterTransferAddress, 1);
-        await crafter.craft(1, [[]]);
-        //Check balances
-        expect(await inputERC20.balanceOf(burnAddress)).to.equal(1);
-        expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance.sub(1));
-        expect(await inputERC20.balanceOf(crafter.address)).to.equal(0);
-        expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance);
-        expect(await outputERC20.balanceOf(crafter.address)).to.equal(0);
+            //Set Approval ERC20 Output
+            await outputERC20.connect(owner).approve(CrafterTransferAddress, 1);
+
+            //Deploy Crafter craftableAmount=1
+            //Check balances
+            //Clone deterministic
+            await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
+            crafter = (await ethers.getContractAt('CrafterTransfer', CrafterTransferAddress)) as CrafterTransfer;
+            //Assert transferred
+            originalInputBalance = parseUnits('1000000000.0', 'ether');
+            originalOutputBalance = parseUnits('1000000000.0', 'ether');
+
+            expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance);
+            expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance.sub(1));
+            expect(await outputERC20.balanceOf(crafter.address)).to.equal(1);
+            //Storage tests
+            const inputs = await crafter.getInputs();
+            const outputs = await crafter.getOutputs();
+            expect(inputs.length).to.equal(1);
+            expect(outputs.length).to.equal(1);
+            const input0 = await crafter.getInputIngredient(0);
+            const output0 = await crafter.getOutputIngredient(0);
+            expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc20,
+                consumableType: ConsumableType.burned,
+                contractAddr: inputERC20.address,
+                amounts: [BigNumber.from(1)],
+                tokenIds: [],
+            });
+            expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc20,
+                consumableType: ConsumableType.unaffected,
+                contractAddr: outputERC20.address,
+                amounts: [BigNumber.from(1)],
+                tokenIds: [],
+            });
+        });
+
+        it('craft', async () => {
+            //Craft 1
+            await inputERC20.connect(owner).approve(CrafterTransferAddress, 1);
+            await crafter.craft(1, [[]]);
+            //Check balances
+            expect(await inputERC20.balanceOf(burnAddress)).to.equal(1);
+            expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance.sub(1));
+            expect(await inputERC20.balanceOf(crafter.address)).to.equal(0);
+            expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance);
+            expect(await outputERC20.balanceOf(crafter.address)).to.equal(0);
+        });
+
+        it('withdraw', async () => {
+            //Withdraw 1
+            await crafter.withdraw(1);
+            //Check balances
+            expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance);
+            expect(await inputERC20.balanceOf(crafter.address)).to.equal(0);
+            expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance);
+            expect(await outputERC20.balanceOf(crafter.address)).to.equal(0);
+        });
+
+        it('deposit', async () => {
+            //Deposit 1
+            await outputERC20.connect(owner).approve(CrafterTransferAddress, 1);
+            await crafter.deposit(1, [[]]);
+            //Check balances
+            expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance);
+            expect(await inputERC20.balanceOf(crafter.address)).to.equal(0);
+            expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance.sub(2));
+            expect(await outputERC20.balanceOf(crafter.address)).to.equal(2);
+        });
+
+        afterEach(async () => {
+            //Storage tests - unchanged
+            const input0 = await crafter.getInputIngredient(0);
+            const output0 = await crafter.getOutputIngredient(0);
+            expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc20,
+                consumableType: ConsumableType.burned,
+                contractAddr: inputERC20.address,
+                amounts: [BigNumber.from(1)],
+                tokenIds: [],
+            });
+            expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc20,
+                consumableType: ConsumableType.unaffected,
+                contractAddr: outputERC20.address,
+                amounts: [BigNumber.from(1)],
+                tokenIds: [],
+            });
+        })
     });
 
     it('1 ERC721 -> 1 ERC721', async () => {

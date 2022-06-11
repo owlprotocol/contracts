@@ -42,7 +42,7 @@ const config: HardhatUserConfig = {
             from: process.env.PRIV_KEY,
             url: process.env.RINKEBY_URL || 'https://rinkeby.infura.io/v3/fee5821234524325b482f04d51c75878',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY, process.env.OTHER_PRIV_KEY],
+            accounts: [process.env.PRIV_KEY],
         },
         mainnet: {
             from: process.env.PRIV_KEY,
