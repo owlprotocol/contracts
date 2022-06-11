@@ -120,3 +120,11 @@ http://localhost:8000/metadata/getImage/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6
 
 **Deployed API**
 https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/15532881770934585726362572820003503218105251610
+
+
+## Docker
+```
+docker build . -t vulcanlink/nft-decoder
+docker push vulcanlink/nft-decoder
+docker run vulcanlink/nft-decoder
+```
