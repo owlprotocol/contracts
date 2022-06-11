@@ -149,34 +149,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await cryptoOwlsContr.connect(admin).setApprovalForAll(CrafterTransferAddress, true);
     await cryptoOwlsPartsContr.connect(admin).setApprovalForAll(CrafterTransferAddress, true);
 
-    console.log(await cryptoOwlsContr.ownerOf('15532881770934585726362572820003503218105251610'));
-
-    const tx = await CrafterTransferImplementation.initialize(
-        admin.address,
-        ONE_ADDRESS,
-        10,
-        [
-            {
-                token: 2,
-                consumableType: 1,
-                contractAddr: ERC1155InstanceAddress,
-                amounts: ERC1115Amounts,
-                tokenIds: ERC1155Ids,
-            },
-        ],
-        [
-            {
-                token: 1,
-                consumableType: 0,
-                contractAddr: ERC721InstanceAddress,
-                amounts: [],
-                tokenIds,
-            },
-        ],
+    console.log(
+        await cryptoOwlsContr.isApprovedForAll(admin.address, CrafterTransferAddress),
+        CrafterTransferAddress,
+        cryptoOwlsContr.address,
     );
-    await tx.wait();
 
-    // await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
+    await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
 
     console.debug({
         ERC721Instance: ERC721InstanceAddress,

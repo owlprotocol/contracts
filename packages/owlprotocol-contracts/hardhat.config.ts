@@ -37,7 +37,7 @@ const config: HardhatUserConfig = {
             //@ts-ignore
             accounts: [{ balance: '1000000000000000000', privateKey: process.env.PRIV_KEY }],
         },
-        /*
+
         rinkeby: {
             from: process.env.PRIV_KEY,
             url: process.env.RINKEBY_URL || 'https://rinkeby.infura.io/v3/fee5821234524325b482f04d51c75878',
@@ -128,7 +128,6 @@ const config: HardhatUserConfig = {
         //     //@ts-ignore will not be undefined
         //     accounts: [process.env.PRIV_KEY],
         // },
-        */
     },
     //@ts-ignore
     typechain: {
@@ -139,11 +138,11 @@ const config: HardhatUserConfig = {
         apiKey: {
             mainnet: process.env.MAINNET_API_KEY,
             polygon: process.env.POLYGON_API_KEY,
-            // binance: process.env.BINANCE_API_KEY,
-            // arbitrum: process.env.ARBITRUM_API_KEY,
-            // optimism: process.env.OPTIMISM_API_KEY,
+            bsc: process.env.BINANCE_API_KEY,
+            arbitrumOne: process.env.ARBITRUM_API_KEY,
+            optimisticEthereum: process.env.OPTIMISM_API_KEY,
             avalanche: process.env.AVAX_API_KEY,
-            // fantom: process.env.FANTOM_API_KEY,
+            opera: process.env.FANTOM_API_KEY,
             aurora: process.env.AURORA_API_KEY,
             moonriver: process.env.MOONRIVER_API_KEY,
             moonbeam: process.env.MOONBEAM_API_KEY,

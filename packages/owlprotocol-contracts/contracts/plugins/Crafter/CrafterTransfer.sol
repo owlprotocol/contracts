@@ -16,8 +16,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import './ICrafter.sol';
 import './CraftLib.sol';
 
-import 'hardhat/console.sol';
-
 /**
  * @dev Pluggable Crafting Contract.
  */
@@ -43,7 +41,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
-        // _disableInitializers();
+        _disableInitializers();
     }
 
     /**
@@ -225,7 +223,6 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
         uint256 erc721Outputs = 0;
 
         for (uint256 i = 0; i < outputs.length; i++) {
-            console.log('running');
             CraftLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == CraftLib.TokenType.erc20) {
                 //Transfer ERC20
@@ -242,7 +239,6 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
                     '_outputsERC721Ids[i] != depositAmount'
                 );
                 for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
-                    console.log('erc115', from, address(this), _outputsERC721Ids[erc721Outputs][j]);
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         from,
                         address(this),
