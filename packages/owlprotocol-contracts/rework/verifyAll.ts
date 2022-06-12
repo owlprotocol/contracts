@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const contrAddr = '0x4ee2D9cc8395f297183341acE35214E21666C71B';
+const contrAddr = '0xdBd2BaCe25998F67781aA087cEaF8f2a45B5f9B4';
 
 const etherscanExplorers = {
     mainnet: process.env.MAINNET_API_KEY,
