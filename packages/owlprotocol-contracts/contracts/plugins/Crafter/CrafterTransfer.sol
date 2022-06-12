@@ -436,10 +436,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
                     ingredient.amounts[0] * craftAmount
                 );
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
-                //Transfer ERC721, tokenIds from [craftedAmount ... craftedAmount+craftAmount] have already been transferred.
-                // NOTE - this could cause index issues when items are withdrawn from the crafter
-                // Also causes issues with check-effects, craftedAmount is already offset
-                // I'm switching this to reverse indexing based on the available ids
+                //Pop token ids from storage
                 for (uint256 j = ingredient.tokenIds.length; j > ingredient.tokenIds.length - craftAmount; j--) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         address(this),
