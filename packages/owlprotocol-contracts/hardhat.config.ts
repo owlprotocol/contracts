@@ -157,6 +157,70 @@ const config: HardhatUserConfig = {
                     browserURL: 'https://polygonscan.com',
                 },
             },
+            {
+                network: 'binance',
+                chainId: 56,
+                urls: {
+                    apiURL: 'https://api.bscscan.com/',
+                    browserURL: 'https://bscscan.com/',
+                },
+            },
+            {
+                network: 'arbitrum',
+                chainId: 42161,
+                urls: {
+                    apiURL: 'https://api.arbiscan.com/',
+                    browserURL: 'https://arbiscan.io/',
+                },
+            },
+            {
+                network: 'optimism',
+                chainId: 10,
+                urls: {
+                    apiURL: 'https://api-optimistic.etherscan.io',
+                    browserURL: 'https://optimistic.etherscan.io/',
+                },
+            },
+            {
+                network: 'avalanche',
+                chainId: 43114,
+                urls: {
+                    apiURL: 'https://api.snowtrace.io',
+                    browserURL: 'https://snowtrace.io/',
+                },
+            },
+            {
+                network: 'fantom',
+                chainId: 250,
+                urls: {
+                    apiURL: 'https://api.ftmscan.com',
+                    browserURL: 'https://ftmscan.com/',
+                },
+            },
+            {
+                network: 'aurora',
+                chainId: 13113161554,
+                urls: {
+                    apiURL: 'https://explorer.mainnet.aurora.dev/api',
+                    browserURL: 'https://aurorascan.dev/',
+                },
+            },
+            {
+                network: 'moonriver',
+                chainId: 1285,
+                urls: {
+                    apiURL: 'https://blockscout.moonriver.moonbeam.network/api',
+                    browserURL: 'https://moonriver.moonscan.io/',
+                },
+            },
+            {
+                network: 'moonbeam',
+                chainId: 1284,
+                urls: {
+                    apiURL: 'https://api-moonbeam.moonscan.io',
+                    browserURL: 'https://moonscan.io/',
+                },
+            },
         ],
     },
 };

@@ -1,4 +1,5 @@
 import { ethers } from 'hardhat';
+import { ERC1155 } from '../../typechain';
 
 // Creates + returns dummy ERC20 tokens for use in testing
 export async function createERC1155(tokens = 1) {
@@ -7,7 +8,7 @@ export async function createERC1155(tokens = 1) {
 
     const contracts = [];
     for (let i = 0; i < tokens; i++) {
-        contracts.push(FactoryERC1155.deploy(`Coin ${i}`, mintAmount));
+        contracts.push(FactoryERC1155.deploy(`Coin ${i}`, mintAmount) as Promise<ERC1155>);
     }
     const deployedContracts = await Promise.all(contracts);
     // Assert all deployed

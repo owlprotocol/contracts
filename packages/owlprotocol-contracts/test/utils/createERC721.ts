@@ -1,4 +1,5 @@
 import { ethers } from 'hardhat';
+import { ERC721 } from '../../typechain';
 
 // Creates + returns dummy ERC721 tokens for use in testing
 export async function createERC721(tokens = 1, mintAmount = 10) {
@@ -6,9 +7,9 @@ export async function createERC721(tokens = 1, mintAmount = 10) {
 
     const contracts = [];
     for (let i = 0; i < tokens; i++) {
-        contracts.push(FactoryERC721.deploy(`Collection ${i}`, `#${i}`));
+        contracts.push(FactoryERC721.deploy(`Collection ${i}`, `#${i}`) as Promise<ERC721>);
     }
-    const deployedContracts = await Promise.all(contracts);
+    const deployedContracts: ERC721[] = await Promise.all(contracts);
     // Make sure all deployed
     await Promise.all(deployedContracts.map((c) => c.deployed()));
 

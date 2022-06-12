@@ -16,6 +16,8 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import './ICrafter.sol';
 import './CraftLib.sol';
 
+import 'hardhat/console.sol';
+
 /**
  * @dev Pluggable Crafting Contract.
  */
@@ -245,7 +247,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
                         _outputsERC721Ids[erc721Outputs][j]
                     );
                     //Update ingredient, push additional ERC721 tokenId
-                    ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
+                    // ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
                 }
                 erc721Outputs += 1;
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
