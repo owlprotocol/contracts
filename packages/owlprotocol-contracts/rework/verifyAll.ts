@@ -1,11 +1,9 @@
-import config from '../hardhat.config';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { Console } from 'console';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const contrAddr = '0xDdE49F4aC07CdFa60B0559803EeE4A520c2611ED';
+const contrAddr = '0xdBd2BaCe25998F67781aA087cEaF8f2a45B5f9B4';
 
 const etherscanExplorers = {
     mainnet: process.env.MAINNET_API_KEY,
@@ -23,7 +21,6 @@ const etherscanExplorers = {
 const sourcifyExplorers = ['polygon', 'binance', 'optimism', 'avalanche', 'aurora', 'boba', 'moonriver', 'moonbeam'];
 
 (async () => {
-    let i = 0;
     for (const key in etherscanExplorers) {
         if (key === 'hardhat' || key === 'rinkeby') continue;
         let str = '';
@@ -36,14 +33,24 @@ const sourcifyExplorers = ['polygon', 'binance', 'optimism', 'avalanche', 'auror
             if (stderr) console.log(stderr);
             str += stdout;
 
-            str += (await promisify(exec)(`hh --network ${key} sourcify`)).stdout;
-            console.log(str);
-            console.log();
+            console.log(str + '\n');
         } catch (err) {
-            console.log(err);
-            console.log();
+            console.log(err + '\n');
             continue;
         }
-        i += 1;
+    }
+
+    for (let i = 0; i < sourcifyExplorers.length; i++) {
+        let str = '';
+        try {
+            const { stdout, stderr } = await promisify(exec)(`hh --network ${sourcifyExplorers[i]} sourcify`);
+            if (stderr) console.log(stderr);
+            str += stdout;
+
+            console.log(str + '\n');
+        } catch (err) {
+            console.log(err + '\n');
+            continue;
+        }
     }
 })();
