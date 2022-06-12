@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 const { utils } = ethers;
-const { commify, formatEther, parseUnits } = utils;
+const { parseUnits } = utils;
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { pick } from 'lodash';
@@ -115,6 +115,8 @@ describe('Crafter.sol', function () {
             expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance.sub(1));
             expect(await outputERC20.balanceOf(crafter.address)).to.equal(1);
             //Storage tests
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
+
             const inputs = await crafter.getInputs();
             const outputs = await crafter.getOutputs();
             expect(inputs.length).to.equal(1);
@@ -141,6 +143,8 @@ describe('Crafter.sol', function () {
             //Craft 1
             await inputERC20.connect(owner).approve(CrafterTransferAddress, 1);
             await crafter.craft(1, [[]]);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
             expect(await inputERC20.balanceOf(burnAddress)).to.equal(1);
             expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance.sub(1));
@@ -152,6 +156,8 @@ describe('Crafter.sol', function () {
         it('withdraw', async () => {
             //Withdraw 1
             await crafter.withdraw(1);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
             expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance);
             expect(await inputERC20.balanceOf(crafter.address)).to.equal(0);
@@ -163,11 +169,19 @@ describe('Crafter.sol', function () {
             //Deposit 1
             await outputERC20.connect(owner).approve(CrafterTransferAddress, 1);
             await crafter.deposit(1, [[]]);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
             //Check balances
             expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance);
             expect(await inputERC20.balanceOf(crafter.address)).to.equal(0);
             expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance.sub(2));
             expect(await outputERC20.balanceOf(crafter.address)).to.equal(2);
+
+            //Craft 1
+            await inputERC20.connect(owner).approve(CrafterTransferAddress, 1);
+            await crafter.craft(1, [[]]);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
 
         afterEach(async () => {
@@ -255,6 +269,8 @@ describe('Crafter.sol', function () {
             expect(await outputERC721.ownerOf(1)).to.equal(crafter.address);
 
             //Storage tests
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
+
             const inputs = await crafter.getInputs();
             const outputs = await crafter.getOutputs();
             expect(inputs.length).to.equal(1);
@@ -281,9 +297,30 @@ describe('Crafter.sol', function () {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
             await crafter.craft(1, [[1]]);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
             expect(await inputERC721.ownerOf(1)).to.equal(burnAddress);
             expect(await outputERC721.ownerOf(1)).to.equal(owner.address);
+
+            //Storage tests
+            const input0 = await crafter.getInputIngredient(0);
+            const output0 = await crafter.getOutputIngredient(0);
+            expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc721,
+                consumableType: ConsumableType.burned,
+                contractAddr: inputERC721.address,
+                amounts: [],
+                tokenIds: [],
+            });
+            //Empty because crafting pops token id
+            expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc721,
+                consumableType: ConsumableType.unaffected,
+                contractAddr: outputERC721.address,
+                amounts: [],
+                tokenIds: [],
+            });
         });
 
         // after(async () => {
@@ -309,17 +346,62 @@ describe('Crafter.sol', function () {
         it('withdraw', async () => {
             //Withdraw 1
             await crafter.withdraw(1);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
             expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
             expect(await outputERC721.ownerOf(1)).to.equal(owner.address);
+            //Storage tests
+            const input0 = await crafter.getInputIngredient(0);
+            const output0 = await crafter.getOutputIngredient(0);
+            expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc721,
+                consumableType: ConsumableType.burned,
+                contractAddr: inputERC721.address,
+                amounts: [],
+                tokenIds: [],
+            });
+            //Empty because withdraw pops token id
+            expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc721,
+                consumableType: ConsumableType.unaffected,
+                contractAddr: outputERC721.address,
+                amounts: [],
+                tokenIds: [],
+            });
         });
 
         it('deposit', async () => {
             //Deposit 1
             await outputERC721.connect(owner).setApprovalForAll(CrafterTransferAddress, true);
             await crafter.deposit(1, [[2]]);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
             //Check balances
             expect(await outputERC721.ownerOf(2)).to.equal(crafter.address);
+            //Storage tests
+            const input0 = await crafter.getInputIngredient(0);
+            const output0 = await crafter.getOutputIngredient(0);
+            expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc721,
+                consumableType: ConsumableType.burned,
+                contractAddr: inputERC721.address,
+                amounts: [],
+                tokenIds: [],
+            });
+            //Additional token id pushed by deposit
+            expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc721,
+                consumableType: ConsumableType.unaffected,
+                contractAddr: outputERC721.address,
+                amounts: [],
+                tokenIds: [BigNumber.from(1), BigNumber.from(2)],
+            });
+            //Craft 1
+            await inputERC721.connect(owner).setApprovalForAll(CrafterTransferAddress, true);
+            await crafter.craft(1, [[1]]);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
     });
 
@@ -396,6 +478,8 @@ describe('Crafter.sol', function () {
             expect(await outputERC1155.balanceOf(crafter.address, outputId)).to.equal(outputAmount);
 
             //Storage tests
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
+
             const inputs = await crafter.getInputs();
             const outputs = await crafter.getOutputs();
             expect(inputs.length).to.equal(1);
@@ -422,6 +506,8 @@ describe('Crafter.sol', function () {
             //Craft 1
             await inputERC1155.connect(owner).setApprovalForAll(CrafterTransferAddress, true);
             await crafter.craft(1, [[]]);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
             expect(await inputERC1155.balanceOf(burnAddress, inputId)).to.equal(inputAmount);
             expect(await inputERC1155.balanceOf(owner.address, inputId)).to.equal(ORIGINAL_AMOUNT.sub(inputAmount));
@@ -431,6 +517,8 @@ describe('Crafter.sol', function () {
         it('withdraw', async () => {
             //Withdraw 1
             await crafter.withdraw(1);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
             expect(await inputERC1155.balanceOf(owner.address, inputId)).to.equal(ORIGINAL_AMOUNT);
             expect(await inputERC1155.balanceOf(crafter.address, inputId)).to.equal(0);
@@ -442,8 +530,15 @@ describe('Crafter.sol', function () {
             //Deposit 1
             await outputERC1155.connect(owner).setApprovalForAll(CrafterTransferAddress, true);
             await crafter.deposit(1, []);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
             //Check balances
             expect(await outputERC1155.balanceOf(crafter.address, outputId)).to.equal(outputAmount.toNumber() * 2);
+            //Craft 1
+            await inputERC1155.connect(owner).setApprovalForAll(CrafterTransferAddress, true);
+            await crafter.craft(1, [[]]);
+            //Check storage
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
 
         afterEach(async () => {

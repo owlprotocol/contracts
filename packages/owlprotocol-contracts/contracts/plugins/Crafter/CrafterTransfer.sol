@@ -31,8 +31,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
     event RecipeCraft(uint256 craftedAmount, uint256 craftableAmount, address indexed user);
 
     address public burnAddress;
-    uint256 public craftableAmount;
-    uint256 public craftedAmount;
+    uint96 public craftableAmount;
 
     CraftLib.Ingredient[] private inputs;
     CraftLib.Ingredient[] private outputs;
@@ -56,7 +55,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
     function initialize(
         address _admin,
         address _burnAddress,
-        uint256 _craftableAmount,
+        uint96 _craftableAmount,
         CraftLib.Ingredient[] calldata _inputs,
         CraftLib.Ingredient[] calldata _outputs
     ) public initializer {
@@ -73,37 +72,43 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
         // NOTE - deep copies arrays
         // Inputs validations
         for (uint256 i = 0; i < _inputs.length; i++) {
-            inputs.push(_inputs[i]);
             if (_inputs[i].token == CraftLib.TokenType.erc20) {
                 require(_inputs[i].tokenIds.length == 0, 'tokenids.length != 0');
                 require(_inputs[i].amounts.length == 1, 'amounts.length != 1');
-            }
-            if (_inputs[i].token == CraftLib.TokenType.erc721) {
+            } else if (_inputs[i].token == CraftLib.TokenType.erc721) {
                 //accept all token ids as inputs
                 require(_inputs[i].tokenIds.length == 0, 'tokenids.length != 0');
                 require(_inputs[i].amounts.length == 0, 'amounts.length != 0');
-            }
-            if (_inputs[i].token == CraftLib.TokenType.erc1155) {
+            } else if (_inputs[i].token == CraftLib.TokenType.erc1155) {
                 require(_inputs[i].tokenIds.length == _inputs[i].amounts.length, 'tokenids.length != amounts.length');
             }
+            inputs.push(_inputs[i]);
         }
 
         uint256 erc721amount = 0;
 
         // Outputs validations
         for (uint256 i = 0; i < _outputs.length; i++) {
-            outputs.push(_outputs[i]);
             if (_outputs[i].token == CraftLib.TokenType.erc20) {
                 require(_outputs[i].tokenIds.length == 0, 'tokenids.length != 0');
                 require(_outputs[i].amounts.length == 1, 'amounts.length != 1');
-            }
-            if (_outputs[i].token == CraftLib.TokenType.erc721) {
+                outputs.push(_outputs[i]);
+            } else if (_outputs[i].token == CraftLib.TokenType.erc721) {
                 require(_outputs[i].tokenIds.length == _craftableAmount, 'tokenids.length != _craftableAmount');
                 require(_outputs[i].amounts.length == 0, 'amounts.length != 0');
                 erc721amount++;
-            }
-            if (_outputs[i].token == CraftLib.TokenType.erc1155) {
+                //Copy token data but set tokenIds as empty (these are filled out in the _deposit function call)
+                CraftLib.Ingredient memory x = CraftLib.Ingredient({
+                    token: CraftLib.TokenType.erc721,
+                    consumableType: _outputs[i].consumableType,
+                    contractAddr: _outputs[i].contractAddr,
+                    amounts: new uint256[](0),
+                    tokenIds: new uint256[](0)
+                });
+                outputs.push(x);
+            } else if (_outputs[i].token == CraftLib.TokenType.erc1155) {
                 require(_outputs[i].tokenIds.length == _outputs[i].amounts.length, 'tokenids.length != amounts.length');
+                outputs.push(_outputs[i]);
             }
         }
 
@@ -203,7 +208,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
      * @param depositAmount How many times the recipe should be craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
      */
-    function deposit(uint256 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
+    function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
         _deposit(depositAmount, _outputsERC721Ids, _msgSender());
     }
 
@@ -215,7 +220,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
      * @param from address to transfer tokens from
      */
     function _deposit(
-        uint256 depositAmount,
+        uint96 depositAmount,
         uint256[][] memory _outputsERC721Ids,
         address from
     ) internal {
@@ -247,7 +252,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
                         _outputsERC721Ids[erc721Outputs][j]
                     );
                     //Update ingredient, push additional ERC721 tokenId
-                    // ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
+                    ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
                 }
                 erc721Outputs += 1;
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
@@ -276,7 +281,7 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
      * @dev Used to withdraw recipe outputs. Reverse logic as deposit().
      * @param withdrawAmount How many times the craft outputs should be withdrawn
      */
-    function withdraw(uint256 withdrawAmount) external onlyOwner {
+    function withdraw(uint96 withdrawAmount) external onlyOwner {
         // Requires
         require(withdrawAmount > 0, 'withdrawAmount cannot be 0!');
         require(withdrawAmount <= craftableAmount, 'Not enough resources!');
@@ -330,14 +335,13 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function craft(uint256 craftAmount, uint256[][] calldata _inputERC721Ids) public {
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) public {
         // Requires
         require(craftAmount > 0, 'craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'Not enough resources to craft!');
 
         // Update crafting stats (check-effects)
         craftableAmount -= craftAmount;
-        craftedAmount += craftAmount;
 
         //Track ERC721 inputs idx
         uint256 erc721Inputs = 0;
@@ -461,6 +465,6 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
             }
         }
 
-        emit RecipeCraft(craftedAmount, craftableAmount, _msgSender());
+        emit RecipeCraft(craftAmount, craftableAmount, _msgSender());
     }
 }

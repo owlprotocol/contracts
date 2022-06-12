@@ -17,7 +17,7 @@ interface ICrafter {
     function initialize(
         address _admin,
         address _burnAddress,
-        uint256 _craftableAmount,
+        uint96 _craftableAmount,
         CraftLib.Ingredient[] calldata _inputs,
         CraftLib.Ingredient[] calldata _outputs
     ) external;
@@ -28,14 +28,14 @@ interface ICrafter {
      * @param depositAmount How many times the recipe should be craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
      */
-    function deposit(uint256 depositAmount, uint256[][] calldata _outputsERC721Ids) external;
+    function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) external;
 
     /**
      * @notice Must be recipe creator
      * @dev Used to withdraw recipe outputs. Reverse logic as deposit().
      * @param withdrawAmount How many times the craft outputs should be withdrawn
      */
-    function withdraw(uint256 withdrawAmount) external;
+    function withdraw(uint96 withdrawAmount) external;
 
     /**
      * @notice Craft {craftAmount}
@@ -43,5 +43,5 @@ interface ICrafter {
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function craft(uint256 craftAmount, uint256[][] calldata _inputERC721Ids) external;
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external;
 }
