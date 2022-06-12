@@ -223,6 +223,7 @@ importers:
       '@openzeppelin/contracts': ^4.4.2
       '@openzeppelin/contracts-upgradeable': ^4.6.0
       '@openzeppelin/hardhat-upgrades': ^1.17.0
+      '@owlprotocol/networks': ^1.0.0
       '@typechain/ethers-v5': ^7.2.0
       '@typechain/hardhat': ^2.3.1
       '@typechain/web3-v1': ^3.1.0
@@ -230,6 +231,7 @@ importers:
       '@types/chai-as-promised': ^7.1.4
       '@types/crypto-js': ^4.1.1
       '@types/glob': ^7.2.0
+      '@types/lodash': ^4.14.182
       '@types/mocha': ^9.1.1
       '@types/node': ^16.11.38
       '@typescript-eslint/eslint-plugin': ^4.33.0
@@ -253,6 +255,7 @@ importers:
       hardhat-deploy: ^0.11.10
       hardhat-deploy-ethers: ^0.3.0-beta.13
       lint-staged: ^11.2.6
+      lodash: ^4.17.21
       merkletreejs: ^0.2.31
       mocha: ^9.1.4
       npm-run-all: ^4.1.5
@@ -281,13 +284,15 @@ importers:
       '@openzeppelin/contracts': 4.6.0
       '@openzeppelin/contracts-upgradeable': 4.6.0
       '@openzeppelin/hardhat-upgrades': 1.18.1_a12d17a3e175b6e2c487dbfcb91e515d
+      '@owlprotocol/networks': 1.0.0
       '@typechain/ethers-v5': 7.2.0_53d3b3fdc580fa81562dc93275d55a04
-      '@typechain/hardhat': 2.3.1_hardhat@2.9.7+typechain@5.2.0
+      '@typechain/hardhat': 2.3.1_270d2c896eb8ee8d59451e0d37f80854
       '@typechain/web3-v1': 3.1.0_af3b01623be4a11a7977401fe98d47ad
       '@types/chai': 4.3.1
       '@types/chai-as-promised': 7.1.5
       '@types/crypto-js': 4.1.1
       '@types/glob': 7.2.0
+      '@types/lodash': 4.14.182
       '@types/mocha': 9.1.1
       '@types/node': 16.11.38
       '@typescript-eslint/eslint-plugin': 4.33.0_0ea2560eb4b1391729f478e990b9c54f
@@ -311,6 +316,7 @@ importers:
       hardhat-deploy: 0.11.10
       hardhat-deploy-ethers: 0.3.0-beta.13_ethers@5.6.8+hardhat@2.9.7
       lint-staged: 11.2.6
+      lodash: 4.17.21
       merkletreejs: 0.2.31
       mocha: 9.2.2
       npm-run-all: 4.1.5
@@ -1174,6 +1180,10 @@ packages:
       - supports-color
     dev: true
 
+  /@owlprotocol/networks/1.0.0:
+    resolution: {integrity: sha512-Jl9CqRO1KjEFfK1MRpDIUtIeD7eVrCl3HNcsbc3EZw8/2jFUTy6ZrA5nJkeaheHni0yItzrG/eWPLnK4rYq20Q==}
+    dev: true
+
   /@protobufjs/aspromise/1.1.2:
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
 
@@ -1373,6 +1383,19 @@ packages:
       typescript: 4.7.3
     dev: true
 
+  /@typechain/hardhat/2.3.1_270d2c896eb8ee8d59451e0d37f80854:
+    resolution: {integrity: sha512-BQV8OKQi0KAzLXCdsPO0pZBNQQ6ra8A2ucC26uFX/kquRBtJu1yEyWnVSmtr07b5hyRoJRpzUeINLnyqz4/MAw==}
+    peerDependencies:
+      hardhat: ^2.0.10
+      lodash: ^4.17.15
+      typechain: ^5.1.2
+    dependencies:
+      fs-extra: 9.1.0
+      hardhat: 2.9.7_chai@4.3.6
+      lodash: 4.17.21
+      typechain: 5.2.0_typescript@4.7.3
+    dev: true
+
   /@typechain/hardhat/2.3.1_hardhat@2.9.7+typechain@5.2.0:
     resolution: {integrity: sha512-BQV8OKQi0KAzLXCdsPO0pZBNQQ6ra8A2ucC26uFX/kquRBtJu1yEyWnVSmtr07b5hyRoJRpzUeINLnyqz4/MAw==}
     peerDependencies:
@@ -1518,6 +1541,10 @@ packages:
       '@types/abstract-leveldown': 7.2.0
       '@types/level-errors': 3.0.0
       '@types/node': 16.11.38
+    dev: true
+
+  /@types/lodash/4.14.182:
+    resolution: {integrity: sha512-/THyiqyQAP9AfARo4pF+aCGcyiQ94tX/Is2I7HofNRqoYLgN1PBoOWu2/zTA5zMxzP5EFutMtWtGAFRKUe961Q==}
     dev: true
 
   /@types/long/4.0.2:
@@ -2101,7 +2128,7 @@ packages:
   /async/2.6.2:
     resolution: {integrity: sha512-H1qVYh1MYhEEFLsP97cVKqCGo7KfCyTt6uEWqsTBr9SO84oK9Uwbyd/yCW+6rKJLHksBNUVWZDAjfS+Ccx0Bbg==}
     dependencies:
-      lodash: 4.17.20
+      lodash: 4.17.21
     dev: true
 
   /async/2.6.4:
@@ -2174,7 +2201,7 @@ packages:
       convert-source-map: 1.8.0
       debug: 2.6.9
       json5: 0.5.1
-      lodash: 4.17.20
+      lodash: 4.17.21
       minimatch: 3.1.2
       path-is-absolute: 1.0.1
       private: 0.1.8
@@ -2190,7 +2217,7 @@ packages:
       babel-types: 6.26.0
       detect-indent: 4.0.0
       jsesc: 1.3.0
-      lodash: 4.17.20
+      lodash: 4.17.21
       source-map: 0.5.7
       trim-right: 1.0.1
     dev: true
@@ -2218,7 +2245,7 @@ packages:
       babel-helper-function-name: 6.24.1
       babel-runtime: 6.26.0
       babel-types: 6.26.0
-      lodash: 4.17.20
+      lodash: 4.17.21
     dev: true
 
   /babel-helper-explode-assignable-expression/6.24.1:
@@ -2265,7 +2292,7 @@ packages:
     dependencies:
       babel-runtime: 6.26.0
       babel-types: 6.26.0
-      lodash: 4.17.20
+      lodash: 4.17.21
     dev: true
 
   /babel-helper-remap-async-to-generator/6.24.1:
@@ -2347,7 +2374,7 @@ packages:
       babel-template: 6.26.0
       babel-traverse: 6.26.0
       babel-types: 6.26.0
-      lodash: 4.17.20
+      lodash: 4.17.21
     dev: true
 
   /babel-plugin-transform-es2015-classes/6.24.1:
@@ -2559,7 +2586,7 @@ packages:
       babel-runtime: 6.26.0
       core-js: 2.6.12
       home-or-tmp: 2.0.0
-      lodash: 4.17.20
+      lodash: 4.17.21
       mkdirp: 0.5.6
       source-map-support: 0.4.18
     dev: true
@@ -2578,7 +2605,7 @@ packages:
       babel-traverse: 6.26.0
       babel-types: 6.26.0
       babylon: 6.18.0
-      lodash: 4.17.20
+      lodash: 4.17.21
     dev: true
 
   /babel-traverse/6.26.0:
@@ -2592,7 +2619,7 @@ packages:
       debug: 2.6.9
       globals: 9.18.0
       invariant: 2.2.4
-      lodash: 4.17.20
+      lodash: 4.17.21
     dev: true
 
   /babel-types/6.26.0:
@@ -2600,7 +2627,7 @@ packages:
     dependencies:
       babel-runtime: 6.26.0
       esutils: 2.0.3
-      lodash: 4.17.20
+      lodash: 4.17.21
       to-fast-properties: 1.0.3
     dev: true
 

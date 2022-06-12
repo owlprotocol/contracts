@@ -37,11 +37,12 @@ const config: HardhatUserConfig = {
             //@ts-ignore
             accounts: [{ balance: '1000000000000000000', privateKey: process.env.PRIV_KEY }],
         },
+
         rinkeby: {
             from: process.env.PRIV_KEY,
             url: process.env.RINKEBY_URL || 'https://rinkeby.infura.io/v3/fee5821234524325b482f04d51c75878',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY, process.env.OTHER_PRIV_KEY],
+            accounts: [process.env.PRIV_KEY],
         },
         mainnet: {
             from: process.env.PRIV_KEY,
@@ -134,7 +135,93 @@ const config: HardhatUserConfig = {
         target: 'ethers-v5', //All options: ethers-v5, web3-v1, truffle-v5
     },
     etherscan: {
-        apiKey: process.env.ETHERSCAN_API_KEY || '',
+        apiKey: {
+            mainnet: process.env.MAINNET_API_KEY,
+            polygon: process.env.POLYGON_API_KEY,
+            bsc: process.env.BINANCE_API_KEY,
+            arbitrumOne: process.env.ARBITRUM_API_KEY,
+            optimisticEthereum: process.env.OPTIMISM_API_KEY,
+            avalanche: process.env.AVAX_API_KEY,
+            opera: process.env.FANTOM_API_KEY,
+            aurora: process.env.AURORA_API_KEY,
+            moonriver: process.env.MOONRIVER_API_KEY,
+            moonbeam: process.env.MOONBEAM_API_KEY,
+        },
+        //@ts-ignore
+        customChains: [
+            {
+                network: 'polygon',
+                chainId: 137,
+                urls: {
+                    apiURL: 'https://api.polygonscan.com/',
+                    browserURL: 'https://polygonscan.com',
+                },
+            },
+            {
+                network: 'binance',
+                chainId: 56,
+                urls: {
+                    apiURL: 'https://api.bscscan.com/',
+                    browserURL: 'https://bscscan.com/',
+                },
+            },
+            {
+                network: 'arbitrum',
+                chainId: 42161,
+                urls: {
+                    apiURL: 'https://api.arbiscan.com/',
+                    browserURL: 'https://arbiscan.io/',
+                },
+            },
+            {
+                network: 'optimism',
+                chainId: 10,
+                urls: {
+                    apiURL: 'https://api-optimistic.etherscan.io',
+                    browserURL: 'https://optimistic.etherscan.io/',
+                },
+            },
+            {
+                network: 'avalanche',
+                chainId: 43114,
+                urls: {
+                    apiURL: 'https://api.snowtrace.io',
+                    browserURL: 'https://snowtrace.io/',
+                },
+            },
+            {
+                network: 'fantom',
+                chainId: 250,
+                urls: {
+                    apiURL: 'https://api.ftmscan.com',
+                    browserURL: 'https://ftmscan.com/',
+                },
+            },
+            {
+                network: 'aurora',
+                chainId: 13113161554,
+                urls: {
+                    apiURL: 'https://explorer.mainnet.aurora.dev/api',
+                    browserURL: 'https://aurorascan.dev/',
+                },
+            },
+            {
+                network: 'moonriver',
+                chainId: 1285,
+                urls: {
+                    apiURL: 'https://blockscout.moonriver.moonbeam.network/api',
+                    browserURL: 'https://moonriver.moonscan.io/',
+                },
+            },
+            {
+                network: 'moonbeam',
+                chainId: 1284,
+                urls: {
+                    apiURL: 'https://api-moonbeam.moonscan.io',
+                    browserURL: 'https://moonscan.io/',
+                },
+            },
+        ],
     },
 };
 

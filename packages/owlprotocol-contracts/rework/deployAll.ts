@@ -4,7 +4,7 @@ import { promisify } from 'util';
 
 (async () => {
     for (const key in config.networks) {
-        const { stdout, stderr } = await promisify(exec)(`hh deploy --network ${key} --tags ProxyFactory --reset`);
+        const { stdout, stderr } = await promisify(exec)(`hh deploy --network ${key} --tags ProxyFactory`);
         if (stderr) console.error(stderr);
         console.log(stdout);
     }

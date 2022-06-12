@@ -225,7 +225,6 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
         uint256 erc721Outputs = 0;
 
         for (uint256 i = 0; i < outputs.length; i++) {
-            console.log('running');
             CraftLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == CraftLib.TokenType.erc20) {
                 //Transfer ERC20
@@ -242,14 +241,13 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
                     '_outputsERC721Ids[i] != depositAmount'
                 );
                 for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
-                    console.log('erc115', _outputsERC721Ids[erc721Outputs][j]);
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         from,
                         address(this),
                         _outputsERC721Ids[erc721Outputs][j]
                     );
                     //Update ingredient, push additional ERC721 tokenId
-                    ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
+                    // ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
                 }
                 erc721Outputs += 1;
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
