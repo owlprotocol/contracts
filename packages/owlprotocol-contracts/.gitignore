@@ -9,9 +9,9 @@ cache
 factory
 
 # auto-generated
-src/types/ethers
-src/types/truffle
-src/types/web3
+/types/ethers
+/types/truffle
+/types/web3
 src/ethers
 src/truffle
 src/web3
