@@ -35,4 +35,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default deploy;
-deploy.tags = ['ERC721'];
+deploy.tags = ['ERC721', 'Implementation'];
+deploy.dependencies = ['ProxyFactory'];

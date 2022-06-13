@@ -35,4 +35,4 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default deploy;
-deploy.tags = ['ProxyFactory'];
+deploy.tags = ['ProxyFactory', 'Implementation'];
