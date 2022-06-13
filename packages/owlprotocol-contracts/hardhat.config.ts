@@ -34,100 +34,110 @@ const config: HardhatUserConfig = {
         hardhat: {
             from: process.env.PRIV_KEY,
             chainId: 1337,
-            //@ts-ignore
-            accounts: [{ balance: '1000000000000000000', privateKey: process.env.PRIV_KEY }],
+            accounts: [
+                //@ts-ignore
+                { balance: '1000000000000000000', privateKey: process.env.PRIV_KEY },
+                //@ts-ignore
+                { balance: '0', privateKey: process.env.PROXY_PRIV_KEY },
+            ],
         },
 
         rinkeby: {
             from: process.env.PRIV_KEY,
             url: process.env.RINKEBY_URL || 'https://rinkeby.infura.io/v3/fee5821234524325b482f04d51c75878',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         mainnet: {
             from: process.env.PRIV_KEY,
             url: process.env.MAINNET_URL || 'https://eth-mainnet.public.blastapi.io',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         polygon: {
             from: process.env.PRIV_KEY,
             url: process.env.POLYGON_URL || 'https://matic-mainnet.chainstacklabs.com',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         binance: {
             from: process.env.PRIV_KEY,
             url: process.env.BINANCE_URL || 'https://rpc-bsc.bnb48.club',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         arbitrum: {
             from: process.env.PRIV_KEY,
             url: process.env.ARBITRUM_URL || 'https://arb1.arbitrum.io/rpc',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         optimism: {
             from: process.env.PRIV_KEY,
             url: process.env.OPTIMISM_URL || 'https://mainnet.optimism.io',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         avalanche: {
             from: process.env.PRIV_KEY,
             url: process.env.AVALANCHE_URL || 'https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         fantom: {
             from: process.env.PRIV_KEY,
             url: process.env.FANTOM_URL || 'https://rpc.ankr.com/fantom',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         harmony: {
             from: process.env.PRIV_KEY,
             url: process.env.HARMONY_URL || 'https://rpc.heavenswail.one',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         aurora: {
             from: process.env.PRIV_KEY,
             url: process.env.AURORA_URL || 'https://mainnet.aurora.dev',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         boba: {
             from: process.env.PRIV_KEY,
             url: process.env.BOBA_URL || 'https://lightning-replica.boba.network',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         // huobi: {
         //     from: process.env.PRIV_KEY,
         //     url: process.env.HUOBI_URL || 'https://http-mainnet.hecochain.com',
         //     //@ts-ignore will not be undefined
-        //     accounts: [process.env.PRIV_KEY],
+        //     accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         // },
         moonriver: {
             from: process.env.PRIV_KEY,
             url: process.env.MOONRIVER_URL || 'https://moonriver.public.blastapi.io',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         moonbeam: {
             from: process.env.PRIV_KEY,
             url: process.env.MOONBEAM_URL || 'https://moonbeam.public.blastapi.io',
             //@ts-ignore will not be undefined
-            accounts: [process.env.PRIV_KEY],
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         // theta: {
         //     from: process.env.PRIV_KEY,
         //     url: process.env.THETA_URL || 'https://eth-rpc-api.thetatoken.org/rpc',
         //     //@ts-ignore will not be undefined
-        //     accounts: [process.env.PRIV_KEY],
+        //     accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         // },
+        owl: {
+            from: process.env.PRIV_KEY,
+            url: process.env.OWL_URL || 'https://blockchain.istio.owlprotocol.xyz/poa/rpc',
+            //@ts-ignore will not be undefined
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
+        },
     },
     //@ts-ignore
     typechain: {
