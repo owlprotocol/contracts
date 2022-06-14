@@ -2,7 +2,6 @@ import { ethers, web3, network } from 'hardhat';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 
-const deployerAddr = '0x6fd935c3BbbDf664b67e28B14236a66a7588D683';
 const address = '0xDdE49F4aC07CdFa60B0559803EeE4A520c2611ED';
 const nonceToDeploy = 2;
 

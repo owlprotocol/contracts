@@ -12,16 +12,21 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import './ICrafter.sol';
 import './CraftLib.sol';
 
-import 'hardhat/console.sol';
-
 /**
  * @dev Pluggable Crafting Contract.
  */
-contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable {
+contract CrafterTransfer is
+    ICrafter,
+    ERC721HolderUpgradeable,
+    ERC1155HolderUpgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
     /**********************
              Types
     **********************/
@@ -463,5 +468,11 @@ contract CrafterTransfer is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgr
         }
 
         emit RecipeCraft(craftAmount, craftableAmount, _msgSender());
+    }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 }

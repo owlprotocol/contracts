@@ -4,11 +4,17 @@ const { parseUnits } = utils;
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { pick } from 'lodash';
-import { CrafterTransfer, CrafterTransfer__factory, ERC20, ERC721, ERC1155 } from '../typechain';
-import { createERC20, createERC721, createERC1155 } from './utils';
+import {
+    CrafterTransfer,
+    CrafterTransfer__factory,
+    ERC1167Factory,
+    ERC1167Factory__factory,
+    ERC20,
+    ERC721,
+    ERC1155,
+} from '../../../typechain';
+import { createERC20, createERC721, createERC1155 } from '../../utils';
 
-import { ERC1167Factory__factory } from '../typechain/factories/ERC1167Factory__factory';
-import { ERC1167Factory } from '../typechain/ERC1167Factory';
 import { BigNumber } from 'ethers';
 
 enum ConsumableType {
@@ -92,7 +98,7 @@ describe('Crafter.sol', function () {
             ]);
 
             //Predict address
-            const salt = ethers.utils.formatBytes32String('');
+            const salt = ethers.utils.formatBytes32String('1');
             CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
                 CrafterTransferImplementation.address,
                 salt,
@@ -246,7 +252,7 @@ describe('Crafter.sol', function () {
             ]);
 
             //Predict address
-            const salt = ethers.utils.formatBytes32String('');
+            const salt = ethers.utils.formatBytes32String('1');
             CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
                 CrafterTransferImplementation.address,
                 salt,
@@ -454,7 +460,7 @@ describe('Crafter.sol', function () {
             ]);
 
             //Predict address
-            const salt = ethers.utils.formatBytes32String('');
+            const salt = ethers.utils.formatBytes32String('1');
             CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
                 CrafterTransferImplementation.address,
                 salt,
@@ -654,7 +660,7 @@ describe('Crafter.sol', function () {
             ]);
 
             //Predict address
-            const salt = ethers.utils.formatBytes32String('');
+            const salt = ethers.utils.formatBytes32String('1');
             CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
                 CrafterTransferImplementation.address,
                 salt,
