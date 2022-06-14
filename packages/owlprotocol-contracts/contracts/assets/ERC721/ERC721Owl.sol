@@ -22,10 +22,31 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         string calldata _symbol,
         string calldata baseURI_
     ) external initializer {
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+    }
+
+    function proxyInitialize(
+        address _admin,
+        string calldata _name,
+        string calldata _symbol,
+        string calldata baseURI_
+    ) external onlyInitializing {
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+    }
+
+    function __ERC721Owl_init(
+        address _admin,
+        string memory _name,
+        string memory _symbol,
+        string memory baseURI_
+    ) internal onlyInitializing {
+        __ERC721Owl_init_unchained(_admin, baseURI_);
         __ERC721_init(_name, _symbol);
         __ERC721Burnable_init();
         __AccessControl_init();
+    }
 
+    function __ERC721Owl_init_unchained(address _admin, string memory baseURI_) internal onlyInitializing {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);

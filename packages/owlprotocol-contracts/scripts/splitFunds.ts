@@ -2,7 +2,6 @@ import { ethers } from 'hardhat';
 const { utils } = ethers;
 const { formatUnits } = utils;
 
-const splitTo = '';
 (async () => {
     const [orig, proxy] = await ethers.getSigners();
     const balance = await orig.getBalance();

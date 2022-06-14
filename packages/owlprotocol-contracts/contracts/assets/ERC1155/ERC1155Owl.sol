@@ -14,11 +14,20 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         _disableInitializers();
     }
 
-    function initialize(address _admin, string calldata uri_) external initializer {
+    function initialize(address _admin, string calldata uri_) external initializer {}
+
+    function proxyInitialize(address _admin, string calldata uri_) external onlyInitializing {
+        __ERC1155Owl_init(_admin, uri_);
+    }
+
+    function __ERC1155Owl_init(address _admin, string memory uri_) internal onlyInitializing {
+        __ERC1155Owl_init_unchained(_admin);
         __ERC1155_init(uri_);
         __ERC1155Burnable_init();
         __AccessControl_init();
+    }
 
+    function __ERC1155Owl_init_unchained(address _admin) internal onlyInitializing {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
