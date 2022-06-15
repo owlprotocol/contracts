@@ -775,15 +775,17 @@ describe('Crafter.sol', function () {
         it('craft1', async () => {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterTransferV2Address, 1);
+            await input2ERC721.connect(owner).approve(CrafterTransferV2Address, 1);
             await crafter.craft(1, [[1], [1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
             //Check balances
             expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
+            expect(await input2ERC721.ownerOf(1)).to.equal(owner.address);
 
+            expect(await output2ERC721.ownerOf(3)).to.equal(owner.address);
             expect(await output2ERC721.ownerOf(1)).to.equal(crafter.address);
             expect(await output2ERC721.ownerOf(2)).to.equal(crafter.address);
-            expect(await output2ERC721.ownerOf(3)).to.equal(owner.address);
 
             expect(await outputERC721.ownerOf(4)).to.equal(owner.address);
             expect(await outputERC721.ownerOf(2)).to.equal(crafter.address);
@@ -826,18 +828,27 @@ describe('Crafter.sol', function () {
             });
         });
 
-        /* it('craft2', async () => {
+        it('craft2', async () => {
             //Craft 2
             await inputERC721.connect(owner).approve(CrafterTransferV2Address, 1);
-            await crafter.craft(1, [[1]]);
-            await crafter.craft(1, [[1]]);
+            await input2ERC721.connect(owner).approve(CrafterTransferV2Address, 1);
+            await crafter.craft(2, [[1, 2], [1, 2]]);
 
             //Check storage
-            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
             //Check balances
             expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
-            expect(await outputERC721.ownerOf(1)).to.equal(owner.address);
+            expect(await input2ERC721.ownerOf(1)).to.equal(owner.address);
+            expect(await inputERC721.ownerOf(2)).to.equal(owner.address);
+            expect(await input2ERC721.ownerOf(2)).to.equal(owner.address);
+
+            expect(await output2ERC721.ownerOf(3)).to.equal(owner.address);
+            expect(await output2ERC721.ownerOf(1)).to.equal(owner.address);
+            expect(await output2ERC721.ownerOf(2)).to.equal(crafter.address);
+
+            expect(await outputERC721.ownerOf(4)).to.equal(owner.address);
             expect(await outputERC721.ownerOf(2)).to.equal(owner.address);
+            expect(await outputERC721.ownerOf(1)).to.equal(crafter.address);
 
             //Storage tests
             const input0 = await crafter.getInputIngredient(0);
@@ -855,42 +866,45 @@ describe('Crafter.sol', function () {
                 consumableType: ConsumableType.unaffected,
                 contractAddr: outputERC721.address,
                 amounts: [],
+                tokenIds: [BigNumber.from(1)],
+            });
+
+            const input1 = await crafter.getInputIngredient(1);
+            const output1 = await crafter.getOutputIngredient(1);
+            expect(pick(input1, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc721,
+                consumableType: ConsumableType.NTime,
+                contractAddr: input2ERC721.address,
+                amounts: [BigNumber.from(3)],
                 tokenIds: [],
+            });
+            //Empty because crafting pops token id
+            expect(pick(output1, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                token: TokenType.erc721,
+                consumableType: ConsumableType.unaffected,
+                contractAddr: output2ERC721.address,
+                amounts: [],
+                tokenIds: [BigNumber.from(2)],
             });
         });
 
-        it('craft3', async () => {
-            //Craft 3
+        it('craft4', async () => {
+            //Craft 4
             await inputERC721.connect(owner).approve(CrafterTransferV2Address, 1);
-            await crafter.craft(1, [[1]]);
-            await crafter.craft(1, [[1]]);
-            await expect(crafter.craft(1, [[1]])).to.be.revertedWith('Not enough resources to craft!');
+            await input2ERC721.connect(owner).approve(CrafterTransferV2Address, 1);
+            await expect(crafter.craft(4, [[1, 2, 3, 4], [1, 2, 3, 4]])).to.be.revertedWith('Not enough resources to craft!');
 
             //Check storage
-            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
-            //Check balances
-            expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
-            expect(await outputERC721.ownerOf(1)).to.equal(owner.address);
-            expect(await outputERC721.ownerOf(2)).to.equal(owner.address);
+            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(3);
+            
+        });
 
-            //Storage tests
-            const input0 = await crafter.getInputIngredient(0);
-            const output0 = await crafter.getOutputIngredient(0);
-            expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
-                token: TokenType.erc721,
-                consumableType: ConsumableType.NTime,
-                contractAddr: inputERC721.address,
-                amounts: [BigNumber.from(2)],
-                tokenIds: [],
-            });
-            //Empty because crafting pops token id
-            expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
-                token: TokenType.erc721,
-                consumableType: ConsumableType.unaffected,
-                contractAddr: outputERC721.address,
-                amounts: [],
-                tokenIds: [],
-            });
-        });*/
+        it('Exceed ingredient 1 nUse ', async () => {
+            await inputERC721.connect(owner).approve(CrafterTransferV2Address, 1);
+            await input2ERC721.connect(owner).approve(CrafterTransferV2Address, 1);
+            await expect(crafter.craft(3, [[1, 1, 1], [1, 2, 3]])).to.be.revertedWith('Used over the limit of n');;
+
+        });
+
     });
 });
