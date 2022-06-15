@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { SpecieMetadata, validateAndGetSchema } from '../../metadata';
 import { BadRequest } from 'http-errors';
-import { writeFileSync, existsSync, readFileSync, mkdir, mkdirSync } from 'fs';
+import { writeFileSync, existsSync, readFileSync, mkdir } from 'fs';
 import path from 'path';
 import axios, { AxiosError } from 'axios';
 import { merge } from '../../images';
@@ -62,14 +62,12 @@ export async function getInstance(ipfsHash: string, tokenId: string) {
 
     if (specieMetadata === null) throw new BadRequest('Invalid SpecieMetadata');
 
-
     const tokenMetadata = specieMetadata.dnaToMetadata(toBN(tokenId));
 
     const mergedImg = await merge(tokenMetadata, specieMetadata, ipfsHash, {
         Canvas,
         Image,
     });
-
 
     return { attributes: tokenMetadata, image: mergedImg };
 }
