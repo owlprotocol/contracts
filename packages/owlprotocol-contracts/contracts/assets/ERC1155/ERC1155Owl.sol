@@ -86,6 +86,15 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         _setURI(newuri);
     }
 
+    /**
+     * @dev Defines collection-wide metadata that is URI-accessible
+     * Clients calling this function must replace the `\{id\}` substring with '/metadata.json'
+     * 
+     */
+    function contractUri() external view returns (string memory) {
+        return uri(0);
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
