@@ -91,7 +91,7 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
      * Clients calling this function must replace the `\{id\}` substring with '/metadata.json'
      * 
      */
-    function contractUri() external view returns (string memory) {
+    function contractURI() external view returns (string memory) {
         return uri(0);
     }
 
