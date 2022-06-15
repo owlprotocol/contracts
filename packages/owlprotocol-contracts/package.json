@@ -14,7 +14,7 @@
         "clean:types": "rimraf types typechain",
         "test": "npx hardhat test",
         "start": "npx hardhat run --network localhost scripts/deploy.ts",
-        "compile": "npx hardhat clean && npx hardhat compile",
+        "compile": "npx hardhat clean && npx hardhat compile && npx generate-types",
         "test:parallel": "npx hardhat test --parallel",
         "build": "npm run compile"
     },
