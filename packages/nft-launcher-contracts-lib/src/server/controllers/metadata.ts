@@ -69,12 +69,14 @@ export async function getInstance(ipfsHash: string, tokenId: string) {
         Image,
     });
 
+
     const tokenOverrides = specieMetadata.getOverride(tokenId);
 
     const finalJson = { attributes: tokenMetadata, image: mergedImg };
     if (tokenOverrides !== undefined) Object.assign(finalJson, tokenOverrides);
 
     return finalJson;
+
 }
 
 export function hitTokenCache(cachePath: string, tokenId: string): any | null {
