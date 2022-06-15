@@ -48,4 +48,8 @@ contract FactoryERC721 is ERC721 {
     function safeMint(address to, uint256 tokenId) public {
         _safeMint(to, tokenId);
     }
+
+    function exists(uint256 tokenId) external view returns (bool) {
+        return _exists(tokenId);
+    }
 }

@@ -25,4 +25,8 @@ contract FactoryERC20 is ERC20 {
         if (mintAmount == 0) mintAmount = 1_000_000_000_000_000_000_000_000_000;
         _mint(msg.sender, mintAmount);
     }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
 }
