@@ -1,7 +1,6 @@
 import { SpecieMetadata, SpecieTrait } from '../metadata';
 import { create as ipfsHttpClient } from 'ipfs-http-client';
 import { writeFileSync } from 'fs';
-import species from '../species.json';
 
 const client = ipfsHttpClient({
     url: 'https://ipfs.infura.io:5001/api/v0',
@@ -235,13 +234,22 @@ const metadata = new SpecieMetadata(
         eyeRightColor,
     ],
     true,
+    {
+        name: {
+            '15532881770934585726362572820003503218105251610': 'Kacey',
+        },
+        description: {
+            '15532881770934585726362572820003503218105251610':
+                'Kacey the CryptoOwl... A nocturnal crypto-mining, nft-gambling degenerate.',
+        },
+    },
 );
 
 writeFileSync('./src/owlMetadata.json', JSON.stringify(metadata.getJsonMetadata()));
 
 (async () => {
-    const { cid } = await client.add(JSON.stringify(species));
+    const { cid } = await client.add(JSON.stringify(metadata.getJsonMetadata()));
     console.log(cid);
 })();
 
-('QmQVLdQYar2oFZn3ZmBMQrSZTEy91V9PcoxT539Y4dVQ4i');
+('QmYsD2AYGd4DbZ44PpFnQrhYbnHGV1f22PnKoRciR73UDj');

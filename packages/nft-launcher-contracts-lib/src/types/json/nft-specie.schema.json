@@ -3,6 +3,9 @@
     "description": "Schema for a valid Specie Metadata",
     "type": "object",
     "properties": {
+        "overrides": {
+            "type": "object"
+        },
         "name": {
             "type": "string",
             "description": "Name of the item",
