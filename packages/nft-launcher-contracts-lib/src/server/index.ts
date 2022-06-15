@@ -1,5 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express';
-import morgan from 'morgan'
+import express, { Request, Response } from 'express';
+import morgan from 'morgan';
 import { HttpError, NotFound } from 'http-errors';
 import { existsSync, mkdir } from 'fs';
 import { metadataRouter } from './routes';
@@ -27,10 +27,10 @@ app.use(async (req, res, next) => {
 
 const cacheDir = path.join(__dirname, '..', '..', '..', 'cache');
 //create cache
-if (!existsSync(cacheDir)) mkdir('./cache', () => { });
+if (!existsSync(cacheDir)) mkdir('./cache', () => {});
 
 //Error handling middleware
-app.use((err: HttpError, req: Request, res: Response, next: NextFunction) => {
+app.use((err: HttpError, req: Request, res: Response) => {
     res.status(err.status || 500);
     res.send({
         error: {

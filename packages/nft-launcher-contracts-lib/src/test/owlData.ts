@@ -1,7 +1,6 @@
 import { SpecieMetadata, SpecieTrait } from '../metadata';
 import { create as ipfsHttpClient } from 'ipfs-http-client';
 import { writeFileSync } from 'fs';
-import { json } from 'stream/consumers';
 
 const client = ipfsHttpClient({
     url: 'https://ipfs.infura.io:5001/api/v0',
@@ -244,4 +243,4 @@ writeFileSync('./src/owlMetadata.json', JSON.stringify(metadata.getJsonMetadata(
     console.log(cid);
 })();
 
-const uploadedIPFSHash = 'QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM';
+('QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM');
