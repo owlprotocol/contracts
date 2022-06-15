@@ -12,12 +12,14 @@ export interface Metadata {
 }
 class SpecieMetadata {
     //order in this array matter; earlier traits function as lower layers in image generation
+    private overrides: Record<string, Record<string, string>> | undefined;
     private traits: SpecieTrait[];
     private maxBitSize: number;
 
-    constructor(traits: SpecieTrait[], includeColorMap?: boolean) {
+    constructor(traits: SpecieTrait[], includeColorMap?: boolean, overrides?: Record<string, Record<string, string>>) {
         if (includeColorMap) traits.push(colorMap);
 
+        this.overrides = overrides;
         this.traits = traits;
         this.maxBitSize = traits.reduce((total, trait) => total + trait.getBitSize(), 0);
     }
@@ -25,10 +27,12 @@ class SpecieMetadata {
     getJsonMetadata() {
         const jsonTraits = this.traits.map((trait) => trait.getJsonFormat());
 
-        return {
+        const asJson = {
             traits: jsonTraits,
             maxBitSize: this.maxBitSize,
         };
+        if (this.overrides !== undefined) Object.assign(asJson, { overrides: this.overrides });
+        return asJson;
     }
 
     getSpecieMetadata(): SpecieTrait[] {
@@ -63,9 +67,7 @@ class SpecieMetadata {
         let pos = 0;
 
         for (let i = 0; i < bitsList.length; i++) {
-            let bits;
-
-            bits = bin.substring(bin.length - pos, bin.length - pos - bitsList[i]);
+            const bits = bin.substring(bin.length - pos, bin.length - pos - bitsList[i]);
 
             const currTrait = this.traits[i];
             const options = currTrait.getValueOptions();
@@ -113,6 +115,20 @@ class SpecieMetadata {
 
         return bn(parseInt(finalBin, 2));
     }
+
+    getOverride(dna: string) {
+        if (this.overrides === undefined) return undefined;
+        //@ts-ignore
+        const extraOverrides: Record<string, string> = {};
+        for (const key in this.overrides) {
+            if (this.overrides[key][dna] !== undefined) extraOverrides[key] = this.overrides[key][dna];
+        }
+        return extraOverrides;
+    }
+
+    getOverrides() {
+        return this.overrides;
+    }
 }
 
 export function bn(i: number) {
@@ -128,11 +144,14 @@ export function validateSchema(object: any): boolean {
 
 export function validateAndGetSchema(object: any): SpecieMetadata {
     validateSchema(object); // errors will be thrown in validateSchema()
+    console.log(object.overrides);
     return new SpecieMetadata(
         object.traits.map((trait: any) => {
             const { trait_type, type, value_options, display_type, max_value, description } = trait;
             return new SpecieTrait(trait_type, type, value_options, display_type, max_value, description);
         }),
+        undefined,
+        object.overrides,
     );
 }
 export class InvalidDnaError extends Error {
