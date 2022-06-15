@@ -81,8 +81,10 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
             } else if (_inputs[i].token == CraftLib.TokenType.erc721) {
                 //accept all token ids as inputs
                 require(_inputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
-                require(_inputs[i].amounts.length == 1, 'amounts.length != 0');
-                nUse[i] = _inputs[i].amounts[0];
+                require(_inputs[i].amounts.length == 1 || _inputs[i].amounts.length == 0, 'amounts.length != 1 or 0'); //modified to support NTime
+                if (_inputs[i].amounts.length == 1) {
+                    nUse[i] = _inputs[i].amounts[0];
+                }
             } else if (_inputs[i].token == CraftLib.TokenType.erc1155) {
                 require(_inputs[i].tokenIds.length == _inputs[i].amounts.length, 'tokenids.length != amounts.length');
             }
