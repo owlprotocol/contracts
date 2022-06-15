@@ -36,7 +36,7 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
     CraftLib.Ingredient[] private inputs;
     CraftLib.Ingredient[] private outputs;
 
-    mapping(uint256 => uint256) nUse; //maps tokenID to nUSE (max count of each token ID) which remains constant
+    mapping(uint256 => uint256) nUse; //maps ingredient to nUSE (max count grabbed from amount[0]
     mapping(address => mapping(uint256 => uint256)) usedERC721Inputs; //maps an address to a certain tokenId to nUsed which we increment
 
     /**********************
@@ -78,14 +78,11 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
             if (_inputs[i].token == CraftLib.TokenType.erc20) {
                 require(_inputs[i].tokenIds.length == 0, 'tokenids.length != 0');
                 require(_inputs[i].amounts.length == 1, 'amounts.length != 1');
-            for (uint j = 0; j < _inputs[i].tokenIds.length; j++) {
-                nUse[inputs[i].tokenIds[j]] = inputs[i].amounts[j];
-            }
-
             } else if (_inputs[i].token == CraftLib.TokenType.erc721) {
                 //accept all token ids as inputs
-                require(_inputs[i].tokenIds.length == 0, 'tokenids.length != 0');
-                require(_inputs[i].amounts.length == 0, 'amounts.length != 0');
+                require(_inputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+                require(_inputs[i].amounts.length == 1, 'amounts.length != 0');
+                nUse[i] = _inputs[i].amounts[0];
             } else if (_inputs[i].token == CraftLib.TokenType.erc1155) {
                 require(_inputs[i].tokenIds.length == _inputs[i].amounts.length, 'tokenids.length != amounts.length');
             }
@@ -347,8 +344,6 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
         require(craftAmount > 0, 'craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'Not enough resources to craft!');
 
-
-
         // Update crafting stats (check-effects)
         craftableAmount -= craftAmount;
 
@@ -406,11 +401,13 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
                                 _msgSender(),
                             'User does not own token(s)!'
                         );
-                        address contractAddress = msg.sender;
-                        uint256 currTokenID = _inputERC721Ids[erc721Inputs][j];
-                        require ((usedERC721Inputs[contractAddress])[currTokenID] < nUse[currTokenID]);
-                        (usedERC721Inputs[contractAddress])[currTokenID] += 1;
+
                     }
+                    address contractAddress = msg.sender;
+                    uint256 currTokenID = _inputERC721Ids[erc721Inputs][i];
+                    console.log((usedERC721Inputs[contractAddress])[currTokenID]);
+                    require ((usedERC721Inputs[contractAddress])[currTokenID] < nUse[i], 'Used over the limit of n');
+                    (usedERC721Inputs[contractAddress])[currTokenID] += 1;
                 }
                 erc721Inputs += 1;
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
