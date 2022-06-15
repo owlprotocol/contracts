@@ -116,4 +116,8 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
     {
         return super.supportsInterface(interfaceId);
     }
+
+    function exists(uint256 tokenId) external view returns (bool) {
+        return _exists(tokenId);
+    }
 }

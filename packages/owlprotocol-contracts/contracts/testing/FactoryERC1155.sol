@@ -48,4 +48,21 @@ contract FactoryERC1155 is ERC1155 {
     ) public {
         _mint(to, tokenId, amount, new bytes(0));
     }
+
+    /**
+     * @notice Must have MINTER_ROLE
+     * @dev Allows caller to mint NFTs (safeMint)
+     * @param to address to
+     * @param ids id values
+     * @param amounts to mint
+     * @param data for hooks
+     */
+    function mintBatch(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) public {
+        _mintBatch(to, ids, amounts, data);
+    }
 }

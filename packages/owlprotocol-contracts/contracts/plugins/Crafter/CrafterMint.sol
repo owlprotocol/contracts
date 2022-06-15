@@ -8,9 +8,11 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol'
 import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol';
 
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '../../assets/ERC20/ERC20Owl.sol';
 import '../../assets/ERC721/ERC721Owl.sol';
@@ -22,18 +24,30 @@ import './CraftLib.sol';
 /**
  * @dev Pluggable Crafting Contract.
  */
-contract CrafterMint is ERC721HolderUpgradeable, OwnableUpgradeable {
-    // Events
+contract CrafterMint is
+    ICrafter,
+    ERC721HolderUpgradeable,
+    ERC1155HolderUpgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
+    /**********************
+             Types
+    **********************/
+
     event CreateRecipe(address indexed creator, CraftLib.Ingredient[] inputs, CraftLib.Ingredient[] outputs);
     event RecipeUpdate(uint256 craftableAmount);
     event RecipeCraft(uint256 craftedAmount, uint256 craftableAmount, address indexed user);
 
     address public burnAddress;
-    uint256 public craftableAmount;
-    uint256 public craftedAmount;
+    uint96 public craftableAmount;
 
-    CraftLib.Ingredient[] public inputs;
-    CraftLib.Ingredient[] public outputs;
+    CraftLib.Ingredient[] private inputs;
+    CraftLib.Ingredient[] private outputs;
+
+    /**********************
+        Initialization
+    **********************/
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -50,6 +64,7 @@ contract CrafterMint is ERC721HolderUpgradeable, OwnableUpgradeable {
     function initialize(
         address _admin,
         address _burnAddress,
+        uint96 _craftableAmount,
         CraftLib.Ingredient[] calldata _inputs,
         CraftLib.Ingredient[] calldata _outputs
     ) public initializer {
@@ -64,22 +79,211 @@ contract CrafterMint is ERC721HolderUpgradeable, OwnableUpgradeable {
         burnAddress = _burnAddress;
 
         // NOTE - deep copies arrays
-        // Inputs
+        // Inputs validations
         for (uint256 i = 0; i < _inputs.length; i++) {
+            if (_inputs[i].token == CraftLib.TokenType.erc20) {
+                require(_inputs[i].tokenIds.length == 0, 'tokenids.length != 0');
+                require(_inputs[i].amounts.length == 1, 'amounts.length != 1');
+            } else if (_inputs[i].token == CraftLib.TokenType.erc721) {
+                //accept all token ids as inputs
+                require(_inputs[i].tokenIds.length == 0, 'tokenids.length != 0');
+                require(_inputs[i].amounts.length == 0, 'amounts.length != 0');
+            } else if (_inputs[i].token == CraftLib.TokenType.erc1155) {
+                require(_inputs[i].tokenIds.length == _inputs[i].amounts.length, 'tokenids.length != amounts.length');
+            }
             inputs.push(_inputs[i]);
-            // Reject start ids
-            if (_outputs[i].token == CraftLib.TokenType.erc721)
-                require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
         }
-        // Outputs
+
+        uint256 erc721amount = 0;
+
+        // Outputs validations
         for (uint256 i = 0; i < _outputs.length; i++) {
-            outputs.push(_outputs[i]);
-            // Reject start ids
-            if (_outputs[i].token == CraftLib.TokenType.erc721)
-                require(_outputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
+            if (_outputs[i].token == CraftLib.TokenType.erc20) {
+                require(_outputs[i].tokenIds.length == 0, 'tokenids.length != 0');
+                require(_outputs[i].amounts.length == 1, 'amounts.length != 1');
+                outputs.push(_outputs[i]);
+            } else if (_outputs[i].token == CraftLib.TokenType.erc721) {
+                require(_outputs[i].tokenIds.length == _craftableAmount, 'tokenids.length != _craftableAmount');
+                require(_outputs[i].amounts.length == 0, 'amounts.length != 0');
+                erc721amount++;
+                //Copy token data but set tokenIds as empty (these are filled out in the _deposit function call)
+                CraftLib.Ingredient memory x = CraftLib.Ingredient({
+                    token: CraftLib.TokenType.erc721,
+                    consumableType: _outputs[i].consumableType,
+                    contractAddr: _outputs[i].contractAddr,
+                    amounts: new uint256[](0),
+                    tokenIds: new uint256[](0)
+                });
+                outputs.push(x);
+            } else if (_outputs[i].token == CraftLib.TokenType.erc1155) {
+                require(_outputs[i].tokenIds.length == _outputs[i].amounts.length, 'tokenids.length != amounts.length');
+                outputs.push(_outputs[i]);
+            }
         }
 
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
+
+        uint256[][] memory _outputsERC721Ids = new uint256[][](erc721amount);
+        uint256 outputERC721index = 0;
+
+        for (uint256 i = 0; i < _outputs.length; i++) {
+            if (_outputs[i].token == CraftLib.TokenType.erc721) {
+                _outputsERC721Ids[outputERC721index] = new uint256[](_craftableAmount);
+                for (uint256 j = 0; j < _craftableAmount; j++) {
+                    _outputsERC721Ids[outputERC721index][j] = _outputs[i].tokenIds[j];
+                }
+                outputERC721index++;
+            }
+        }
+
+        if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids);
+    }
+
+    /**********************
+            Getters
+    **********************/
+
+    /**
+     * @dev Returns all inputs (without `amounts` or `tokenIds`)
+     */
+    function getInputs() public view returns (CraftLib.Ingredient[] memory _inputs) {
+        return inputs;
+    }
+
+    /**
+     * @dev Returns all outputs (without `amounts` or `tokenIds`)
+     */
+    function getOutputs() public view returns (CraftLib.Ingredient[] memory _outputs) {
+        return outputs;
+    }
+
+    /**
+     * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
+     * @param index ingredient index to return details for
+     * @return token token type
+     * @return consumableType consumable type
+     * @return contractAddr token contract address
+     * @return amounts amount of each token
+     * @return tokenIds token ids
+     */
+    function getInputIngredient(uint256 index)
+        public
+        view
+        returns (
+            CraftLib.TokenType token,
+            CraftLib.ConsumableType consumableType,
+            address contractAddr,
+            uint256[] memory amounts,
+            uint256[] memory tokenIds
+        )
+    {
+        CraftLib.Ingredient storage i = inputs[index];
+
+        return (i.token, i.consumableType, i.contractAddr, i.amounts, i.tokenIds);
+    }
+
+    /**
+     * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
+     * @param index ingredient index to return details for
+     * @return token token type
+     * @return consumableType consumable type
+     * @return contractAddr token contract address
+     * @return amounts amount of each token
+     * @return tokenIds token ids
+     */
+    function getOutputIngredient(uint256 index)
+        public
+        view
+        returns (
+            CraftLib.TokenType token,
+            CraftLib.ConsumableType consumableType,
+            address contractAddr,
+            uint256[] memory amounts,
+            uint256[] memory tokenIds
+        )
+    {
+        CraftLib.Ingredient storage i = outputs[index];
+
+        return (i.token, i.consumableType, i.contractAddr, i.amounts, i.tokenIds);
+    }
+
+    /**********************
+         Interaction
+    **********************/
+
+    /**
+     * @notice Must be recipe creator. Automatically sends from `msg.sender`
+     * @dev Used to deposit recipe outputs.
+     * @param depositAmount How many times the recipe should be craftable
+     * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     */
+    function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
+        _deposit(depositAmount, _outputsERC721Ids);
+    }
+
+    /**
+     * @notice Must be recipe creator
+     * @dev Used to deposit recipe outputs
+     * @param depositAmount How many times the recipe should be craftable
+     * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     */
+    function _deposit(uint96 depositAmount, uint256[][] memory _outputsERC721Ids) internal {
+        //Requires
+        require(depositAmount > 0, 'depositAmount cannot be 0!');
+
+        uint256 erc721Outputs = 0;
+
+        for (uint256 i = 0; i < outputs.length; i++) {
+            CraftLib.Ingredient storage ingredient = outputs[i];
+            if (ingredient.token == CraftLib.TokenType.erc721) {
+                //Transfer ERC721
+                require(
+                    _outputsERC721Ids[erc721Outputs].length == depositAmount,
+                    '_outputsERC721Ids[i] != depositAmount'
+                );
+                for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
+                    require(
+                        !ERC721Owl(ingredient.contractAddr).exists(_outputsERC721Ids[erc721Outputs][j]),
+                        'tokenId already minted'
+                    );
+                    //Update ingredient, push additional ERC721 tokenId
+                    ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
+                }
+                erc721Outputs += 1;
+            }
+        }
+
+        // Increase craftableAmount (after transfers have confirmed, prevent reentry)
+        craftableAmount += depositAmount;
+        emit RecipeUpdate(craftableAmount);
+    }
+
+    /**
+     * @notice Must be recipe creator
+     * @dev Used to withdraw recipe outputs. Reverse logic as deposit().
+     * @param withdrawAmount How many times the craft outputs should be withdrawn
+     */
+    function withdraw(uint96 withdrawAmount) external onlyOwner {
+        // Requires
+        require(withdrawAmount > 0, 'withdrawAmount cannot be 0!');
+        require(withdrawAmount <= craftableAmount, 'Not enough resources!');
+
+        // Decrease craftableAmount (check-effects)
+        craftableAmount -= withdrawAmount;
+
+        for (uint256 i = 0; i < outputs.length; i++) {
+            CraftLib.Ingredient storage ingredient = outputs[i];
+            if (ingredient.token == CraftLib.TokenType.erc721) {
+                //Pop tokenIds from end of array
+                //Transfer ERC721, tokenIds from [len-withdrawAmount ... len-1] have already been transferred.
+                for (uint256 j = ingredient.tokenIds.length - withdrawAmount; j < ingredient.tokenIds.length; j++) {
+                    //Update ingredient, remove withdrawn tokenId
+                    ingredient.tokenIds.pop();
+                }
+            }
+        }
+
+        emit RecipeUpdate(craftableAmount);
     }
 
     /**
@@ -88,14 +292,13 @@ contract CrafterMint is ERC721HolderUpgradeable, OwnableUpgradeable {
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function craft(uint256 craftAmount, uint256[][] calldata _inputERC721Ids) public {
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) public {
         // Requires
         require(craftAmount > 0, 'craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'Not enough resources to craft!');
 
         // Update crafting stats (check-effects)
         craftableAmount -= craftAmount;
-        craftedAmount += craftAmount;
 
         //Track ERC721 inputs idx
         uint256 erc721Inputs = 0;
@@ -183,10 +386,10 @@ contract CrafterMint is ERC721HolderUpgradeable, OwnableUpgradeable {
         for (uint256 i = 0; i < outputs.length; i++) {
             CraftLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == CraftLib.TokenType.erc20) {
-                //Mint ERC20
+                //Transfer ERC20
                 ERC20Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.amounts[0] * craftAmount);
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
-                //Mint ERC721, tokenIds from [craftedAmount ... craftedAmount+craftAmount] have already been minted.
+                //Pop token ids from storage
                 for (uint256 j = ingredient.tokenIds.length; j > ingredient.tokenIds.length - craftAmount; j--) {
                     ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[j - 1]);
                 }
@@ -202,6 +405,12 @@ contract CrafterMint is ERC721HolderUpgradeable, OwnableUpgradeable {
             }
         }
 
-        emit RecipeCraft(craftedAmount, craftableAmount, _msgSender());
+        emit RecipeCraft(craftAmount, craftableAmount, _msgSender());
+    }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 }
