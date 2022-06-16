@@ -87,13 +87,14 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
      */
     function setURI(string calldata newuri) public onlyRole(URI_ROLE) {
         _setURI(newuri);
+        uri = newuri;
     }
 
     /**
      * @dev Defines collection-wide metadata that is URI-accessible
      * 
      */
-    function contractURI() external view returns (string memory) {
+    function contractURI() public view returns (string memory) {
         return string(abi.encodePacked(uri, '/metadata.json'));
     }
 
