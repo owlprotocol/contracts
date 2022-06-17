@@ -81,10 +81,12 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
             } else if (_inputs[i].token == CraftLib.TokenType.erc721) {
                 //accept all token ids as inputs
                 require(_inputs[i].tokenIds.length == 0, 'tokenIds.length != 0');
-                require(_inputs[i].amounts.length == 1 || _inputs[i].amounts.length == 0, 'amounts.length != 1 or 0'); //modified to support NTime
-                if (_inputs[i].amounts.length == 1) {
+
+                //modified to support NTime
+                if (_inputs[i].consumableType == CraftLib.ConsumableType.NTime) {
+                    require(_inputs[i].amounts.length == 1, 'amounts.length != 1; required for NTime ConsumableType');
                     nUse[i] = _inputs[i].amounts[0];
-                }
+                } else require(_inputs[i].amounts.length == 0, 'amounts.length != 1 or 0');
             } else if (_inputs[i].token == CraftLib.TokenType.erc1155) {
                 require(_inputs[i].tokenIds.length == _inputs[i].amounts.length, 'tokenids.length != amounts.length');
             }
@@ -256,7 +258,6 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
                         from,
                         address(this),
                         _outputsERC721Ids[erc721Outputs][j]
-
                     );
                     //Update ingredient, push additional ERC721 tokenId
                     ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
@@ -377,9 +378,10 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
                 //ERC721
                 require(_inputERC721Ids[erc721Inputs].length == craftAmount, '_inputERC721Ids[i] != craftAmount');
+                uint256[] memory currInputArr = _inputERC721Ids[erc721Inputs];
                 if (ingredient.consumableType == CraftLib.ConsumableType.burned) {
                     //Transfer ERC721
-                    for (uint256 j = 0; j < _inputERC721Ids[erc721Inputs].length; j++) {
+                    for (uint256 j = 0; j < currInputArr.length; j++) {
                         IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                             _msgSender(),
                             burnAddress,
@@ -388,26 +390,25 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
                     }
                 } else if (ingredient.consumableType == CraftLib.ConsumableType.unaffected) {
                     //Check ERC721
-                    for (uint256 j = 0; j < _inputERC721Ids[erc721Inputs].length; j++) {
+                    for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(_inputERC721Ids[erc721Inputs][j]) ==
-                                _msgSender(),
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
                             'User does not own token(s)!'
                         );
                     }
-                }
-                else if (ingredient.consumableType == CraftLib.ConsumableType.NTime) {
+                } else if (ingredient.consumableType == CraftLib.ConsumableType.NTime) {
                     //Check ERC721
-                    for (uint256 j = 0; j < _inputERC721Ids[erc721Inputs].length; j++) {
+                    for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(_inputERC721Ids[erc721Inputs][j]) ==
-                                _msgSender(),
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
                             'User does not own token(s)!'
                         );
-                        address contractAddress = inputs[i].contractAddr;
-                        uint256 currTokenID = _inputERC721Ids[erc721Inputs][j];
-                        require ((usedERC721Inputs[contractAddress])[currTokenID] < nUse[i], 'Used over the limit of n');
-                        (usedERC721Inputs[contractAddress])[currTokenID] += 1;
+                        uint256 currTokenID = currInputArr[j];
+                        require(
+                            (usedERC721Inputs[ingredient.contractAddr])[currTokenID] < nUse[i],
+                            'Used over the limit of n'
+                        );
+                        (usedERC721Inputs[ingredient.contractAddr])[currTokenID] += 1;
                     }
                 }
                 erc721Inputs += 1;
@@ -458,15 +459,12 @@ contract CrafterTransferV2 is ICrafter, ERC721HolderUpgradeable, ERC1155HolderUp
                 );
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
                 //Pop token ids from storage
-                for (uint256 j = ingredient.tokenIds.length; j > ingredient.tokenIds.length - craftAmount; j--) {
+                for (uint256 j = 0; j < craftAmount; j++) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         address(this),
                         _msgSender(),
-                        ingredient.tokenIds[j - 1]
+                        ingredient.tokenIds[ingredient.tokenIds.length - 1]
                     );
-                }
-                //Update ingredient, remove withdrawn tokenId
-                for (uint256 p = 0; p < craftAmount; p++) {
                     ingredient.tokenIds.pop();
                 }
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {

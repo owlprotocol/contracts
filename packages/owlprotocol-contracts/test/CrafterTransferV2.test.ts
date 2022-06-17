@@ -4,11 +4,16 @@ const { parseUnits } = utils;
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { pick } from 'lodash';
-import { CrafterTransferV2, CrafterTransferV2__factory, ERC20, ERC721, ERC1155 } from '../typechain';
+import {
+    CrafterTransferV2,
+    CrafterTransferV2__factory,
+    ERC20,
+    ERC721,
+    ERC1155,
+    ERC1167Factory,
+    ERC1167Factory__factory,
+} from '../typechain';
 import { createERC20, createERC721, createERC1155 } from './utils';
-
-import { ERC1167Factory__factory } from '../typechain/factories/ERC1167Factory__factory';
-import { ERC1167Factory } from '../typechain/ERC1167Factory';
 import { BigNumber } from 'ethers';
 
 enum ConsumableType {
@@ -561,10 +566,7 @@ describe('Crafter.sol', function () {
         it('craft2', async () => {
             //Craft 2
             await inputERC721.connect(owner).approve(CrafterTransferV2Address, 1);
-            console.log(await crafter.getOutputIngredient(0));
             await crafter.craft(2, [[1, 1]]);
-            console.log(await crafter.getOutputIngredient(0));
-            //await crafter.craft(1, [[1]]);
 
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
@@ -700,8 +702,6 @@ describe('Crafter.sol', function () {
             await output2ERC721.connect(owner).approve(CrafterTransferV2Address, 2);
             await output2ERC721.connect(owner).approve(CrafterTransferV2Address, 1);
 
-            console.log('string', owner.address, CrafterTransferV2Address); //
-
             //Deploy Crafter craftableAmount=3
             //Check balances
             //Clone deterministic
@@ -710,8 +710,6 @@ describe('Crafter.sol', function () {
                 salt,
                 CrafterTransferV2Data,
             );
-
-            console.log('test'); //this is where the error is. must be something with the ERC1167 factory?
 
             crafter = await (ethers.getContractAt(
                 'CrafterTransferV2',
@@ -832,7 +830,10 @@ describe('Crafter.sol', function () {
             //Craft 2
             await inputERC721.connect(owner).approve(CrafterTransferV2Address, 1);
             await input2ERC721.connect(owner).approve(CrafterTransferV2Address, 1);
-            await crafter.craft(2, [[1, 2], [1, 2]]);
+            await crafter.craft(2, [
+                [1, 2],
+                [1, 2],
+            ]);
 
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
@@ -892,20 +893,27 @@ describe('Crafter.sol', function () {
             //Craft 4
             await inputERC721.connect(owner).approve(CrafterTransferV2Address, 1);
             await input2ERC721.connect(owner).approve(CrafterTransferV2Address, 1);
-            await expect(crafter.craft(4, [[1, 2, 3, 4], [1, 2, 3, 4]])).to.be.revertedWith('Not enough resources to craft!');
+            await expect(
+                crafter.craft(4, [
+                    [1, 2, 3, 4],
+                    [1, 2, 3, 4],
+                ]),
+            ).to.be.revertedWith('Not enough resources to craft!');
 
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(3);
-            
         });
 
         it('Exceed ingredient 1 nUse ', async () => {
             await inputERC721.connect(owner).approve(CrafterTransferV2Address, 1);
             await input2ERC721.connect(owner).approve(CrafterTransferV2Address, 1);
-            await expect(crafter.craft(3, [[1, 1, 1], [1, 2, 3]])).to.be.revertedWith('Used over the limit of n');;
-
+            await expect(
+                crafter.craft(3, [
+                    [1, 1, 1],
+                    [1, 2, 3],
+                ]),
+            ).to.be.revertedWith('Used over the limit of n');
         });
-
     });
 
     describe('1 ERC20 -> 1 ERC20', () => {
@@ -963,7 +971,11 @@ describe('Crafter.sol', function () {
             //Deploy Crafter craftableAmount=1
             //Check balances
             //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterTransferV2Implementation.address, salt, CrafterTransferV2Data);
+            await ERC1167Factory.cloneDeterministic(
+                CrafterTransferV2Implementation.address,
+                salt,
+                CrafterTransferV2Data,
+            );
             crafter = (await ethers.getContractAt('CrafterTransferV2', CrafterTransferV2Address)) as CrafterTransferV2;
             //Assert transferred
             originalInputBalance = parseUnits('1000000000.0', 'ether');
@@ -1117,7 +1129,11 @@ describe('Crafter.sol', function () {
             //Deploy Crafter craftableAmount=1
             //Check balances
             //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterTransferV2Implementation.address, salt, CrafterTransferV2Data);
+            await ERC1167Factory.cloneDeterministic(
+                CrafterTransferV2Implementation.address,
+                salt,
+                CrafterTransferV2Data,
+            );
             crafter = await (ethers.getContractAt(
                 'CrafterTransferV2',
                 CrafterTransferV2Address,
@@ -1325,7 +1341,11 @@ describe('Crafter.sol', function () {
             //Deploy Crafter craftableAmount=1
             //Check balances
             //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterTransferV2Implementation.address, salt, CrafterTransferV2Data);
+            await ERC1167Factory.cloneDeterministic(
+                CrafterTransferV2Implementation.address,
+                salt,
+                CrafterTransferV2Data,
+            );
             crafter = await (ethers.getContractAt(
                 'CrafterTransferV2',
                 CrafterTransferV2Address,
@@ -1525,7 +1545,11 @@ describe('Crafter.sol', function () {
             await outputERC1155.connect(owner).setApprovalForAll(CrafterTransferV2Address, true);
 
             //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterTransferV2Implementation.address, salt, CrafterTransferV2Data);
+            await ERC1167Factory.cloneDeterministic(
+                CrafterTransferV2Implementation.address,
+                salt,
+                CrafterTransferV2Data,
+            );
             crafter = await (ethers.getContractAt(
                 'CrafterTransferV2',
                 CrafterTransferV2Address,
@@ -1649,4 +1673,3 @@ describe('Crafter.sol', function () {
         });
     });
 });
-

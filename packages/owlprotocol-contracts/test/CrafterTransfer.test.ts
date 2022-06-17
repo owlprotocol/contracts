@@ -37,7 +37,7 @@ describe('Crafter.sol', function () {
 
     before(async () => {
         // Launch Crafter + implementation
-        CrafterTransferFactory = (await ethers.getContractFactory('CrafterTransfer')) as CrafterTransfer__factory;
+        CrafterTransferFactory = (await ethers.getContractFactory('CrafterTransferV2')) as CrafterTransfer__factory;
         CrafterTransferImplementation = await CrafterTransferFactory.deploy();
 
         // Launch ERC1167 Factory
@@ -106,7 +106,7 @@ describe('Crafter.sol', function () {
             //Check balances
             //Clone deterministic
             await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
-            crafter = (await ethers.getContractAt('CrafterTransfer', CrafterTransferAddress)) as CrafterTransfer;
+            crafter = (await ethers.getContractAt('CrafterTransferV2', CrafterTransferAddress)) as CrafterTransfer;
             //Assert transferred
             originalInputBalance = parseUnits('1000000000.0', 'ether');
             originalOutputBalance = parseUnits('1000000000.0', 'ether');
@@ -261,7 +261,7 @@ describe('Crafter.sol', function () {
             //Clone deterministic
             await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
             crafter = await (ethers.getContractAt(
-                'CrafterTransfer',
+                'CrafterTransferV2',
                 CrafterTransferAddress,
             ) as Promise<CrafterTransfer>);
             //Assert transferred
@@ -469,7 +469,7 @@ describe('Crafter.sol', function () {
             //Clone deterministic
             await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
             crafter = await (ethers.getContractAt(
-                'CrafterTransfer',
+                'CrafterTransferV2',
                 CrafterTransferAddress,
             ) as Promise<CrafterTransfer>);
             //Assert transferred
@@ -669,7 +669,7 @@ describe('Crafter.sol', function () {
             //Clone deterministic
             await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
             crafter = await (ethers.getContractAt(
-                'CrafterTransfer',
+                'CrafterTransferV2',
                 CrafterTransferAddress,
             ) as Promise<CrafterTransfer>);
 
