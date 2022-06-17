@@ -4,7 +4,9 @@ import { promisify } from 'util';
 
 (async () => {
     for (const key in config.networks) {
-        const { stdout, stderr } = await promisify(exec)(`hh deploy --network ${key} --tags ERC1155`);
+        console.log('deploying on', key, '...');
+        if (key === 'hardhat' || key === 'rinkeby') continue;
+        const { stdout, stderr } = await promisify(exec)(`hh deploy --network ${key} --tags Implementation`);
         if (stderr) console.error(stderr);
         console.log(stdout);
     }
