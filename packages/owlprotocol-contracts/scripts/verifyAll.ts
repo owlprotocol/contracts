@@ -26,38 +26,38 @@ const etherscanExplorers = {
 const sourcifyExplorers = ['polygon', 'binance', 'optimism', 'avalanche', 'aurora', 'boba', 'moonriver', 'moonbeam'];
 
 (async () => {
-    // for (const key in etherscanExplorers) {
-    //     let str = '';
-    //     try {
-    //         const etherscanKey = etherscanExplorers[key as keyof typeof etherscanExplorers];
-    //         console.log(key);
-    //         for (let i = 0; i < contrAddrs.length; i++) {
-    //             console.log(contrAddrs[i]);
-    //             try {
-    //                 const { stdout, stderr } = await promisify(exec)(`hh verify --network ${key} ${contrAddrs[i]}`, {
-    //                     env: { ETHERSCAN_API_KEY: etherscanKey },
-    //                 });
-    //                 if (stderr) console.log(stderr);
-    //                 str += stdout;
+    for (const key in etherscanExplorers) {
+        let str = '';
+        try {
+            const etherscanKey = etherscanExplorers[key as keyof typeof etherscanExplorers];
+            console.log(key);
+            for (let i = 0; i < contrAddrs.length; i++) {
+                console.log(contrAddrs[i]);
+                try {
+                    const { stdout, stderr } = await promisify(exec)(`hh verify --network ${key} ${contrAddrs[i]}`, {
+                        env: { ETHERSCAN_API_KEY: etherscanKey },
+                    });
+                    if (stderr) console.log(stderr);
+                    str += stdout;
 
-    //                 console.log(str + '\n');
-    //             } catch (err) {
-    //                 console.log(err + '\n');
-    //                 continue;
-    //             }
-    //         }
-    //     } catch (err) {
-    //         console.log(err + '\n');
-    //         continue;
-    //     }
-    // }
+                    console.log(str + '\n');
+                } catch (err) {
+                    console.log(err + '\n');
+                    continue;
+                }
+            }
+        } catch (err) {
+            console.log(err + '\n');
+            continue;
+        }
+    }
 
     for (let i = 0; i < sourcifyExplorers.length; i++) {
         let str = '';
         try {
             console.log(sourcifyExplorers[i]);
             const { stdout, stderr } = await promisify(exec)(`hh --network ${sourcifyExplorers[i]} sourcify`);
-            // if (stderr) console.log(stderr);
+            if (stderr) console.log(stderr);
             str += stdout;
 
             console.log(str + '\n');
