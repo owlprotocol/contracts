@@ -1,5 +1,6 @@
 import SpecieTrait from './SpecieTrait';
 import web3 from 'web3';
+import { toBN } from 'web3-utils';
 import Ajv from 'ajv';
 import { Value, SpecieMetadataSchema, MetadataList, ValueRange } from '../types';
 import BN from 'bn.js';
@@ -13,13 +14,23 @@ export interface Metadata {
 class SpecieMetadata {
     //order in this array matter; earlier traits function as lower layers in image generation
     private overrides: Record<string, Record<string, string>> | undefined;
+    private format?: Record<string, string>;
     private traits: SpecieTrait[];
     private maxBitSize: number;
 
-    constructor(traits: SpecieTrait[], includeColorMap?: boolean, overrides?: Record<string, Record<string, string>>) {
+    constructor(
+        traits: SpecieTrait[],
+        includeColorMap?: boolean,
+        overrides?: Record<string, Record<string, string>>,
+        format?: Record<string, string>,
+    ) {
         if (includeColorMap) traits.push(colorMap);
 
+        if (traits.find((e) => e.getTraitType() === 'dna') !== undefined)
+            throw new Error('trait_type dna is reserved and cannot be used. Use another name for that trait_type');
+
         this.overrides = overrides;
+        this.format = format;
         this.traits = traits;
         this.maxBitSize = traits.reduce((total, trait) => total + trait.getBitSize(), 0);
     }
@@ -32,6 +43,10 @@ class SpecieMetadata {
             maxBitSize: this.maxBitSize,
         };
         if (this.overrides !== undefined) Object.assign(asJson, { overrides: this.overrides });
+        if (this.format !== undefined)
+            Object.assign(asJson, {
+                format: this.format,
+            });
         return asJson;
     }
 
@@ -41,9 +56,9 @@ class SpecieMetadata {
 
     generateAllInstances(): MetadataList {
         const instances: MetadataList = {};
-        for (let i = 0; bn(i).lt(bn(2).pow(bn(this.maxBitSize))); i++) {
+        for (let i = 0; toBN(i).lt(toBN(2).pow(toBN(this.maxBitSize))); i++) {
             try {
-                instances[i] = this.dnaToMetadata(bn(i));
+                instances[i] = this.dnaToMetadata(toBN(i));
             } catch (err) {
                 //ignores invalid dnas (some undefined trait(s))
                 if ((err as Error).name === 'InvalidDnaError') continue;
@@ -59,7 +74,7 @@ class SpecieMetadata {
 
     //left most bits represent top most traits in triats list
     dnaToMetadata(n: BN): Value[] {
-        if (!n.lt(bn(2).pow(bn(this.maxBitSize))) || n.lt(bn(0))) throw new Error('Dna out of metadata range');
+        if (!n.lt(toBN(2).pow(toBN(this.maxBitSize))) || n.lt(toBN(0))) throw new Error('Dna out of metadata range');
         const bin = n.toString(2, this.maxBitSize);
         const bitsList: number[] = this.traits.map((trait) => trait.getBitSize());
         const metadata: Value[] = [];
@@ -113,12 +128,11 @@ class SpecieMetadata {
             finalBin += web3.utils.padLeft(index.toString(2), trait.getBitSize());
         });
 
-        return bn(parseInt(finalBin, 2));
+        return toBN(parseInt(finalBin, 2));
     }
 
     getOverride(dna: string) {
         if (this.overrides === undefined) return undefined;
-        //@ts-ignore
         const extraOverrides: Record<string, string> = {};
         for (const key in this.overrides) {
             if (this.overrides[key][dna] !== undefined) extraOverrides[key] = this.overrides[key][dna];
@@ -129,10 +143,34 @@ class SpecieMetadata {
     getOverrides() {
         return this.overrides;
     }
-}
 
-export function bn(i: number) {
-    return new BN(i);
+    getFormat(dna: string) {
+        if (this.format === undefined) return undefined;
+        const extraFormat: Record<string, string> = {};
+        const tokenMetadata = this.dnaToMetadata(toBN(dna));
+        for (const key in this.format) {
+            let keyString = this.format[key];
+            const toFormatArr = this.format[key].match(new RegExp(/(?<=[$][{]\s*).*?(?=\s*})/gs));
+            if (toFormatArr === null) continue;
+            for (let i = 0; i < toFormatArr?.length; i++) {
+                console.log(toFormatArr[i], keyString);
+
+                if (toFormatArr[i] === 'dna') keyString = keyString.replace(`$\{${toFormatArr[i]}}`, dna);
+                else
+                    keyString = keyString.replace(
+                        `$\{${toFormatArr[i]}}`,
+                        //@ts-ignore
+                        tokenMetadata.find((e) => e.trait_type === toFormatArr[i])?.value,
+                    );
+            }
+            extraFormat[key] = keyString;
+        }
+        return extraFormat;
+    }
+
+    getFormats() {
+        return this.format;
+    }
 }
 
 export function validateSchema(object: any): boolean {
@@ -144,7 +182,6 @@ export function validateSchema(object: any): boolean {
 
 export function validateAndGetSchema(object: any): SpecieMetadata {
     validateSchema(object); // errors will be thrown in validateSchema()
-    console.log(object.overrides);
     return new SpecieMetadata(
         object.traits.map((trait: any) => {
             const { trait_type, type, value_options, display_type, max_value, description } = trait;
@@ -152,6 +189,7 @@ export function validateAndGetSchema(object: any): SpecieMetadata {
         }),
         undefined,
         object.overrides,
+        object.format,
     );
 }
 export class InvalidDnaError extends Error {
