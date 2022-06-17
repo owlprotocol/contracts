@@ -10,7 +10,8 @@ library CraftLib {
     enum ConsumableType {
         unaffected,
         burned,
-        locked
+        locked,
+        NTime
     }
 
     // Token Types
