@@ -58,7 +58,7 @@ class SpecieMetadata {
         const instances: MetadataList = {};
         for (let i = 0; toBN(i).lt(toBN(2).pow(toBN(this.maxBitSize))); i++) {
             try {
-                instances[i] = this.dnaToMetadata(toBN(i));
+                instances[i] = this.dnaToAttributes(toBN(i));
             } catch (err) {
                 //ignores invalid dnas (some undefined trait(s))
                 if ((err as Error).name === 'InvalidDnaError') continue;
@@ -73,7 +73,7 @@ class SpecieMetadata {
     }
 
     //left most bits represent top most traits in triats list
-    dnaToMetadata(n: BN): Value[] {
+    dnaToAttributes(n: BN): Value[] {
         if (!n.lt(toBN(2).pow(toBN(this.maxBitSize))) || n.lt(toBN(0))) throw new Error('Dna out of metadata range');
         const bin = n.toString(2, this.maxBitSize);
         const bitsList: number[] = this.traits.map((trait) => trait.getBitSize());
@@ -106,7 +106,7 @@ class SpecieMetadata {
         return metadata;
     }
 
-    metadataToDna(metadata: Value[]): BN {
+    attributesToDna(metadata: Value[]): BN {
         let finalBin = '';
         metadata.forEach((value: Value) => {
             const trait = this.traits.find(
@@ -131,6 +131,20 @@ class SpecieMetadata {
         return toBN(parseInt(finalBin, 2));
     }
 
+    dnaToMetadata(n: string) {
+        const tokenMetadata = this.dnaToAttributes(toBN(n));
+
+        const tokenFormats = this.getFormat(n);
+
+        const tokenOverrides = this.getOverride(n);
+
+        let finalJson = { attributes: tokenMetadata };
+        if (tokenFormats !== undefined) finalJson = { ...finalJson, ...tokenFormats };
+        if (tokenOverrides !== undefined) finalJson = { ...finalJson, ...tokenOverrides };
+
+        return finalJson;
+    }
+
     getOverride(dna: string) {
         if (this.overrides === undefined) return undefined;
         const extraOverrides: Record<string, string> = {};
@@ -147,7 +161,7 @@ class SpecieMetadata {
     getFormat(dna: string) {
         if (this.format === undefined) return undefined;
         const extraFormat: Record<string, string> = {};
-        const tokenMetadata = this.dnaToMetadata(toBN(dna));
+        const tokenMetadata = this.dnaToAttributes(toBN(dna));
         for (const key in this.format) {
             let keyString = this.format[key];
             const toFormatArr = this.format[key].match(new RegExp(/(?<=[$][{]\s*).*?(?=\s*})/gs));

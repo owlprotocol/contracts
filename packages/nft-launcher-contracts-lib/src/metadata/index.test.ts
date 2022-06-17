@@ -48,13 +48,13 @@ describe('metadata.integration', () => {
             assert.equal(metadata.getMaxBitSize(), bodyBitSize + eyeBitSize + mouthBitSize);
         });
 
-        it('dnaToMetadata', () => {
-            expect(() => metadata.dnaToMetadata(bn(7))).to.throw('Invalid Dna for this SpecieMetadata');
-            assert.deepEqual(instanceMetadata8, metadata.dnaToMetadata(bn(8)));
+        it('dnaToAttributes', () => {
+            expect(() => metadata.dnaToAttributes(bn(7))).to.throw('Invalid Dna for this SpecieMetadata');
+            assert.deepEqual(instanceMetadata8, metadata.dnaToAttributes(bn(8)));
         });
 
-        it('metadataToDna', () => {
-            assert.equal(8, metadata.metadataToDna(instanceMetadata8).toNumber());
+        it('attributesToDna', () => {
+            assert.equal(8, metadata.attributesToDna(instanceMetadata8).toNumber());
         });
     });
 
