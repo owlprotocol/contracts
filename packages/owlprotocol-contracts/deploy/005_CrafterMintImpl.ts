@@ -16,4 +16,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default deploy;
-deploy.tags = ['CrafterTransfer', 'Implementation'];
+deploy.tags = ['CrafterMintImpl', 'CrafterMint', 'Implementation'];
+deploy.dependencies = ['ProxyFactory'];

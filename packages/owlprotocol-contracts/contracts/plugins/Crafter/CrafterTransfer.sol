@@ -41,8 +41,8 @@ contract CrafterTransfer is
     CraftLib.Ingredient[] private inputs;
     CraftLib.Ingredient[] private outputs;
 
-    mapping(uint256 => uint256) nUse; //maps ingredient to nUSE (max count grabbed from amount[0]
-    mapping(address => mapping(uint256 => uint256)) usedERC721Inputs; //maps an address to a certain tokenId to nUsed which we increment
+    mapping(uint256 => uint256) nUse; //maps ingredient to nUSE (max count grabbed from amount[0])
+    mapping(address => mapping(uint256 => uint256)) usedERC721Inputs; //maps a contract address to a tokenId to nUsed which we increment
 
     /**********************
         Initialization
@@ -137,8 +137,6 @@ contract CrafterTransfer is
             }
         }
 
-        emit CreateRecipe(_msgSender(), _inputs, _outputs);
-
         uint256[][] memory _outputsERC721Ids = new uint256[][](erc721amount);
         uint256 outputERC721index = 0;
 
@@ -153,6 +151,8 @@ contract CrafterTransfer is
         }
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids, _admin);
+
+        emit CreateRecipe(_msgSender(), _inputs, _outputs);
     }
 
     /**********************

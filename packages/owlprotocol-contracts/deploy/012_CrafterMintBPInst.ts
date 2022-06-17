@@ -122,3 +122,4 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 export default deploy;
 deploy.tags = ['CrafterMint', 'BeaconProxy', 'Instance'];
+deploy.dependencies = ['Beacons', 'BeaconProxyImpl', 'CrafterMintImpl'];

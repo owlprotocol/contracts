@@ -56,4 +56,4 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 export default deploy;
 deploy.tags = ['BeaconProxy', 'Instance'];
-deploy.dependencies = ['Implementation', 'Beacons'];
+deploy.dependencies = ['Beacons', 'BeaconProxyImpl', 'ERC721Impl'];
