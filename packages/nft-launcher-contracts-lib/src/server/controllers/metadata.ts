@@ -6,7 +6,6 @@ import path from 'path';
 import axios, { AxiosError } from 'axios';
 import { merge } from '../../images';
 import { Canvas, Image } from 'canvas';
-import { toBN } from 'web3-utils';
 
 export async function getMetadata(req: Request, res: Response, next: NextFunction) {
     try {
@@ -62,21 +61,14 @@ export async function getInstance(ipfsHash: string, tokenId: string) {
 
     if (specieMetadata === null) throw new BadRequest('Invalid SpecieMetadata');
 
-    const tokenMetadata = specieMetadata.dnaToMetadata(toBN(tokenId));
+    const tokenMetadata = specieMetadata.dnaToMetadata(tokenId);
 
-    const mergedImg = await merge(tokenMetadata, specieMetadata, ipfsHash, {
+    const mergedImg = await merge(tokenMetadata.attributes, specieMetadata, ipfsHash, {
         Canvas,
         Image,
     });
 
-
-    const tokenOverrides = specieMetadata.getOverride(tokenId);
-
-    const finalJson = { attributes: tokenMetadata, image: mergedImg };
-    if (tokenOverrides !== undefined) Object.assign(finalJson, tokenOverrides);
-
-    return finalJson;
-
+    return { ...tokenMetadata, image: mergedImg };
 }
 
 export function hitTokenCache(cachePath: string, tokenId: string): any | null {
