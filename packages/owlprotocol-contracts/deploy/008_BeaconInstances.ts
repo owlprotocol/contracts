@@ -48,51 +48,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log(
         `CrafterTransfer beacon deployed to ${crafterTransferBeaconInstAddr} with ${crafterTransferBeaconTx.gasUsed} gas`,
     );
-
-    // const ERC721Impl = (await ethers.getContractAt('ERC721Owl', ERC721Addr)) as ERC721Owl;
-    // const ERC1155Impl = (await ethers.getContractAt('ERC1155Owl', ERC1155Addr)) as ERC1155Owl;
-    // const crafterTransferImpl = (await ethers.getContractAt('CrafterTransfer', crafterTransferAddr)) as CrafterTransfer;
-
-    // const ERC721Data = ERC721Impl.interface.encodeFunctionData('initialize', [
-    //     other,
-    //     'CryptoOwls',
-    //     'OWL',
-    //     'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
-    // ]);
-    // const ERC721InstanceAddress = await proxy.predictDeterministicAddress(ERC721Addr, salt, ERC721Data);
-
-    // const ERC1155Data = ERC1155Impl.interface.encodeFunctionData('initialize', [
-    //     deployer,
-    //     'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu',
-    // ]);
-    // const ERC1155InstanceAddress = await proxy.predictDeterministicAddress(ERC1155Addr, salt, ERC1155Data);
-
-    // const CrafterTransferData = crafterTransferImpl.interface.encodeFunctionData('initialize', [
-    //     other,
-    //     other,
-    //     0,
-    //     [
-    //         {
-    //             token: 2,
-    //             consumableType: 1,
-    //             contractAddr: ERC1155InstanceAddress,
-    //             amounts: ERC1115Amounts,
-    //             tokenIds: ERC1155Ids,
-    //         },
-    //     ],
-    //     [
-    //         {
-    //             token: 1,
-    //             consumableType: 0,
-    //             contractAddr: ERC721InstanceAddress,
-    //             amounts: [],
-    //             tokenIds,
-    //         },
-    //     ],
-    // ]);
-
-    // await proxy.cloneDeterministic(address, salt);
 };
 
 export default deploy;
-deploy.tags = ['BeaconProxy', 'Beacons'];
+deploy.tags = ['Beacons'];
+deploy.dependencies = ['ProxyFactory', 'BeaconImpl', 'ERC721Impl', 'ERC1155Impl', 'CrafterTransferImpl'];
