@@ -8,7 +8,7 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
 contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessControlUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
-    string private uri;
+    string private contract_uri;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -24,7 +24,7 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
 
-        uri = uri_;
+        contract_uri = uri_;
     }
 
     /**
@@ -87,7 +87,15 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
      */
     function setURI(string calldata newuri) public onlyRole(URI_ROLE) {
         _setURI(newuri);
-        uri = newuri;
+    }
+
+    /**
+     * @notice Must have URI_ROLE role!
+     * @dev Allows setting the contract uri
+     * @param newuri set the contract_uri value.
+     */
+    function setContractURI(string calldata newuri) public onlyRole(URI_ROLE) {
+        contract_uri = newuri;
     }
 
     /**
@@ -95,7 +103,7 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
      * 
      */
     function contractURI() public view returns (string memory) {
-        return string(abi.encodePacked(uri, '/metadata.json'));
+        return string(abi.encodePacked(contract_uri, '/metadata.json'));
     }
 
     function supportsInterface(bytes4 interfaceId)
