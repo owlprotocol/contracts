@@ -15,7 +15,7 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         _disableInitializers();
     }
 
-    function initialize(address _admin, string calldata uri_, string calldata contractURI_) external initializer {
+    function initialize(address _admin, string calldata uri_, string calldata newContractURI) external initializer {
         __ERC1155_init(uri_);
         __ERC1155Burnable_init();
         __AccessControl_init();
@@ -24,7 +24,7 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
 
-        contractURI_ = contractURI_;
+        contractURI_ = newContractURI;
     }
 
     /**
