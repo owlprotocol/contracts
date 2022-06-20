@@ -109,10 +109,10 @@ contract EnglishAuction is
     }
 
     function bid(uint amount, address from) external payable { //added from address to track original caller (bidder), why doesnt msg.sender work?
+        console.log("message sender:" , from);
         require(started, "not started");
         require(block.timestamp < endAt, "ended");
-        require(amount > highestBid, "value < highest");
-        console.log("message sender:" , from);
+        require(amount > highestBid, "value <= highest");
         
         SafeERC20Upgradeable.safeTransferFrom(
             acceptableToken,
