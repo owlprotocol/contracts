@@ -12,6 +12,8 @@ import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 
+import { ethers } from 'ethers';
+
 import dotenv from 'dotenv';
 dotenv.config();
 // TODO - auto doc generation
@@ -38,7 +40,10 @@ const config: HardhatUserConfig = {
                 //@ts-ignore
                 { balance: '1000000000000000000', privateKey: process.env.PRIV_KEY },
                 //@ts-ignore
-                { balance: '1000000000000000000', privateKey: process.env.PROXY_PRIV_KEY },
+                { balance: '0', privateKey: process.env.PROXY_PRIV_KEY },
+                { balance: '0', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32) },
+                { balance: '0', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(2), 32) },
+                { balance: '0', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32) },
             ],
         },
 
