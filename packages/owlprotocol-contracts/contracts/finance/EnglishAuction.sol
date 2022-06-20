@@ -13,37 +13,32 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-import "hardhat/console.sol";
+import 'hardhat/console.sol';
 
-contract EnglishAuction is
-    ERC721HolderUpgradeable,
-    ERC1155HolderUpgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable
-{
+contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     /**********************
              Types
     **********************/
     event Start();
-    event Bid(address indexed sender, uint amount);
-    event Withdraw(address indexed bidder, uint amount);
-    event End(address winner, uint amount);
+    event Bid(address indexed sender, uint256 amount);
+    event Withdraw(address indexed bidder, uint256 amount);
+    event End(address winner, uint256 amount);
 
     IERC721Upgradeable public nft;
-    uint public nftId;
+    uint256 public nftId;
     IERC20Upgradeable public acceptableToken;
 
     address payable public seller;
 
-    uint public auctionDuration;
-    uint public endAt;
+    uint256 public auctionDuration;
+    uint256 public endAt;
     bool public started;
     bool public ended;
     //IMPLEMENT RESET TIME
 
     address public highestBidder;
-    uint public highestBid;
-    mapping(address => uint) public bids;
+    uint256 public highestBid;
+    mapping(address => uint256) public bids;
 
     /**********************
         Initialization
@@ -53,7 +48,6 @@ contract EnglishAuction is
     constructor() {
         _disableInitializers();
     }
-
 
     /**
      * @dev Create auction instance
@@ -67,10 +61,10 @@ contract EnglishAuction is
     function initialize(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startingBid,
-        uint _auctionDuration
+        uint256 _startingBid,
+        uint256 _auctionDuration
     ) external initializer {
         __EnglishAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration);
     }
@@ -78,10 +72,10 @@ contract EnglishAuction is
     function proxyInitialize(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startingBid,
-        uint _auctionDuration
+        uint256 _startingBid,
+        uint256 _auctionDuration
     ) external onlyInitializing {
         __EnglishAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration);
     }
@@ -89,24 +83,23 @@ contract EnglishAuction is
     function __EnglishAuction_init(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startingBid,
-        uint _auctionDuration
+        uint256 _startingBid,
+        uint256 _auctionDuration
     ) internal onlyInitializing {
         __Ownable_init();
         _transferOwnership(seller);
         __EnglishAuction_init_unchained(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration);
-
     }
 
     function __EnglishAuction_init_unchained(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startingBid,
-        uint _auctionDuration
+        uint256 _startingBid,
+        uint256 _auctionDuration
     ) internal onlyInitializing {
         nft = IERC721Upgradeable(_nft);
         nftId = _nftId;
@@ -123,7 +116,7 @@ contract EnglishAuction is
     **********************/
 
     function start() external onlyOwner {
-        require(!started, "started");
+        require(!started, 'started');
         //require(msg.sender == seller, "not seller");
 
         nft.transferFrom(seller, address(this), nftId); //change from msg.sender to seller, why?
@@ -133,18 +126,14 @@ contract EnglishAuction is
         emit Start();
     }
 
-    function bid(uint amount, address from) external payable { //added from address to track original caller (bidder), why doesnt msg.sender work?
-        require(started, "not started");
-        require(block.timestamp < endAt, "ended");
-        require(amount > highestBid, "value < highest");
-        console.log("message sender:" , from);
+    function bid(uint256 amount, address from) external payable {
+        //added from address to track original caller (bidder), why doesnt msg.sender work?
+        console.log('message sender:', from);
+        require(started, 'not started');
+        require(block.timestamp < endAt, 'ended');
+        require(amount > highestBid, 'value <= highest');
 
-        SafeERC20Upgradeable.safeTransferFrom(
-            acceptableToken,
-            from,
-            address(this),
-            amount
-        );
+        SafeERC20Upgradeable.safeTransferFrom(acceptableToken, from, address(this), amount);
 
         if (highestBidder != address(0)) {
             bids[highestBidder] += highestBid;
@@ -156,8 +145,9 @@ contract EnglishAuction is
         emit Bid(from, amount);
     }
 
-    function withdraw(address from) external { //added from parameter as above
-        uint bal = bids[from];
+    function withdraw(address from) external {
+        //added from parameter as above
+        uint256 bal = bids[from];
         bids[from] = 0;
         payable(from).transfer(bal);
 
@@ -165,9 +155,9 @@ contract EnglishAuction is
     }
 
     function end() external onlyOwner {
-        require(started, "not started");
-        require(block.timestamp >= endAt, "not ended");
-        require(!ended, "ended");
+        require(started, 'not started');
+        require(block.timestamp >= endAt, 'not ended');
+        require(!ended, 'ended');
 
         ended = true;
         if (highestBidder != address(0)) {

@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 const { utils } = ethers;
 const { parseUnits } = utils;
 import { expect } from 'chai';
@@ -52,7 +52,7 @@ describe('EnglishAuction.sol', function () {
         let EnglishAuctionAddress: string;
         let auction: EnglishAuction;
 
-        let originalERC20Balance: Number;
+        let originalERC20Balance: number;
 
         beforeEach(async () => {
             //Deploy ERC20 and ERC721
@@ -86,19 +86,19 @@ describe('EnglishAuction.sol', function () {
             //need to look at three things now: seller, the contract, and the bidder
             //as well as two assets: the NFT, and the ERC 20 token
 
-
             //Set Approval ERC721 for sale
 
-
             await testNFT.connect(seller).approve(EnglishAuctionAddress, 1);
+            await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);
+            await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);
+            await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);
 
             // Transfer ERC20s to bidders
             await acceptableERC20Token.connect(seller).transfer(bidder1.address, 100);
             await acceptableERC20Token.connect(seller).transfer(bidder2.address, 100);
             await acceptableERC20Token.connect(seller).transfer(bidder3.address, 100);
-            let totalERC20Minted : BigNumber = parseUnits('1000000000.0');
+            const totalERC20Minted: BigNumber = parseUnits('1000000000.0');
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(300));
-
 
             //deploy auction
             //check balances
@@ -114,26 +114,38 @@ describe('EnglishAuction.sol', function () {
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(originalERC20Balance);
             expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(originalERC20Balance);
             expect(await acceptableERC20Token.balanceOf(bidder3.address)).to.equal(originalERC20Balance);
-
-            //storage tests
-
         });
 
         it('simple auction - 1 bidder', async () => {
             await auction.start();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
-            console.log("bidder 1:", bidder1.address);
+            await expect(auction.bid(1, bidder1.address)).to.be.revertedWith('value <= highest');
 
-            await auction.connect(bidder1).bid(5, bidder1.address);
+            await auction.bid(5, bidder1.address);
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
             expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(5);
+
+            await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
+            await auction.end();
         });
 
-        it('complex auction - multiple bidder', async () => {
+        it('complex auction - two bidders', async () => {
             await auction.start();
-            //await auction.bid(3);
 
+            expect(await testNFT.balanceOf(auction.address)).to.equal(1);
+            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
+
+            await auction.bid(5, bidder1.address);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(5);
+
+            await expect(auction.bid(5, bidder2.address)).to.be.revertedWith('value <= highest');
+            await auction.bid(7, bidder2.address);
+            expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(93);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(7);
+
+            //await auction.bid(3);
         });
 
         it('error: bid too low', async () => {
