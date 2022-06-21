@@ -1,0 +1,138 @@
+{
+    "address": "0xDdE49F4aC07CdFa60B0559803EeE4A520c2611ED",
+    "abi": [
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "internalType": "uint8",
+                    "name": "version",
+                    "type": "uint8"
+                }
+            ],
+            "name": "Initialized",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "internalType": "address",
+                    "name": "instance",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "address",
+                    "name": "implementation",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "bytes32",
+                    "name": "salt",
+                    "type": "bytes32"
+                }
+            ],
+            "name": "NewClone",
+            "type": "event"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "implementation",
+                    "type": "address"
+                },
+                {
+                    "internalType": "bytes",
+                    "name": "data",
+                    "type": "bytes"
+                }
+            ],
+            "name": "clone",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "instance",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "implementation",
+                    "type": "address"
+                },
+                {
+                    "internalType": "bytes32",
+                    "name": "salt",
+                    "type": "bytes32"
+                },
+                {
+                    "internalType": "bytes",
+                    "name": "data",
+                    "type": "bytes"
+                }
+            ],
+            "name": "cloneDeterministic",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "instance",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "implementation",
+                    "type": "address"
+                },
+                {
+                    "internalType": "bytes32",
+                    "name": "salt",
+                    "type": "bytes32"
+                },
+                {
+                    "internalType": "bytes",
+                    "name": "data",
+                    "type": "bytes"
+                }
+            ],
+            "name": "predictDeterministicAddress",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "predicted",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ],
+    "transactionHash": "0x123210ce43e16551457ad52d0e7d25893bc60a0039891ee4de8c1875b4125962",
+    "receipt": {
+        "to": null,
+        "from": "0x6fd935c3bbbdf664b67e28b14236a66a7588d683",
+        "contractAddress": "0xDdE49F4aC07CdFa60B0559803EeE4A520c2611ED",
+        "transactionIndex": 27,
+        "gasUsed": "488234",
+        "transactionHash": "0x123210ce43e16551457ad52d0e7d25893bc60a0039891ee4de8c1875b4125962",
+        "blockNumber": 10884674,
+        "cumulativeGasUsed": "29400980"
+    },
+    "args": [],
+    "numDeployments": 1
+}

@@ -121,5 +121,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log(`CrafterMint beacon proxy deployed to ${crafterMintBPInstAddr} with ${deployReceipt.gasUsed} gas`);
 };
 export default deploy;
-deploy.tags = ['CrafterMint', 'BeaconProxy', 'Instance'];
-deploy.dependencies = ['Beacons', 'BeaconProxyImpl', 'CrafterMintImpl'];
+// deploy.tags = ['CrafterMint', 'BeaconProxy', 'Instance'];
+// deploy.dependencies = ['CrafterMintImpl', 'BeaconProxyImpl', 'Beacons'];

@@ -11,7 +11,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployer } = await getNamedAccounts();
     if (process.env.PRIV_KEY === undefined) return;
 
-    if ((await web3.eth.getCode(address)) != '0x') return console.log(`already deployed on ${network.name}`);
+    if ((await web3.eth.getCode(address)) != '0x')
+        return console.log(`already deployed on ${network.name} as ${address}`);
 
     //burn nonces 0 - 4
     // if (nonce < nonceToDeploy) {
