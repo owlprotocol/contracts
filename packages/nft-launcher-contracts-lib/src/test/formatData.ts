@@ -263,6 +263,7 @@ const tokenIds = [
     '3012200999211091208000221002190000000000',
     '3204700997211091208000111002190000000000',
 ];
+
 const nameOverrides: Record<string, string> = {};
 tokenIds.forEach((e, i) => {
     nameOverrides[e] = `CryptoOwl #${i + 1}`;

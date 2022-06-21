@@ -9,6 +9,7 @@ import {
     ERC721Owl,
     UpgradeableBeaconInitializable,
 } from '../typechain';
+import { ERC721BeaconInstAddr, ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from './000_constants';
 
 const tokenIds = [
     '15532881770934585726362572820003503218105251610',
@@ -27,9 +28,9 @@ const ERC1115Amounts = [2, 2, 2, 1, 1, 1, 2];
 const ERC1155Ids = [0, 1, 2, 3, 4, 5, 6];
 
 const salt = ethers.utils.formatBytes32String('1');
-let ERC721BeaconAddr = '0xb57a585Fce9C830eBF8B39447A6Db5d2e2b432e5';
-let ERC1155BeaconAddr = '0xd5c881E831b038DBfadb7cbB538Dcff565d023fA';
-let crafterTransferBeaconAddr = '0xB9564d2667DEBC2D8444aC70F130cC8aC7ACb9B4';
+let ERC721BeaconAddr = ERC721BeaconInstAddr;
+let ERC1155BeaconAddr = ERC1155BeaconInstAddr;
+let crafterTransferBeaconAddr = crafterTransferBeaconInstAddr;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
