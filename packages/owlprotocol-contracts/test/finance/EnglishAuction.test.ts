@@ -92,9 +92,10 @@ describe('EnglishAuction.sol', function () {
             
             await testNFT.connect(seller).approve(EnglishAuctionAddress, 1);
             await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100); 
-            await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);  
-            await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100); 
+            await acceptableERC20Token.connect(bidder2).approve(EnglishAuctionAddress, 100);  
+            await acceptableERC20Token.connect(bidder3).approve(EnglishAuctionAddress, 100);
             
+                        
             // Transfer ERC20s to bidders
             await acceptableERC20Token.connect(seller).transfer(bidder1.address, 100);
             await acceptableERC20Token.connect(seller).transfer(bidder2.address, 100);
@@ -120,19 +121,26 @@ describe('EnglishAuction.sol', function () {
             
         });
 
+         
         it('simple auction - 1 bidder', async () => {
             await auction.start();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
-            await expect(auction.bid(1, bidder1.address)).to.be.revertedWith('value <= highest');
             
             await auction.bid(5, bidder1.address);
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
             expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(5);
             
-            await network.provider.send("evm_increaseTime", [86401]); //advance timestamp in seconds       
+            await network.provider.send("evm_increaseTime", [86401]); //advance timestamp in seconds    
+            
+            
             await auction.end();
+            
+            let totalERC20Minted : BigNumber = parseUnits('1000000000.0');
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(295));
+            expect(await testNFT.balanceOf(bidder1.address)).to.equal(1);
         });
+        
 
         it('complex auction - two bidders', async () => {
             await auction.start();
@@ -142,25 +150,97 @@ describe('EnglishAuction.sol', function () {
 
             
             await auction.bid(5, bidder1.address);
+            
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
             expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(5);
 
-            await expect(auction.bid(5, bidder2.address)).to.be.revertedWith('value <= highest');
             await auction.bid(7, bidder2.address);
             expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(93);
-            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(7);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(12);
+            
 
-            //await auction.bid(3);
+            await auction.bid(10, bidder3.address);
+            expect(await acceptableERC20Token.balanceOf(bidder3.address)).to.equal(90);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(22);
 
+
+    
+            await auction.bid(20, bidder1.address);
+            
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(75);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(42);
+            
+            
+            await network.provider.send("evm_increaseTime", [86401]); //advance timestamp in seconds  
+            
+            await auction.end();
+            let totalERC20Minted : BigNumber = parseUnits('1000000000.0');
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(280));
+            expect(await testNFT.balanceOf(bidder1.address)).to.equal(1);
+            await auction.withdraw(bidder1.address);
+            
+            await auction.withdraw(bidder2.address);
+            await auction.withdraw(bidder3.address);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(80);
+            expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(100);
+            expect(await acceptableERC20Token.balanceOf(bidder3.address)).to.equal(100);
         });
 
         it('error: bid too low', async () => {
-            //await auction.withdraw();
+            await auction.start();
+
+            expect(await testNFT.balanceOf(auction.address)).to.equal(1);
+            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
+
+            
+            await auction.bid(5, bidder1.address);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(5);
+
+            await expect(auction.bid(3, bidder2.address)).to.be.revertedWith("value <= highest");
 
         });
 
         it('error: bid after auction ends', async () => {
-            //await auction.end();
+            await auction.start();
+            expect(await testNFT.balanceOf(auction.address)).to.equal(1);
+            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
+            
+            await auction.bid(5, bidder1.address);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(5);
+            
+            await network.provider.send("evm_increaseTime", [86401]); //advance timestamp in seconds    
+               
+            await auction.end();
+            await expect(auction.bid(7, bidder2.address)).to.be.revertedWith("ended");
+
+        });
+
+        it('error: withdraw as highest bidder before ended', async () => {
+            await auction.start();
+            expect(await testNFT.balanceOf(auction.address)).to.equal(1);
+            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
+            
+            await auction.bid(5, bidder1.address);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(5);
+
+            await auction.bid(10, bidder2.address);
+            expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(90);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(15);
+
+            await expect(auction.withdraw(bidder2.address)).to.be.revertedWith("the highest bidder cannot withdraw!");
+
+            await network.provider.send("evm_increaseTime", [86401]); //advance timestamp in seconds    
+               
+            await auction.end();
+            let totalERC20Minted : BigNumber = parseUnits('1000000000.0');
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(290));
+            await auction.withdraw(bidder1.address);
+            expect(await testNFT.balanceOf(bidder2.address)).to.equal(1);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(100);
+            expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(90);
 
         });
         

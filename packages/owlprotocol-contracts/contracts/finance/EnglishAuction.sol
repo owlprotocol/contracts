@@ -40,6 +40,7 @@ contract EnglishAuction is
     bool public started;
     bool public ended;
     //IMPLEMENT RESET TIME
+    //IMPLMENT BIDS HAVE TO BE MULITPLIER LARGER THAN CURRENT HIGHEST BID
 
     address public highestBidder;
     uint public highestBid;
@@ -88,11 +89,7 @@ contract EnglishAuction is
         _transferOwnership(seller);
         //console.log('owner', owner());
     }
-    /**********************
-            Getters
-    **********************/
     
-
     /**********************
          Interaction
     **********************/
@@ -109,7 +106,6 @@ contract EnglishAuction is
     }
 
     function bid(uint amount, address from) external payable { //added from address to track original caller (bidder), why doesnt msg.sender work?
-        console.log("message sender:" , from);
         require(started, "not started");
         require(block.timestamp < endAt, "ended");
         require(amount > highestBid, "value <= highest");
@@ -120,36 +116,43 @@ contract EnglishAuction is
             address(this),
             amount
         );
+
+        highestBidder = from;
+        highestBid = amount;
         
         if (highestBidder != address(0)) {
             bids[highestBidder] += highestBid;
         }
 
-        highestBidder = from;
-        highestBid = amount;
-
         emit Bid(from, amount);
     }
 
-    function withdraw(address from) external { //added from parameter as above
-        uint bal = bids[from];
-        bids[from] = 0;
-        payable(from).transfer(bal);
+    function withdraw(address to) external { //added from parameter as above
+        if (!ended) { //the highest bidder while the auction is ongoing cannot withdraw; can only withdraw when ended
+            require(to != highestBidder, 'the highest bidder cannot withdraw!');
+        }
+        uint bal = bids[to];
+        bids[to] = 0;
 
-        emit Withdraw(from, bal);
+        acceptableToken.transfer(to, bal);
+        
+        emit Withdraw(to, bal);
     }
 
     function end() external onlyOwner { 
         require(started, "not started");
         require(block.timestamp >= endAt, "not ended");
         require(!ended, "ended");
-
+        
         ended = true;
         if (highestBidder != address(0)) {
-            nft.safeTransferFrom(address(this), highestBidder, nftId);
-            seller.transfer(highestBid);
+            nft.safeTransferFrom(address(this), highestBidder, nftId); 
+            
+            acceptableToken.transfer(seller, highestBid);
+
+            bids[highestBidder] -= highestBid; //addition
         } else {
-            nft.safeTransferFrom(address(this), seller, nftId);
+            nft.safeTransferFrom(address(this), seller, nftId); 
         }
 
         emit End(highestBidder, highestBid);
