@@ -66,15 +66,43 @@ contract CrafterTransfer is
         uint96 _craftableAmount,
         CraftLib.Ingredient[] calldata _inputs,
         CraftLib.Ingredient[] calldata _outputs
-    ) public initializer {
-        // Requires
+    ) external initializer {
+        __CrafterTransfer_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
+    }
+
+    function proxyInitialize(
+        address _admin,
+        address _burnAddress,
+        uint96 _craftableAmount,
+        CraftLib.Ingredient[] calldata _inputs,
+        CraftLib.Ingredient[] calldata _outputs
+    ) external onlyInitializing {
+        __CrafterTransfer_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
+    }
+
+    function __CrafterTransfer_init(
+        address _admin,
+        address _burnAddress,
+        uint96 _craftableAmount,
+        CraftLib.Ingredient[] calldata _inputs,
+        CraftLib.Ingredient[] calldata _outputs
+    ) internal onlyInitializing {
         require(_burnAddress != address(0), 'CrafterTransfer: burn address must not be 0');
         require(_inputs.length > 0, 'CrafterTransfer: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterTransfer: A crafting output must be given!');
 
         __Ownable_init();
         _transferOwnership(_admin);
+        __CrafterTransfer_init_unchained(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
+    }
 
+    function __CrafterTransfer_init_unchained(
+        address _admin,
+        address _burnAddress,
+        uint96 _craftableAmount,
+        CraftLib.Ingredient[] calldata _inputs,
+        CraftLib.Ingredient[] calldata _outputs
+    ) internal onlyInitializing {
         burnAddress = _burnAddress;
 
         // NOTE - deep copies arrays

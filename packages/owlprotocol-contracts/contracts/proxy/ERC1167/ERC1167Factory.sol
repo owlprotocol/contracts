@@ -34,7 +34,7 @@ contract ERC1167Factory is ContextUpgradeable {
         instance = ClonesUpgradeable.cloneDeterministic(implementation, salt);
 
         //data is optional
-        // if (data.length > 0) instance.functionCall(data, 'ERC1167Factory: Failed to call the proxy');
+        if (data.length > 0) instance.functionCall(data, 'ERC1167Factory: Failed to call the proxy');
 
         emit NewClone(instance, implementation, salt);
     }
