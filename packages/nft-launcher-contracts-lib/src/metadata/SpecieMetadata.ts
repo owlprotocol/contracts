@@ -164,21 +164,25 @@ class SpecieMetadata {
         const tokenMetadata = this.dnaToAttributes(toBN(dna));
         for (const key in this.format) {
             let keyString = this.format[key];
-            const toFormatArr = this.format[key].match(new RegExp(/(?<=[$][{]\s*).*?(?=\s*})/gs));
-            if (toFormatArr === null) continue;
-            for (let i = 0; i < toFormatArr?.length; i++) {
-                console.log(toFormatArr[i], keyString);
 
-                if (toFormatArr[i] === 'dna') keyString = keyString.replace(`$\{${toFormatArr[i]}}`, dna);
-                else
-                    keyString = keyString.replace(
-                        `$\{${toFormatArr[i]}}`,
-                        //@ts-ignore
-                        tokenMetadata.find((e) => e.trait_type === toFormatArr[i])?.value,
-                    );
+            const toFormatArr = this.format[key].match(new RegExp(/(?<=[$][{]\s*).*?(?=\s*})/gs));
+            if (toFormatArr !== null) {
+                for (let i = 0; i < toFormatArr?.length; i++) {
+                    console.log(toFormatArr[i], keyString);
+
+                    if (toFormatArr[i] === 'dna') keyString = keyString.replace(`$\{${toFormatArr[i]}}`, dna);
+                    else
+                        keyString = keyString.replace(
+                            `$\{${toFormatArr[i]}}`,
+                            //@ts-ignore
+                            tokenMetadata.find((e) => e.trait_type === toFormatArr[i])?.value,
+                        );
+                }
             }
             extraFormat[key] = keyString;
         }
+        console.log(extraFormat);
+
         return extraFormat;
     }
 
