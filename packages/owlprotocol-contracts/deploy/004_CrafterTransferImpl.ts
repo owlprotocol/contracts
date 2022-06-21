@@ -1,15 +1,17 @@
-import { web3, network } from 'hardhat';
+import { web3, ethers, network } from 'hardhat';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 
-const address = '0x9375400526B841C045BF40C799ABB8e6fAcA4148';
-const nonceToDeploy = 5;
+const address = '0x1Fd2b65F7e23abC6f69EAf5ABf8db73e5a73B73b';
+const nonceToDeploy = 16;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
     if (process.env.PRIV_KEY === undefined) return;
+    const nonce = await web3.eth.getTransactionCount(deployer);
+    const wallet = new ethers.Wallet(process.env.PRIV_KEY, ethers.provider);
 
     if ((await web3.eth.getCode(address)) != '0x')
         return console.log(`already deployed on ${network.name} as ${address}`);
