@@ -13,7 +13,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (process.env.PRIV_KEY === undefined) return;
     const wallet = new ethers.Wallet(process.env.PRIV_KEY, ethers.provider);
 
-    if ((await web3.eth.getCode(address)) != '0x') return console.log(`already deployed on ${network.name}`);
+    if ((await web3.eth.getCode(address)) != '0x')
+        return console.log(`already deployed on ${network.name} as ${address}`);
 
     // //burn 0 and 1 nonce
     if (nonce < nonceToDeploy) {

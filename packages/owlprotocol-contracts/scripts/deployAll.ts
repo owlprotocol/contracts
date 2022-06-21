@@ -6,7 +6,7 @@ import { promisify } from 'util';
     for (const key in config.networks) {
         console.log('deploying on', key, '...');
         if (key === 'hardhat' || key === 'rinkeby') continue;
-        const { stdout, stderr } = await promisify(exec)(`hh deploy --network ${key} --tags Implementation`);
+        const { stdout, stderr } = await promisify(exec)(`hh deploy --network ${key} --tags Beacons`);
         if (stderr) console.error(stderr);
         console.log(stdout);
     }

@@ -4,11 +4,17 @@ import { ethers } from 'hardhat';
 import { BeaconProxyInitializable, ERC1167Factory, ERC721Owl, UpgradeableBeaconInitializable } from '../typechain';
 
 const salt = ethers.utils.formatBytes32String('1');
+// const proxyAddr = '0xDdE49F4aC07CdFa60B0559803EeE4A520c2611ED';
+// const ERC721Addr = '0x4ee2D9cc8395f297183341acE35214E21666C71B';
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
-    const { other } = await getNamedAccounts();
+
     if (process.env.PRIV_KEY === undefined) return;
+
+    const { other } = await getNamedAccounts();
+
+    const otherSigner = (await ethers.getSigners())[1];
 
     const { address: proxyAddr } = await deployments.get('ERC1167Factory');
     const { address: beaconProxyAddr } = await deployments.get('BeaconProxyInitializable');
@@ -27,7 +33,9 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const ERC721BeaconData = beacon.interface.encodeFunctionData('initialize', [other, ERC721Addr]);
 
-    const ERC721BeaconInstAddr = await proxy.predictDeterministicAddress(beaconAddr, salt, ERC721BeaconData);
+    const ERC721BeaconInstAddr = await proxy
+        .connect(otherSigner)
+        .predictDeterministicAddress(beaconAddr, salt, ERC721BeaconData);
 
     const ERC721Impl = (await ethers.getContractAt('ERC721Owl', ERC721Addr)) as ERC721Owl;
 
@@ -45,9 +53,11 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         ERC721Data,
     ]);
 
-    const ERC721BPInstAddr = await proxy.predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
+    const ERC721BPInstAddr = await proxy
+        .connect(otherSigner)
+        .predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
 
-    const deployTx = await proxy.cloneDeterministic(beaconProxyAddr, salt, beaconProxyData);
+    const deployTx = await proxy.connect(otherSigner).cloneDeterministic(beaconProxyAddr, salt, beaconProxyData);
     const receipt = await deployTx.wait();
 
     console.log();
@@ -55,5 +65,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default deploy;
-deploy.tags = ['BeaconProxy', 'Instance'];
-deploy.dependencies = ['Beacons', 'BeaconProxyImpl', 'ERC721Impl'];
+deploy.tags = ['ERC721Inst', 'ERC721', 'BeaconProxy', 'Instance'];
+deploy.dependencies = ['ERC721Impl', 'BeaconProxyImpl', 'Beacons'];

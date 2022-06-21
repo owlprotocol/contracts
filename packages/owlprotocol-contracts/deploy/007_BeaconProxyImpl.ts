@@ -11,7 +11,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployer } = await getNamedAccounts();
     if (process.env.PRIV_KEY === undefined) return;
 
-    if ((await web3.eth.getCode(address)) != '0x') return console.log(`already deployed on ${network.name}`);
+    if ((await web3.eth.getCode(address)) != '0x')
+        return console.log(`already deployed on ${network.name} at ${address}`);
 
     //burn nonces 0 - 7
     // if (nonce < nonceToDeploy) {
@@ -23,7 +24,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     //         await sendTx.wait();
     //     }
     // }
-    if ((await web3.eth.getTransactionCount(deployer)) != nonceToDeploy) return console.log('wrong nonce');
+    // if ((await web3.eth.getTransactionCount(deployer)) != nonceToDeploy) return console.log('wrong nonce');
 
     await deploy('BeaconProxyInitializable', {
         from: deployer,

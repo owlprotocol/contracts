@@ -38,7 +38,7 @@ const config: HardhatUserConfig = {
                 //@ts-ignore
                 { balance: '1000000000000000000', privateKey: process.env.PRIV_KEY },
                 //@ts-ignore
-                { balance: '0', privateKey: process.env.PROXY_PRIV_KEY },
+                { balance: '1000000000000000000', privateKey: process.env.PROXY_PRIV_KEY },
             ],
         },
 
