@@ -1,4 +1,5 @@
-import { ethers } from 'hardhat';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ethers, network } from 'hardhat';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import {
@@ -9,26 +10,16 @@ import {
     ERC721Owl,
     UpgradeableBeaconInitializable,
 } from '../typechain';
-
-const tokenIds = [
-    '15532881770934585726362572820003503218105251610',
-    '22669120234464385131654002667250978900018984730',
-    '11251138692816706083187714911655017808957011738',
-    '5542147921992866558954571033857037263426025242',
-    '23739556003993855042447717144338100252306044698',
-    '23025931936180581485115997338265290227201491226',
-    '29448546774817694566680861022136080797837031194',
-    '35157537545641534090914004899934061343368017690',
-    '40866528316465373615147148777732041888899004186',
-    '45861895240936232901745540205708751110725437210',
-];
+import { ERC721BeaconInstAddr, ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from './000_constants';
+import { tokenIds } from '../constants';
 
 const ERC1115Amounts = [2, 2, 2, 1, 1, 1, 2];
 const ERC1155Ids = [0, 1, 2, 3, 4, 5, 6];
 
 const salt = ethers.utils.formatBytes32String('1');
-// const proxyAddr = '0xDdE49F4aC07CdFa60B0559803EeE4A520c2611ED';
-// const ERC721Addr = '0x4ee2D9cc8395f297183341acE35214E21666C71B';
+let ERC721BeaconAddr = ERC721BeaconInstAddr;
+let ERC1155BeaconAddr = ERC1155BeaconInstAddr;
+let crafterTransferBeaconAddr = crafterTransferBeaconInstAddr;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
@@ -55,16 +46,24 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const beacon = (await ethers.getContractAt(
         'UpgradeableBeaconInitializable',
-        beaconProxyAddr,
+        beaconAddr,
     )) as UpgradeableBeaconInitializable;
 
     const crafterTransfer = (await ethers.getContractAt('CrafterTransfer', crafterTransferAddr)) as CrafterTransfer;
 
+    if (network.name === 'hardhat') {
+        ERC721BeaconAddr = await getERC721BeaconAddr(beacon, proxy, otherSigner, beaconAddr, ERC721Addr);
+        ERC1155BeaconAddr = await getERC1155BeaconAddr(beacon, proxy, otherSigner, beaconAddr, ERC1155Addr);
+        crafterTransferBeaconAddr = await getCrafterTransferBeaconAddr(
+            beacon,
+            proxy,
+            otherSigner,
+            beaconAddr,
+            crafterTransferAddr,
+        );
+    }
+
     //Calculate ERC721 instance address
-    const ERC721BeaconData = beacon.interface.encodeFunctionData('initialize', [other, ERC721Addr]);
-    const ERC721BeaconInstAddr = await proxy
-        .connect(otherSigner)
-        .predictDeterministicAddress(beaconAddr, salt, ERC721BeaconData);
     const ERC721Impl = (await ethers.getContractAt('ERC721Owl', ERC721Addr)) as ERC721Owl;
     const ERC721Data = ERC721Impl.interface.encodeFunctionData('proxyInitialize', [
         other,
@@ -74,26 +73,24 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     ]);
     const ERC721BeaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
         other,
-        ERC721BeaconInstAddr,
+        ERC721BeaconAddr,
         ERC721Data,
     ]);
     const ERC721BPInstAddr = await proxy
         .connect(otherSigner)
         .predictDeterministicAddress(beaconProxyAddr, salt, ERC721BeaconProxyData);
 
+    const ERC721Inst = (await ethers.getContractAt('ERC721Owl', ERC721BPInstAddr)) as ERC721Owl;
+
     //Calculate ERC1155 instance address
-    const ERC1155BeaconData = beacon.interface.encodeFunctionData('initialize', [other, ERC1155Addr]);
-    const ERC1155BeaconInstAddr = await proxy
-        .connect(otherSigner)
-        .predictDeterministicAddress(beaconAddr, salt, ERC1155BeaconData);
     const ERC1155Impl = (await ethers.getContractAt('ERC1155Owl', ERC1155Addr)) as ERC1155Owl;
     const ERC1155Data = ERC1155Impl.interface.encodeFunctionData('proxyInitialize', [
         other,
-        'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu',
+        'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu/{id}.json',
     ]);
     const ERC1155BeaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
         other,
-        ERC1155BeaconInstAddr,
+        ERC1155BeaconAddr,
         ERC1155Data,
     ]);
 
@@ -101,12 +98,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         .connect(otherSigner)
         .predictDeterministicAddress(beaconProxyAddr, salt, ERC1155BeaconProxyData);
 
-    //DEPLOY CRAFTER TRANSFER
+    const ERC1155Inst = (await ethers.getContractAt('ERC1155Owl', ERC1155BPInstAddr)) as ERC1155Owl;
 
-    const CrafterTransferData = crafterTransfer.interface.encodeFunctionData('initialize', [
+    //DEPLOY CRAFTER TRANSFER
+    const crafterTransferData = crafterTransfer.interface.encodeFunctionData('proxyInitialize', [
         other,
         other,
-        0,
+        53,
         [
             {
                 token: 2,
@@ -122,26 +120,80 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
                 consumableType: 0,
                 contractAddr: ERC721BPInstAddr,
                 amounts: [],
-                tokenIds: [],
+                tokenIds,
             },
         ],
     ]);
 
+    const beaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
+        other,
+        crafterTransferBeaconAddr,
+        crafterTransferData,
+    ]);
+
     const crafterTransferBPInstAddr = await proxy
         .connect(otherSigner)
-        .predictDeterministicAddress(crafterTransferAddr, salt, CrafterTransferData);
+        .predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
+
+    //set approvals
+    await ERC721Inst.connect(otherSigner).setApprovalForAll(crafterTransferBPInstAddr, true);
+    await ERC1155Inst.connect(otherSigner).setApprovalForAll(crafterTransferBPInstAddr, true);
 
     const deployCrafterTransfer = await proxy
         .connect(otherSigner)
-        .cloneDeterministic(crafterTransferAddr, salt, CrafterTransferData, {
-            gasLimit: 100000,
-        });
+        .cloneDeterministic(beaconProxyAddr, salt, beaconProxyData);
     const deployReceipt = await deployCrafterTransfer.wait();
 
     console.log(
-        `CrafterTransfer beacon proxy deployed to ${crafterTransferBPInstAddr} with ${deployReceipt.gasUsed} gas`,
+        `\nCrafterTransfer beacon proxy deployed to ${crafterTransferBPInstAddr} with ${deployReceipt.gasUsed} gas`,
     );
 };
+
+async function getERC721BeaconAddr(
+    beacon: UpgradeableBeaconInitializable,
+    proxy: ERC1167Factory,
+    otherSigner: SignerWithAddress,
+    beaconAddr: string,
+    ERC721Addr: string,
+) {
+    const ERC721BeaconData = beacon.interface.encodeFunctionData('initialize', [otherSigner.address, ERC721Addr]);
+    const ERC721BeaconInstAddr = await proxy
+        .connect(otherSigner)
+        .predictDeterministicAddress(beaconAddr, salt, ERC721BeaconData);
+    return ERC721BeaconInstAddr;
+}
+
+async function getERC1155BeaconAddr(
+    beacon: UpgradeableBeaconInitializable,
+    proxy: ERC1167Factory,
+    otherSigner: SignerWithAddress,
+    beaconAddr: string,
+    ERC1155Addr: string,
+) {
+    const ERC1155BeaconData = beacon.interface.encodeFunctionData('initialize', [otherSigner.address, ERC1155Addr]);
+    const ERC1155BeaconInstAddr = await proxy
+        .connect(otherSigner)
+        .predictDeterministicAddress(beaconAddr, salt, ERC1155BeaconData);
+    return ERC1155BeaconInstAddr;
+}
+
+async function getCrafterTransferBeaconAddr(
+    beacon: UpgradeableBeaconInitializable,
+    proxy: ERC1167Factory,
+    otherSigner: SignerWithAddress,
+    beaconAddr: string,
+    crafterTransferAddr: string,
+) {
+    const crafterTransferBeaconData = beacon.interface.encodeFunctionData('initialize', [
+        otherSigner.address,
+        crafterTransferAddr,
+    ]);
+    const crafterTransferBeaconInstAddr = await proxy
+        .connect(otherSigner)
+        .predictDeterministicAddress(beaconAddr, salt, crafterTransferBeaconData);
+    return crafterTransferBeaconInstAddr;
+}
+
 export default deploy;
 deploy.tags = ['CrafterTransferInst', 'CrafterTransfer', 'BeaconProxy', 'Instance'];
-deploy.dependencies = ['CrafterTransferImpl', 'BeaconProxyImpl', 'Beacons'];
+deploy.dependencies = ['BeaconImpl', 'ERC721Impl', 'ERC1155Impl', 'CrafterTransferImpl', 'BeaconProxyImpl', 'Beacons'];
