@@ -104,7 +104,7 @@ contract EnglishAuction is
 
         nft.transferFrom(seller, address(this), nftId); //change from msg.sender to seller, why?
         started = true;
-        endAt = block.timestamp + auctionDuration * 1 seconds; 
+        endAt = block.timestamp + auctionDuration * 1 seconds; // can save gas here by changing endAt to auctionDuration (?)
 
         emit Start();
     }
