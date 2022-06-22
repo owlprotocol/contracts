@@ -67,12 +67,14 @@ describe('EnglishAuction.sol', function () {
                 //ERC20 Contract address (acceptable token)
                 //starting bid
                 //auction duration
+                //reset time
                 seller.address,
                 testNFT.address,
                 1,
                 acceptableERC20Token.address,
                 2,
-                1,
+                86400,
+                3600,
             ]);
 
             //Predict address
@@ -241,6 +243,34 @@ describe('EnglishAuction.sol', function () {
             expect(await testNFT.balanceOf(bidder2.address)).to.equal(1);
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(100);
             expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(90);
+
+        });
+
+        it('test reset time', async () => {
+            await auction.start();
+            expect(await testNFT.balanceOf(auction.address)).to.equal(1);
+            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
+            
+            await auction.bid(5, bidder1.address);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(5);
+
+
+
+            await auction.bid(10, bidder2.address);
+            expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(90);
+            expect(await acceptableERC20Token.balanceOf(auction.address)).to.equal(15);
+
+            await expect(auction.withdraw(bidder2.address)).to.be.revertedWith("the highest bidder cannot withdraw!");
+
+            await network.provider.send("evm_increaseTime", [82800]); //advance timestamp in seconds  
+            await expect(auction.end()).to.be.revertedWith("not ended");
+            await network.provider.send("evm_increaseTime", [60]); 
+            await auction.bid(15, bidder1.address); 
+            await network.provider.send("evm_increaseTime", [3540]); 
+            await expect(auction.end()).to.be.revertedWith("not ended");   
+            await network.provider.send("evm_increaseTime", [60]); 
+            await auction.end(); 
 
         });
         
