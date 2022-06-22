@@ -24,17 +24,16 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     event Withdraw(address indexed bidder, uint256 amount);
     event End(address winner, uint256 amount);
 
-    IERC721Upgradeable public nft;
+    address public nft;
     uint256 public nftId;
-    IERC20Upgradeable public acceptableToken;
+    address public acceptableToken;
 
     address payable public seller;
     uint256 public endAt;
     uint256 public auctionDuration;
     bool public started;
-    bool public ended;
+    bool public claimed;
     uint256 public resetTime; //number of seconds the auction is reset to after a bid within this time
-
 
     //IMPLEMENT RESET TIME
     //IMPLMENT BIDS HAVE TO BE MULITPLIER LARGER THAN CURRENT HIGHEST BID
@@ -65,56 +64,23 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     function initialize(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startingBid,
-        uint _auctionDuration,
-        uint _resetTime
+        uint256 _startingBid,
+        uint256 _auctionDuration,
+        uint256 _resetTime
     ) public initializer {
-        //requires
-        require (_resetTime > 0, 'must have a valid reset time');
-
-    function proxyInitialize(
-        address payable _seller,
-        address _nft,
-        uint256 _nftId,
-        address ERC20contractAddress,
-        uint256 _startingBid,
-        uint256 _auctionDuration
-    ) external onlyInitializing {
-        __EnglishAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration);
-    }
-
-    function __EnglishAuction_init(
-        address payable _seller,
-        address _nft,
-        uint256 _nftId,
-        address ERC20contractAddress,
-        uint256 _startingBid,
-        uint256 _auctionDuration
-    ) internal onlyInitializing {
-        __Ownable_init();
-        _transferOwnership(seller);
-        __EnglishAuction_init_unchained(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration);
-    }
-
-    function __EnglishAuction_init_unchained(
-        address payable _seller,
-        address _nft,
-        uint256 _nftId,
-        address ERC20contractAddress,
-        uint256 _startingBid,
-        uint256 _auctionDuration
-    ) internal onlyInitializing {
-        nft = IERC721Upgradeable(_nft);
+        nft = (_nft);
         nftId = _nftId;
 
-        acceptableToken = IERC20Upgradeable(ERC20contractAddress);
+        acceptableToken = (ERC20contractAddress);
 
         seller = _seller;
         auctionDuration = _auctionDuration;
         resetTime = _resetTime;
         highestBid = _startingBid;
+
+        IERC721Upgradeable(nft).transferFrom(seller, address(this), nftId);
 
         __Ownable_init();
         _transferOwnership(seller);
@@ -125,97 +91,63 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     **********************/
 
     function start() external onlyOwner {
-        require(!started, 'started');
-        //require(msg.sender == seller, "not seller");
+        require(!started, 'EnglishAuction: started');
 
-        nft.transferFrom(seller, address(this), nftId); //change from msg.sender to seller, why?
         started = true;
         endAt = block.timestamp + auctionDuration * 1 seconds; // can save gas here by changing endAt to auctionDuration (?)
 
         emit Start();
     }
 
-    function bid(uint amount, address from) external payable { //added from address to track original caller (bidder), why doesnt msg.sender work?
-        //require(endAt > 0, "time's up, auction is over"); //same as line 114 pretty much?
-        require(started, "not started");
-        require(block.timestamp < endAt, "ended");
-        require(amount > highestBid, "value <= highest");
+    function bid(uint256 amount) external payable {
+        require(started, 'EnglishAuction: not started');
+        require(block.timestamp < endAt, 'EnglishAuction: ended');
+        require(amount > highestBid, 'EnglishAuction: value <= highest');
 
+        highestBidder = _msgSender();
+        highestBid = amount;
+        uint256 currBid = bids[_msgSender()];
+        bids[_msgSender()] += amount - bids[_msgSender()];
 
         SafeERC20Upgradeable.safeTransferFrom(
-            acceptableToken,
-            from,
+            IERC20Upgradeable(acceptableToken),
+            _msgSender(),
             address(this),
-            amount
+            amount - currBid
         );
 
         // if bid is made with < reset time remaining on the auction , then add to endAt
-        if (endAt - block.timestamp  < resetTime) {
+        if (endAt - block.timestamp < resetTime) endAt += (resetTime - (endAt - block.timestamp)) * 1 seconds;
 
-            endAt += (resetTime - (endAt - block.timestamp)) * 1 seconds;
-
-            /**
-            //bid at 55 want new endAt = 65
-            endAt += 10 - (60 - 55)
-            endAt += 5
-            60 + 5 = 65
-
-
-            //bid at 59 want new endAt = 69
-            endAt += 10 - (60 - 59)
-            endAt += 9
-            60 + 9 = 69
-
-            //bid at 53 want new endAt = 63
-            endAt += 10 - (60 - 53)
-            endAt += 3
-            60 + 3 = 63
-            */
-        }
-
-        highestBidder = from;
-        highestBid = amount;
-
-        if (highestBidder != address(0)) {
-            bids[highestBidder] += highestBid;
-        }
-
-
-        //endAt = block.timestamp + resetTime;
-
-        emit Bid(from, amount);
+        emit Bid(_msgSender(), amount);
     }
 
-    function withdraw(address to) external {
+    function withdraw() external {
         //added from parameter as above
-        if (!ended) {
-            //the highest bidder while the auction is ongoing cannot withdraw; can only withdraw when ended
-            require(to != highestBidder, 'the highest bidder cannot withdraw!');
-        }
-        uint256 bal = bids[to];
-        bids[to] = 0;
+        require(_msgSender() != highestBidder, 'EnglishAuction: the highest bidder cannot withdraw!');
 
-        acceptableToken.transfer(to, bal);
+        uint256 bal = bids[_msgSender()];
+        bids[_msgSender()] = 0;
 
-        emit Withdraw(to, bal);
+        IERC20Upgradeable(acceptableToken).transfer(_msgSender(), bal);
+
+        emit Withdraw(_msgSender(), bal);
     }
 
     //after auction ends, the seller must call end() to transfer nft and funds
-    function end() external onlyOwner {
-        require(started, "not started");
-        require(block.timestamp >= endAt, "not ended");
-        require(!ended, "ended");
+    function claim() external onlyOwner {
+        require(started, 'EnglishAuction: not started');
+        require(block.timestamp >= endAt, 'EnglishAuction: not ended');
+        require(!claimed, 'EnglishAuction: already claimed');
 
-        ended = true;
+        claimed = true;
         if (highestBidder != address(0)) {
-            nft.safeTransferFrom(address(this), highestBidder, nftId);
+            IERC721Upgradeable(nft).safeTransferFrom(address(this), highestBidder, nftId);
 
-            acceptableToken.transfer(seller, highestBid);
+            IERC20Upgradeable(acceptableToken).transfer(seller, highestBid);
 
             bids[highestBidder] -= highestBid; //addition
-        } else {
-            nft.safeTransferFrom(address(this), seller, nftId);
-        }
+        } else IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
 
         emit End(highestBidder, highestBid);
     }
@@ -224,7 +156,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     Getters
     */
 
-    function getCurrentBid() external view returns (uint) {
+    function getCurrentBid() external view returns (uint256) {
         //show the current price
         return highestBid;
     }
@@ -233,11 +165,11 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         return highestBidder;
     }
 
-    function getRemainingTime() external view returns (uint) {
+    function getRemainingTime() external view returns (uint256) {
         return endAt - block.timestamp; //in seconds
     }
 
-    function getResetTime() external view returns (uint) {
+    function getResetTime() external view returns (uint256) {
         return resetTime;
     }
 
