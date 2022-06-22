@@ -58,8 +58,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
      * @param _nftId id of nft for auction
      * @param ERC20contractAddress address of ERC20 token accepted as payment
      * @param _startingBid start bid on nft
-     * @param _auctionDuration duration of auction (in seconds)
-     * @param _resetTime time at which the auction resets when a bid is made within this time frame (in seconds)
+     * @param _auctionDuration duration of auction (in days)
+     * @param _resetTime time to restart clock
      */
     function initialize(
         address payable _seller,
@@ -69,21 +69,65 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _startingBid,
         uint256 _auctionDuration,
         uint256 _resetTime
-    ) public initializer {
+    ) external initializer {
+        __EnglishAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration, _resetTime);
+    }
+
+    function proxyInitialize(
+        address payable _seller,
+        address _nft,
+        uint256 _nftId,
+        address ERC20contractAddress,
+        uint256 _startingBid,
+        uint256 _auctionDuration,
+        uint256 _resetTime
+    ) external onlyInitializing {
+        __EnglishAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration, _resetTime);
+    }
+
+    function __EnglishAuction_init(
+        address payable _seller,
+        address _nft,
+        uint256 _nftId,
+        address ERC20contractAddress,
+        uint256 _startingBid,
+        uint256 _auctionDuration,
+        uint256 _resetTime
+    ) internal onlyInitializing {
+        __Ownable_init();
+        _transferOwnership(_seller);
+
+        __EnglishAuction_init_unchained(
+            _seller,
+            _nft,
+            _nftId,
+            ERC20contractAddress,
+            _startingBid,
+            _auctionDuration,
+            _resetTime
+        );
+    }
+
+    function __EnglishAuction_init_unchained(
+        address payable _seller,
+        address _nft,
+        uint256 _nftId,
+        address ERC20contractAddress,
+        uint256 _startingBid,
+        uint256 _auctionDuration,
+        uint256 _resetTime
+    ) internal onlyInitializing {
         nft = (_nft);
+
         nftId = _nftId;
 
         acceptableToken = (ERC20contractAddress);
 
         seller = _seller;
         auctionDuration = _auctionDuration;
-        resetTime = _resetTime;
         highestBid = _startingBid;
-
+        resetTime = _resetTime;
         IERC721Upgradeable(nft).transferFrom(seller, address(this), nftId);
-
-        __Ownable_init();
-        _transferOwnership(seller);
     }
 
     /**********************
