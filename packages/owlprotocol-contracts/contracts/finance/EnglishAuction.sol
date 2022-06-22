@@ -193,6 +193,27 @@ contract EnglishAuction is
     }
 
     /**
+    Getters 
+    */
+
+    function getCurrentBid() external view returns (uint) {
+        //show the current price
+        return highestBid;
+    }
+
+    function getCurrentHighestBidder() external view returns (address) {
+        return highestBidder;
+    }
+
+    function getRemainingTime() external view returns (uint) {
+        return endAt - block.timestamp; //in seconds
+    }
+
+    function getResetTime() external view returns (uint) {
+        return resetTime;
+    }
+
+    /**
     Upgradeable functions
     */
     function _authorizeUpgrade(address) internal override onlyOwner {}
