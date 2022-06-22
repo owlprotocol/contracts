@@ -29,17 +29,14 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     address public acceptableToken;
 
     address payable public seller;
-    uint256 public endAt;
-    uint256 public auctionDuration;
     bool public started;
     bool public claimed;
+    uint256 public endAt;
+    uint256 public auctionDuration;
+    uint256 public startingBid;
     uint256 public resetTime; //number of seconds the auction is reset to after a bid within this time
 
-    //IMPLEMENT RESET TIME
-    //IMPLMENT BIDS HAVE TO BE MULITPLIER LARGER THAN CURRENT HIGHEST BID
-
     address public highestBidder;
-    uint256 public highestBid;
     mapping(address => uint256) public bids;
 
     /**********************
@@ -124,7 +121,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
         seller = _seller;
         auctionDuration = _auctionDuration;
-        highestBid = _startingBid;
+        startingBid = _startingBid;
         resetTime = _resetTime;
         IERC721Upgradeable(nft).transferFrom(seller, address(this), nftId);
     }
@@ -145,10 +142,9 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     function bid(uint256 amount) external payable {
         require(started, 'EnglishAuction: not started');
         require(block.timestamp < endAt, 'EnglishAuction: ended');
-        require(amount > highestBid, 'EnglishAuction: value <= highest');
+        require(amount > bids[highestBidder], 'EnglishAuction: value <= highest');
 
         highestBidder = _msgSender();
-        highestBid = amount;
         uint256 currBid = bids[_msgSender()];
         bids[_msgSender()] += amount - bids[_msgSender()];
 
@@ -160,7 +156,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         );
 
         // if bid is made with < reset time remaining on the auction , then add to endAt
-        if (endAt - block.timestamp < resetTime) endAt += (resetTime - (endAt - block.timestamp)) * 1 seconds;
+        if (endAt - block.timestamp < resetTime) endAt = (block.timestamp + resetTime) * 1 seconds;
 
         emit Bid(_msgSender(), amount);
     }
@@ -186,13 +182,10 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         claimed = true;
         if (highestBidder != address(0)) {
             IERC721Upgradeable(nft).safeTransferFrom(address(this), highestBidder, nftId);
-
-            IERC20Upgradeable(acceptableToken).transfer(seller, highestBid);
-
-            bids[highestBidder] -= highestBid; //addition
+            IERC20Upgradeable(acceptableToken).transfer(seller, bids[highestBidder]);
         } else IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
 
-        emit End(highestBidder, highestBid);
+        emit End(highestBidder, bids[highestBidder]);
     }
 
     /**
@@ -201,19 +194,12 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
     function getCurrentBid() external view returns (uint256) {
         //show the current price
-        return highestBid;
-    }
-
-    function getCurrentHighestBidder() external view returns (address) {
-        return highestBidder;
+        return bids[highestBidder];
     }
 
     function getRemainingTime() external view returns (uint256) {
+        if (block.timestamp >= endAt) return 0;
         return endAt - block.timestamp; //in seconds
-    }
-
-    function getResetTime() external view returns (uint256) {
-        return resetTime;
     }
 
     /**
