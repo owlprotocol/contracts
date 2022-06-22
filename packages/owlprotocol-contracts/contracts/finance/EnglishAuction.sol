@@ -29,11 +29,13 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     IERC20Upgradeable public acceptableToken;
 
     address payable public seller;
-
-    uint256 public auctionDuration;
     uint256 public endAt;
+    uint256 public auctionDuration;
     bool public started;
     bool public ended;
+    uint256 public resetTime; //number of seconds the auction is reset to after a bid within this time
+
+
     //IMPLEMENT RESET TIME
     //IMPLMENT BIDS HAVE TO BE MULITPLIER LARGER THAN CURRENT HIGHEST BID
 
@@ -57,18 +59,20 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
      * @param _nftId id of nft for auction
      * @param ERC20contractAddress address of ERC20 token accepted as payment
      * @param _startingBid start bid on nft
-     * @param _auctionDuration duration of auction (in days)
+     * @param _auctionDuration duration of auction (in seconds)
+     * @param _resetTime time at which the auction resets when a bid is made within this time frame (in seconds)
      */
     function initialize(
         address payable _seller,
         address _nft,
-        uint256 _nftId,
+        uint _nftId,
         address ERC20contractAddress,
-        uint256 _startingBid,
-        uint256 _auctionDuration
-    ) external initializer {
-        __EnglishAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration);
-    }
+        uint _startingBid,
+        uint _auctionDuration,
+        uint _resetTime
+    ) public initializer {
+        //requires
+        require (_resetTime > 0, 'must have a valid reset time');
 
     function proxyInitialize(
         address payable _seller,
@@ -109,7 +113,11 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
         seller = _seller;
         auctionDuration = _auctionDuration;
+        resetTime = _resetTime;
         highestBid = _startingBid;
+
+        __Ownable_init();
+        _transferOwnership(seller);
     }
 
     /**********************
@@ -122,18 +130,48 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
         nft.transferFrom(seller, address(this), nftId); //change from msg.sender to seller, why?
         started = true;
-        endAt = block.timestamp + auctionDuration * 1 days;
+        endAt = block.timestamp + auctionDuration * 1 seconds;
 
         emit Start();
     }
 
-    function bid(uint256 amount, address from) external payable {
-        //added from address to track original caller (bidder), why doesnt msg.sender work?
-        require(started, 'not started');
-        require(block.timestamp < endAt, 'ended');
-        require(amount > highestBid, 'value <= highest');
+    function bid(uint amount, address from) external payable { //added from address to track original caller (bidder), why doesnt msg.sender work?
+        //require(endAt > 0, "time's up, auction is over"); //same as line 114 pretty much?
+        require(started, "not started");
+        require(block.timestamp < endAt, "ended");
+        require(amount > highestBid, "value <= highest");
 
-        SafeERC20Upgradeable.safeTransferFrom(acceptableToken, from, address(this), amount);
+
+        SafeERC20Upgradeable.safeTransferFrom(
+            acceptableToken,
+            from,
+            address(this),
+            amount
+        );
+
+        // if bid is made with < reset time remaining on the auction , then add to endAt
+        if (endAt - block.timestamp  < resetTime) {
+
+            endAt += (resetTime - (endAt - block.timestamp)) * 1 seconds;
+
+            /**
+            //bid at 55 want new endAt = 65
+            endAt += 10 - (60 - 55)
+            endAt += 5
+            60 + 5 = 65
+
+
+            //bid at 59 want new endAt = 69
+            endAt += 10 - (60 - 59)
+            endAt += 9
+            60 + 9 = 69
+
+            //bid at 53 want new endAt = 63
+            endAt += 10 - (60 - 53)
+            endAt += 3
+            60 + 3 = 63
+            */
+        }
 
         highestBidder = from;
         highestBid = amount;
@@ -141,6 +179,9 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         if (highestBidder != address(0)) {
             bids[highestBidder] += highestBid;
         }
+
+
+        //endAt = block.timestamp + resetTime;
 
         emit Bid(from, amount);
     }
@@ -159,10 +200,11 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         emit Withdraw(to, bal);
     }
 
+    //after auction ends, the seller must call end() to transfer nft and funds
     function end() external onlyOwner {
-        require(started, 'not started');
-        require(block.timestamp >= endAt, 'not ended');
-        require(!ended, 'ended');
+        require(started, "not started");
+        require(block.timestamp >= endAt, "not ended");
+        require(!ended, "ended");
 
         ended = true;
         if (highestBidder != address(0)) {
