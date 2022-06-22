@@ -83,4 +83,4 @@ async function getBeaconAddr(
 
 export default deploy;
 deploy.tags = ['ERC721Inst', 'ERC721', 'BeaconProxy', 'Instance'];
-deploy.dependencies = ['BeaconImpl', 'ERC721Impl', 'ERC721Impl', 'CrafterTransferImpl', 'BeaconProxyImpl', 'Beacons'];
+deploy.dependencies = ['BeaconImpl', 'BeaconProxyImpl', 'ERC721Impl', 'ERC1155Impl', 'CrafterTransferImpl', 'Beacons'];

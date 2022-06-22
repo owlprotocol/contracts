@@ -31,10 +31,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         beaconAddr,
     )) as UpgradeableBeaconInitializable;
 
-    const ERC721BeaconData = beacon.interface.encodeFunctionData('initialize', [
-        other,
-        '0x4ee2D9cc8395f297183341acE35214E21666C71B',
-    ]);
+    const ERC721BeaconData = beacon.interface.encodeFunctionData('initialize', [other, ERC721Addr]);
     const ERC1155BeaconData = beacon.interface.encodeFunctionData('initialize', [other, ERC1155Addr]);
     const crafterTransferBeaconData = beacon.interface.encodeFunctionData('initialize', [other, crafterTransferAddr]);
 
@@ -49,8 +46,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
             .connect(otherSigner)
             .predictDeterministicAddress(beaconAddr, salt, crafterTransferBeaconData);
     }
-
-    console.log(await proxy.connect(otherSigner).predictDeterministicAddress(beaconAddr, salt, ERC721BeaconData));
 
     let deployERC721Beacon;
     let deployERC1155Beacon;
@@ -91,11 +86,4 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 export default deploy;
 deploy.tags = ['Beacons'];
-deploy.dependencies = [
-    'CrafterTransferImpl',
-    'CrafterMintImpl',
-    'BeaconImpl',
-    'ProxyFactory',
-    'ERC721Impl',
-    'ERC1155Impl',
-];
+deploy.dependencies = ['CrafterTransferImpl', 'BeaconImpl', 'ProxyFactory', 'ERC721Impl', 'ERC1155Impl'];
