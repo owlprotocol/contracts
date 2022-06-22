@@ -33,16 +33,15 @@ contract DutchAuction is
     IERC20Upgradeable public acceptableToken;
 
     address payable public seller;
+    address public bidder;
 
     uint public auctionDuration;
-    uint public endPrice; //once it hits this price the bids cannot go any lower?
+    uint public startPrice; //starting maximum price
+    uint public endPrice; //once it hits this price the bids cannot go any lower
+    uint public startTime;
     bool public started;
     bool public ended;
-    uint public endAt; //keeps track of auction duration --> is this even needed?
-
-    address public highestBidder;
-    uint public currentPrice;
-    //mapping(address => uint) public bids; i don't think we need a mapping because this is one and done?
+    uint public endAt; //keeps track of auction duration --> is this even needed if we already have auction duration?
 
     /**********************
         Initialization
@@ -53,7 +52,6 @@ contract DutchAuction is
         _disableInitializers();
     }
 
-
     /**
      * @dev Create auction instance
      * @param _seller address of seller for auction
@@ -62,7 +60,7 @@ contract DutchAuction is
      * @param ERC20contractAddress address of ERC20 token accepted as payment
      * @param _startPrice highest starting price to start the auction
      * @param _endPrice lowest price that seller is willing to accept
-     * @param _auctionDuration duration of auction (in hours)
+     * @param _auctionDuration how long the auction should last
      */
     function initialize(
         address payable _seller,
@@ -75,6 +73,13 @@ contract DutchAuction is
     ) public initializer {
         //requires
 
+
+        //this is the interval : (block.timestamp at view - block.timestamp at start) / auctionDuration
+        //this is the increment: (startPrice - endPrice) * interval
+
+        //current price: start price - [(total time elapsed / auction duration) * (start price - end price)]
+
+
         nft = IERC721Upgradeable(_nft);
         nftId = _nftId;
 
@@ -82,13 +87,13 @@ contract DutchAuction is
 
         seller = _seller;
         auctionDuration = _auctionDuration;
-        currentPrice = _startPrice;
+        startPrice = _startPrice;
         endPrice = _endPrice;
-        //console.log('seller', seller);
+        console.log('seller', seller);
 
         __Ownable_init();
         _transferOwnership(seller);
-        //console.log('owner', owner());
+        console.log('owner', owner());
     }
 
     /**********************
@@ -97,54 +102,54 @@ contract DutchAuction is
 
     function start() external onlyOwner {
         require(!started, "started");
-        //require(msg.sender == seller, "not seller");
 
         nft.transferFrom(seller, address(this), nftId); //change from msg.sender to seller, why?
         started = true;
-        endAt = block.timestamp + auctionDuration * 1 days;
+        startTime = block.timestamp;
+        endAt = block.timestamp + auctionDuration * 1 seconds; //should be controlled by startPrice/endPrice/timeIntervalLength
 
         emit Start();
     }
 
-    function bid(uint amount, address from) external payable { //added from address to track original caller (bidder), why doesnt msg.sender work?
+    /**
+    Getters
+    */
+
+    function getCurrentPrice() public view returns (uint) {
+        //show the current price
+        return startPrice - (((block.timestamp - startTime) - (block.timestamp - startTime) % 30) / auctionDuration) * (startPrice - endPrice);  //round (block.timestamp - startTime) to nearest multiple of 30 seconds: x - x mod 30
+    }
+
+    function bid(uint amount) external payable { //added from address to track original caller (bidder), why doesnt msg.sender work?
         require(started, "not started");
         require(block.timestamp < endAt, "ended");
-        //require(amount > highestBid, "value < highest"); not necessarily true here because highestBid is just the starting price that goes down?
-        require(amount = currentPrice, "must bid the current price"); //check if this is right
-        require(amount > endPrice, "cannot bid lower than lowest possible price");
-        console.log("message sender:" , from);
+        require(!ended, "auction ended");
+        require(amount == getCurrentPrice(), "must bid the current price"); //check if this is right
+        require(amount >= endPrice, "cannot bid lower than lowest possible price");
 
         SafeERC20Upgradeable.safeTransferFrom(
             acceptableToken,
-            from,
+            _msgSender(),
             address(this),
             amount
         );
+        ended = true;
+        bidder = _msgSender();
 
-        if (highestBidder != address(0)) {
-            //bids[highestBidder] += highestBid;
-        }
-
-        highestBidder = from; //highestBidder is the winner and the auction should end
-        //highestBid = amount;
-
-        emit Bid(from, amount);
+        emit Bid(_msgSender(), amount);
     }
 
-    function end() external onlyOwner {
+    function transfer() external onlyOwner {
         require(started, "not started");
-        //require(block.timestamp >= endAt, "not ended"); not necessarily true here because auction finishes as soon as a bid is made
-        require(!ended, "ended");
 
-        ended = true;
-        if (highestBidder != address(0)) {
-            nft.safeTransferFrom(address(this), highestBidder, nftId);
-            seller.transfer(currentPrice);
-        } else {
+        if (ended) {
+            nft.safeTransferFrom(address(this), bidder, nftId);
+            seller.transfer(getCurrentPrice());
+        } else if (block.timestamp >= endAt) { //added this because otherwise the owner can withdraw when the auction is ongoing but no bids are made (ended == false)
             nft.safeTransferFrom(address(this), seller, nftId);
         }
 
-        emit End(highestBidder, currentPrice);
+        emit End(bidder, getCurrentPrice());
     }
 
     /**
