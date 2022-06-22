@@ -58,8 +58,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
      * @param _nftId id of nft for auction
      * @param ERC20contractAddress address of ERC20 token accepted as payment
      * @param _startingBid start bid on nft
-     * @param _auctionDuration duration of auction (in days)
-     * @param _resetTime time to restart clock
+     * @param _auctionDuration duration of auction (in seconds)
+     * @param _resetTime time at which the auction resets when a bid is made within this time frame (in seconds)
      */
     function initialize(
         address payable _seller,
@@ -118,7 +118,6 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _resetTime
     ) internal onlyInitializing {
         nft = (_nft);
-
         nftId = _nftId;
 
         acceptableToken = (ERC20contractAddress);

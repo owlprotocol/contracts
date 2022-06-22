@@ -3,7 +3,7 @@ const { utils } = ethers;
 const { parseUnits } = utils;
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-//import { pick } from 'lodash';
+//import _, { pick } from 'lodash';
 import {
     EnglishAuction,
     EnglishAuction__factory,
