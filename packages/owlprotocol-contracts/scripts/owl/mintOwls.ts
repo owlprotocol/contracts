@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
-import { ERC721Owl } from '../typechain';
-import { tokenIds } from '../constants';
+import { ERC721Owl } from '../../typechain';
+import { tokenIds } from '../../constants';
 
 (async () => {
     const [orig, proxy] = await ethers.getSigners();

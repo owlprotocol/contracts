@@ -7,17 +7,15 @@ import {
     CrafterTransfer,
     ERC1155Owl,
     ERC1167Factory,
-    ERC721Owl,
     UpgradeableBeaconInitializable,
 } from '../typechain';
-import { ERC721BeaconInstAddr, ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from './000_constants';
+import { ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from './000_constants';
 import { tokenIds } from '../constants';
 
 const ERC1115Amounts = [2, 2, 2, 1, 1, 1, 2];
 const ERC1155Ids = [0, 1, 2, 3, 4, 5, 6];
 
 const salt = ethers.utils.formatBytes32String('1');
-let ERC721BeaconAddr = ERC721BeaconInstAddr;
 let ERC1155BeaconAddr = ERC1155BeaconInstAddr;
 let crafterTransferBeaconAddr = crafterTransferBeaconInstAddr;
 
@@ -84,11 +82,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         other,
         53,
-        // [{
-        //     token: 2,
-        //     consumableType: 0,
-        //     contractAddr:
-        // }],
+        [
+            // {
+            //     token: 2,
+            //     consumableType: 0,
+            //     contractAddr:
+            // }
+        ],
         [
             {
                 token: 2,
@@ -111,7 +111,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         .predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
 
     //set approvals
-    await ERC721Inst.connect(otherSigner).setApprovalForAll(crafterTransferBPInstAddr, true);
     await ERC1155Inst.connect(otherSigner).setApprovalForAll(crafterTransferBPInstAddr, true);
 
     const deployCrafterTransfer = await proxy
