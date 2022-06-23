@@ -105,21 +105,26 @@ describe('DutchAuction.sol', function () {
 
             originalERC20Balance = 100;
 
-            expect(await testNFT.balanceOf(seller.address)).to.equal(1);
+            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
+            expect(await testNFT.balanceOf(DutchAuctionAddress)).to.equal(1);
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(originalERC20Balance);
 
             //storage tests
         });
 
         it('simple auction - 1 bidder', async () => {
+            
             await auction.start();
 
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
-            await network.provider.send('evm_increaseTime', [5]); //advance timestamp in seconds
-            expect(await auction.getCurrentPrice()).to.equal(100);
+            expect(await auction.getCurrentPrice()).to.equal(parseUnits("100.0", 18));
+            await network.provider.send('evm_increaseTime', [23]); //advance timestamp in seconds
+            await network.provider.send("evm_mine");
+            expect(await auction.getCurrentPrice()).to.equal(parseUnits("92.500000000000000030", 18));
             await network.provider.send('evm_increaseTime', [25]); //advance timestamp in seconds
+            await network.provider.send("evm_mine");
             expect(await auction.getCurrentPrice()).to.equal(90);
             //await auction.connect(bidder1).bid(100);
             //expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(95);
@@ -137,15 +142,37 @@ describe('DutchAuction.sol', function () {
         });
 
         it('error: bid too low', async () => {
-            //await auction.withdraw();
+            await auction.start();
+            //add increase time
+            //add expect for what the current price should be
+
+            //make below line a bid lower than current price
+            await expect(auction.connect(bidder1).bid(55)).to.be.revertedWith('must bid the current price');
         });
 
         it('error: bid too high', async () => {
-            //await auction.withdraw();
+            await auction.start();
+            //add increase time
+            //add expect for what the current price should be
+
+            //make below line a bid higher than current price
+            await expect(auction.connect(bidder1).bid(55)).to.be.revertedWith('must bid the current price');
+        });
+
+        it('error: bid lower than endPrice', async () => {
+            await auction.start();
+            //add increase time
+            //add expect for what the current price should be
+
+            await expect(auction.connect(bidder1).bid(5)).to.be.revertedWith('cannot bid lower than lowest possible price');
         });
 
         it('error: bid after auction ends', async () => {
-            //await auction.end();
+            await auction.start();
+            //add increase time to finish the auction
+            //add expect for what current price should be -> should be 10?
+            await auction.transfer();
+            await expect(auction.connect(bidder1).bid(50)).to.be.revertedWith('ended');
         });
 
         afterEach(async () => {

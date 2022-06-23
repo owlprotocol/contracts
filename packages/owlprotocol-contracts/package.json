@@ -97,5 +97,8 @@
         "artifacts/contracts",
         "contracts",
         "types"
-    ]
+    ],
+    "dependencies": {
+        "@prb/math": "^2.5.0"
+    }
 }
