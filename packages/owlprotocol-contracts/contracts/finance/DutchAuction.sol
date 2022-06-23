@@ -12,38 +12,33 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import "@prb/math/contracts/PRBMathUD60x18.sol";
 
-import "hardhat/console.sol";
+import '../utils/FractionalExponents.sol';
 
-contract DutchAuction is
-    ERC721HolderUpgradeable,
-    ERC1155HolderUpgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable
-{
+import 'hardhat/console.sol';
+
+contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable, FractionalExponents {
     /**********************
              Types
     **********************/
     event Start();
-    event Bid(address indexed sender, uint amount);
-    event End(address winner, uint amount);
+    event Bid(address indexed sender, uint256 amount);
+    event Claim();
 
     address public nft;
-    uint public nftId;
+    uint256 public nftId;
     address public acceptableToken;
 
     address payable public seller;
-    address public bidder;
 
-    uint public auctionDuration;
-    uint public startPrice; //starting maximum price
-    uint public endPrice; //once it hits this price the bids cannot go any lower
-    uint public startTime;
+    uint256 public auctionDuration;
+    uint256 public startPrice; //starting maximum price
+    uint256 public endPrice; //once it hits this price the bids cannot go any lower
+    uint256 public startTime;
     bool public started;
-    bool public claimed;
-    uint public endAt; //keeps track of auction duration --> is this even needed if we already have auction duration?
+    uint256 public endAt; //keeps track of auction duration --> is this even needed if we already have auction duration?
     bool public isNonLinear;
+    uint256 public priceChangeTimeInterval;
 
     /**********************
         Initialization
@@ -63,54 +58,93 @@ contract DutchAuction is
      * @param _startPrice highest starting price to start the auction
      * @param _endPrice lowest price that seller is willing to accept
      * @param _auctionDuration how long the auction should last
-     * @param
+     * @param _isNonLinear set true if the seller wants to set a nonlinear decrease in price
+     * @param _priceChangeTimeInterval seller decides how often they want price to decrease
      */
     function initialize(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startPrice,
-        uint _endPrice,
-        uint _auctionDuration
+        uint256 _startPrice,
+        uint256 _endPrice,
+        uint256 _auctionDuration,
+        bool _isNonLinear,
+        uint256 _priceChangeTimeInterval
     ) external initializer {
-        __DutchAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startPrice, _endPrice, _auctionDuration);
+        __DutchAuction_init(
+            _seller,
+            _nft,
+            _nftId,
+            ERC20contractAddress,
+            _startPrice,
+            _endPrice,
+            _auctionDuration,
+            _isNonLinear,
+            _priceChangeTimeInterval
+        );
     }
 
     function proxyInitialize(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startPrice,
-        uint _endPrice,
-        uint _auctionDuration
+        uint256 _startPrice,
+        uint256 _endPrice,
+        uint256 _auctionDuration,
+        bool _isNonLinear,
+        uint256 _priceChangeTimeInterval
     ) external onlyInitializing {
-        __DutchAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startPrice, _endPrice, _auctionDuration);
+        __DutchAuction_init(
+            _seller,
+            _nft,
+            _nftId,
+            ERC20contractAddress,
+            _startPrice,
+            _endPrice,
+            _auctionDuration,
+            _isNonLinear,
+            _priceChangeTimeInterval
+        );
     }
 
     function __DutchAuction_init(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startPrice,
-        uint _endPrice,
-        uint _auctionDuration
+        uint256 _startPrice,
+        uint256 _endPrice,
+        uint256 _auctionDuration,
+        bool _isNonLinear,
+        uint256 _priceChangeTimeInterval
     ) internal onlyInitializing {
         __Ownable_init();
         _transferOwnership(_seller);
-        __DutchAuction_init_unchained(_seller, _nft, _nftId, ERC20contractAddress, _startPrice, _endPrice, _auctionDuration);
+        __DutchAuction_init_unchained(
+            _seller,
+            _nft,
+            _nftId,
+            ERC20contractAddress,
+            _startPrice,
+            _endPrice,
+            _auctionDuration,
+            _isNonLinear,
+            _priceChangeTimeInterval
+        );
     }
 
     function __DutchAuction_init_unchained(
         address payable _seller,
         address _nft,
-        uint _nftId,
+        uint256 _nftId,
         address ERC20contractAddress,
-        uint _startPrice,
-        uint _endPrice,
-        uint _auctionDuration
+        uint256 _startPrice,
+        uint256 _endPrice,
+        uint256 _auctionDuration,
+        bool _isNonLinear,
+        uint256 _priceChangeTimeInterval
     ) internal onlyInitializing {
         nft = (_nft);
         nftId = _nftId;
@@ -121,20 +155,22 @@ contract DutchAuction is
         auctionDuration = _auctionDuration;
         startPrice = _startPrice;
         endPrice = _endPrice;
+        isNonLinear = _isNonLinear;
+        priceChangeTimeInterval = _priceChangeTimeInterval;
         IERC721Upgradeable(nft).transferFrom(seller, address(this), nftId);
     }
 
-        //this is the interval : (block.timestamp at view - block.timestamp at start) / auctionDuration
-        //this is the increment: (startPrice - endPrice) * interval
+    //this is the interval : (block.timestamp at view - block.timestamp at start) / auctionDuration
+    //this is the increment: (startPrice - endPrice) * interval
 
-        //current price: start price - [(total time elapsed / auction duration) * (start price - end price)]
+    //current price: start price - [(total time elapsed / auction duration) * (start price - end price)]
 
     /**********************
          Interaction
     **********************/
 
     function start() external onlyOwner {
-        require(!started, "DutchAuction: started");
+        require(!started, 'DutchAuction: started');
 
         started = true;
         startTime = block.timestamp;
@@ -149,43 +185,42 @@ contract DutchAuction is
 
     function getCurrentPrice() public view returns (uint256) {
         //show the current price
-        if (isNonLinear) return (1e18 * startPrice) - 1e18 * (startPrice - endPrice) ** (block.timestamp - startTime) + 1;   
-    
-        return (1e18 * startPrice - ((1e18 * (block.timestamp - startTime) / (auctionDuration))  * ((startPrice - endPrice))));  //round (block.timestamp - startTime) to nearest multiple of 30 seconds: x - x mod 30
-        
-        
+        if (block.timestamp >= endAt) return 1e18 * endPrice;
+        if (isNonLinear) {
+            (uint256 result, uint8 precision) = (power(startPrice - endPrice, 1, uint32(block.timestamp - startTime), uint32( auctionDuration )));
+            uint256 exp = (1e18*result/(2 ** precision));
+            return (1e18 * startPrice) - exp + 1e18;
+        }
+        return (1e18 *
+            startPrice -
+            (((1e18 * ((block.timestamp - startTime) - (block.timestamp - startTime) % 30 )) / (auctionDuration)) * ((startPrice - endPrice)))); //round (block.timestamp - startTime) to nearest multiple of 30 seconds: x - x mod 30
     }
 
-    function bid() external payable { //added from address to track original caller (bidder), why doesnt msg.sender work?
-        require(started, "DutchAuction: not started");
-        require(block.timestamp < endAt, "DutchAuction: ended");
+    function bid() external payable {
+        require(started, 'DutchAuction: not started');
+        require(block.timestamp < endAt, 'DutchAuction: ended');
 
+        uint256 bidPrice = getCurrentPrice();
 
         SafeERC20Upgradeable.safeTransferFrom(
             IERC20Upgradeable(acceptableToken),
             _msgSender(),
             address(this),
-            getCurrentPrice()
+            bidPrice
         );
+        IERC721Upgradeable(nft).safeTransferFrom(address(this),  _msgSender(), nftId);
+        IERC20Upgradeable(acceptableToken).transfer(seller, bidPrice);
 
-        claimed = true;
-        bidder = _msgSender();
-        emit Bid(_msgSender(), getCurrentPrice());
+        emit Bid(_msgSender(), bidPrice);
     }
 
-    function claim() external onlyOwner {
-        require(started, "DutchAuction: not started");
-        require(block.timestamp >= endAt, "DutchAuction: not ended");
+    function claim() external onlyOwner { //owner withdraws asset if nobody bids
+        require(started, 'DutchAuction: not started');
+        require(block.timestamp >= endAt, 'DutchAuction: cannot claim when auction is ongoing!');
 
-        if (claimed) {
-            IERC721Upgradeable(nft).safeTransferFrom(address(this), bidder, nftId);
-            IERC20Upgradeable(acceptableToken).transfer(seller, getCurrentPrice());
-        } else 
-            IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
-        
-        
+        IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
 
-        emit End(bidder, getCurrentPrice());
+        emit Claim();
     }
 
     /**
