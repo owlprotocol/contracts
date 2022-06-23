@@ -38,7 +38,6 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
     bool public started;
     uint256 public endAt; //keeps track of auction duration --> is this even needed if we already have auction duration?
     bool public isNonLinear;
-    uint256 public priceChangeTimeInterval;
 
     /**********************
         Initialization
@@ -59,7 +58,6 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
      * @param _endPrice lowest price that seller is willing to accept
      * @param _auctionDuration how long the auction should last
      * @param _isNonLinear set true if the seller wants to set a nonlinear decrease in price
-     * @param _priceChangeTimeInterval seller decides how often they want price to decrease
      */
     function initialize(
         address payable _seller,
@@ -69,8 +67,7 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _auctionDuration,
-        bool _isNonLinear,
-        uint256 _priceChangeTimeInterval
+        bool _isNonLinear
     ) external initializer {
         __DutchAuction_init(
             _seller,
@@ -80,8 +77,7 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
             _startPrice,
             _endPrice,
             _auctionDuration,
-            _isNonLinear,
-            _priceChangeTimeInterval
+            _isNonLinear
         );
     }
 
@@ -93,8 +89,7 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _auctionDuration,
-        bool _isNonLinear,
-        uint256 _priceChangeTimeInterval
+        bool _isNonLinear
     ) external onlyInitializing {
         __DutchAuction_init(
             _seller,
@@ -104,8 +99,7 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
             _startPrice,
             _endPrice,
             _auctionDuration,
-            _isNonLinear,
-            _priceChangeTimeInterval
+            _isNonLinear
         );
     }
 
@@ -117,8 +111,7 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _auctionDuration,
-        bool _isNonLinear,
-        uint256 _priceChangeTimeInterval
+        bool _isNonLinear
     ) internal onlyInitializing {
         __Ownable_init();
         _transferOwnership(_seller);
@@ -130,8 +123,7 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
             _startPrice,
             _endPrice,
             _auctionDuration,
-            _isNonLinear,
-            _priceChangeTimeInterval
+            _isNonLinear
         );
     }
 
@@ -143,9 +135,9 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _auctionDuration,
-        bool _isNonLinear,
-        uint256 _priceChangeTimeInterval
+        bool _isNonLinear
     ) internal onlyInitializing {
+        require(_startPrice > _endPrice, "DutchAuction: start price must be greater than end price");
         nft = (_nft);
         nftId = _nftId;
 
@@ -156,7 +148,6 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
         startPrice = _startPrice;
         endPrice = _endPrice;
         isNonLinear = _isNonLinear;
-        priceChangeTimeInterval = _priceChangeTimeInterval;
         IERC721Upgradeable(nft).transferFrom(seller, address(this), nftId);
     }
 
@@ -189,11 +180,13 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
         if (isNonLinear) {
             (uint256 result, uint8 precision) = (power(startPrice - endPrice, 1, uint32(block.timestamp - startTime), uint32( auctionDuration )));
             uint256 exp = (1e18*result/(2 ** precision));
-            return (1e18 * startPrice) - exp + 1e18;
+            int256 const = int256(1e18 * int256(startPrice - endPrice) / (1 + int256(endPrice) - int256(startPrice)));
+
+            return uint256((const * int256(exp) / 1e18) - const + 1e18 * int256(startPrice));
         }
         return (1e18 *
             startPrice -
-            (((1e18 * ((block.timestamp - startTime) - (block.timestamp - startTime) % 30 )) / (auctionDuration)) * ((startPrice - endPrice)))); //round (block.timestamp - startTime) to nearest multiple of 30 seconds: x - x mod 30
+            (((1e18 * (block.timestamp - startTime)) / (auctionDuration)) * ((startPrice - endPrice)))); //round (block.timestamp - startTime) to nearest multiple of 30 seconds: x - x mod 30
     }
 
     function bid() external payable {
@@ -205,11 +198,10 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
         SafeERC20Upgradeable.safeTransferFrom(
             IERC20Upgradeable(acceptableToken),
             _msgSender(),
-            address(this),
+            seller,
             bidPrice
         );
         IERC721Upgradeable(nft).safeTransferFrom(address(this),  _msgSender(), nftId);
-        IERC20Upgradeable(acceptableToken).transfer(seller, bidPrice);
 
         emit Bid(_msgSender(), bidPrice);
     }

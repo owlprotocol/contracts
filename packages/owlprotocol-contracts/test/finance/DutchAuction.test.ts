@@ -74,7 +74,6 @@ describe('DutchAuction.sol', function () {
                 10,
                 300,
                 false,
-                0,
             ]);
 
             //Predict address
@@ -173,27 +172,25 @@ describe('DutchAuction.sol', function () {
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
-        it('visual price change', async () => {
-            const tx = await auction.start();
-            await tx.wait();
 
-            expect(await testNFT.balanceOf(auction.address)).to.equal(1);
-            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
+        // it('visual price change', async () => {
+        //     const tx = await auction.start();
+        //     await tx.wait();
 
-            expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
+        //     expect(await testNFT.balanceOf(auction.address)).to.equal(1);
+        //     expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
-            //console.log('hi');
-            for (let i = 0; i < 300; i++) {
-                await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
-                await network.provider.send('evm_mine');
-                console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
+        //     expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
 
-                //expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
-            }
-        });
-        afterEach(async () => {
-            // storage tests - unchanged
-        });
+        //     //console.log('hi');
+        //     for (let i = 0; i < 300; i++) {
+        //         await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
+        //         await network.provider.send('evm_mine');
+        //         console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
+
+        //         //expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
+        //     }
+        // });
     });
 
     describe('Nonlinear Auction Tests', () => {
@@ -229,7 +226,6 @@ describe('DutchAuction.sol', function () {
                 10,
                 300,
                 true,
-                0,
             ]);
 
             //Predict address
@@ -281,24 +277,24 @@ describe('DutchAuction.sol', function () {
 
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
 
-            //console.log('hi');
             await network.provider.send('evm_increaseTime', [23]); //advance timestamp in seconds
             await network.provider.send('evm_mine');
-            expect(await auction.getCurrentPrice()).to.equal(parseUnits('99.588030683856107275', 18));
+            expect(await auction.getCurrentPrice()).to.equal(parseUnits('99.583401815135389380', 18));
             await network.provider.send('evm_increaseTime', [25]); //advance timestamp in seconds
             await network.provider.send('evm_mine');
 
             const sellerBalance = await acceptableERC20Token.balanceOf(seller.address);
             const tx2 = await auction.connect(bidder1).bid();
             await tx2.wait();
-            expect(await auction.getCurrentPrice()).to.equal(parseUnits('98.914582838240080159', 18));
+            expect(await auction.getCurrentPrice()).to.equal(parseUnits('98.902387139793339487', 18));
 
             const balance: BigNumber = parseUnits('100.0', 18);
+
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(
-                balance.sub(parseUnits('98.914582838240080159', 18)),
+                balance.sub(parseUnits('98.902387139793339487', 18)),
             );
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(
-                sellerBalance.add(parseUnits('98.914582838240080159', 18)),
+                sellerBalance.add(parseUnits('98.902387139793339487', 18)),
             );
             expect(await testNFT.balanceOf(bidder1.address)).to.equal(1);
             expect(await testNFT.balanceOf(auction.address)).to.equal(0);
@@ -331,23 +327,24 @@ describe('DutchAuction.sol', function () {
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
 
-        it('visual price change', async () => {
-            const tx = await auction.start();
-            await tx.wait();
+        // it('visual price change', async () => {
+        //     const tx = await auction.start();
+        //     await tx.wait();
 
-            expect(await testNFT.balanceOf(auction.address)).to.equal(1);
-            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
+        //     expect(await testNFT.balanceOf(auction.address)).to.equal(1);
+        //     expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
-            expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
+        //     expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
 
-            //console.log('hi');
-            for (let i = 0; i < 300; i++) {
-                await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
-                await network.provider.send('evm_mine');
-                console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
+        //     const t = (await auction.endAt()).toNumber();
 
-                //expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
-            }
-        });
+        //     await ethers.provider.send('evm_setAutomine', [false]);
+        //     for (let i = 0; i < 300; i++) {
+        //         await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
+        //         await network.provider.send('evm_mine');
+
+        //         console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
+        //     }
+        // });
     });
 });
