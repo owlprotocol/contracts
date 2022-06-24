@@ -1,7 +1,7 @@
 import { web3, network } from 'hardhat';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { burnNonce } from '../../constants/burnNonce';
+import { burnNonce } from '../../constants';
 
 const address = '0xDdE49F4aC07CdFa60B0559803EeE4A520c2611ED';
 const nonceToDeploy = 2;

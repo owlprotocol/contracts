@@ -1,6 +1,6 @@
 import { ethers, web3 } from 'hardhat';
 
-export const burnNonce = async (deployer: string, nonceToDeploy: number) => {
+export default async (deployer: string, nonceToDeploy: number) => {
     if (process.env.PRIV_KEY === undefined) return;
     const nonce = await web3.eth.getTransactionCount(deployer);
     const wallet = new ethers.Wallet(process.env.PRIV_KEY, ethers.provider);
