@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { Address, DeployFunction } from 'hardhat-deploy/types';
+import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, web3, network } from 'hardhat';
 import {
     BeaconProxyInitializable,
@@ -7,8 +7,7 @@ import {
     EnglishAuction,
     UpgradeableBeaconInitializable,
     FactoryERC721,
-} from '../typechain';
-//import { EnglishAuctionBeaconInstAddr } from './000_constants';
+} from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const salt = ethers.utils.formatBytes32String('1');
@@ -16,13 +15,10 @@ let EnglishAuctionBeaconAddr = '';
 let ERC721Contract: FactoryERC721;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    const { deployments, getNamedAccounts } = hre;
-    const { deploy } = deployments;
-
     if (process.env.PRIV_KEY === undefined) return;
 
-    const { deployer, other } = await getNamedAccounts();
-
+    const { deployments, getNamedAccounts } = hre;
+    const { other } = await getNamedAccounts();
     const otherSigner = (await ethers.getSigners())[1];
 
     const { address: proxyAddr } = await deployments.get('ERC1167Factory');
@@ -36,42 +32,26 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         beaconProxyAddr,
     )) as BeaconProxyInitializable;
 
-    //depolyment address for beacon instance = predict determininstic in BP instance
-
-    let FactoryERC20Addr = '';
-    let FactoryERC721Addr = '';
+    let acceptableTokenAddr = '';
+    let nftForSaleAddr = '';
 
     if (network.name === 'hardhat') {
         EnglishAuctionBeaconAddr = await getBeaconAddr(proxy, otherSigner, beaconAddr, EnglishAuctionAddr);
-        await deploy('FactoryERC20', {
-            from: deployer,
-            args: [0, 'name', 'ticker'],
-            log: true,
-        });
-        const { address } = await deployments.get('FactoryERC20');
-        FactoryERC20Addr = address;
 
-        await deploy('FactoryERC721', {
-            from: deployer,
-            args: ['name', 'symbol'],
-            log: true,
-        });
+        const { address } = await deployments.get('FactoryERC20');
+        acceptableTokenAddr = address;
         const { address: address2 } = await deployments.get('FactoryERC721');
-        FactoryERC721Addr = address2;
-        ERC721Contract = (await ethers.getContractAt('FactoryERC721', FactoryERC721Addr)) as FactoryERC721;
-        await ERC721Contract.mint(other, 1);
+        nftForSaleAddr = address2;
+        ERC721Contract = (await ethers.getContractAt('FactoryERC721', address2)) as FactoryERC721;
     }
-    console.log('verify', EnglishAuctionBeaconAddr);
-    //console.log(FactoryERC20Addr);
-    //console.log(FactoryERC721Addr);
 
     const EnglishAuctionImpl = (await ethers.getContractAt('EnglishAuction', EnglishAuctionAddr)) as EnglishAuction;
 
     const EnglishAuctionData = EnglishAuctionImpl.interface.encodeFunctionData('proxyInitialize', [
         other,
-        FactoryERC721Addr,
+        nftForSaleAddr,
         1,
-        FactoryERC20Addr,
+        acceptableTokenAddr,
         10,
         10,
         1,
@@ -98,7 +78,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const deployTx = await proxy.connect(otherSigner).cloneDeterministic(beaconProxyAddr, salt, beaconProxyData);
     const receipt = await deployTx.wait();
 
-    console.log();
     console.log(`English Auction beacon proxy deployed to ${EnglishAuctionBPInstAddr} with ${receipt.gasUsed} gas`);
 };
 
