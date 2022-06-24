@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, web3, network } from 'hardhat';
 import { ERC1167Factory, UpgradeableBeaconInitializable } from '../typechain';
-import { ERC721BeaconInstAddr, ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from './000_constants';
+import { ERC721BeaconInstAddr, ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from '../constants/addresses';
 
 const salt = ethers.utils.formatBytes32String('1');
 

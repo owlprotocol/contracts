@@ -61,9 +61,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         ERC721Contract = (await ethers.getContractAt('FactoryERC721', FactoryERC721Addr)) as FactoryERC721;
         await ERC721Contract.mint(other, 1);
     }
-    console.log('verify', EnglishAuctionBeaconAddr);
-    //console.log(FactoryERC20Addr);
-    //console.log(FactoryERC721Addr);
 
     const EnglishAuctionImpl = (await ethers.getContractAt('EnglishAuction', EnglishAuctionAddr)) as EnglishAuction;
 

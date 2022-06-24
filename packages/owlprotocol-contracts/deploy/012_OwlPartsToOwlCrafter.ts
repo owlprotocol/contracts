@@ -10,7 +10,7 @@ import {
     ERC721Owl,
     UpgradeableBeaconInitializable,
 } from '../typechain';
-import { ERC721BeaconInstAddr, ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from './000_constants';
+import { ERC721BeaconInstAddr, ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from '../constants/addresses';
 import { tokenIds } from '../constants';
 
 const ERC1115Amounts = [2, 2, 2, 1, 1, 1, 2];
@@ -104,7 +104,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const crafterTransferData = crafterTransfer.interface.encodeFunctionData('proxyInitialize', [
         other,
         other,
-        53,
+        0,
         [
             {
                 token: 2,
@@ -120,7 +120,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
                 consumableType: 0,
                 contractAddr: ERC721BPInstAddr,
                 amounts: [],
-                tokenIds,
+                tokenIds: [],
             },
         ],
     ]);

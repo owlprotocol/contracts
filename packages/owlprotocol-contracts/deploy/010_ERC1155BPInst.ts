@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, web3, network } from 'hardhat';
 import { BeaconProxyInitializable, ERC1167Factory, ERC1155Owl, UpgradeableBeaconInitializable } from '../typechain';
-import { ERC1155BeaconInstAddr } from './000_constants';
+import { ERC1155BeaconInstAddr } from '../constants/addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const salt = ethers.utils.formatBytes32String('1');

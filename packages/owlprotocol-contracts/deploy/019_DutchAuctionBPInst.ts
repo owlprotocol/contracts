@@ -57,16 +57,15 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         const { address: address2 } = await deployments.get('FactoryERC721');
         FactoryERC721Addr = address2;
         ERC721Contract = (await ethers.getContractAt('FactoryERC721', FactoryERC721Addr)) as FactoryERC721;
-        await ERC721Contract.mint(other, 1);
+        await ERC721Contract.mint(other, 2);
     }
-    console.log('verify', dutchAuctionBeaconAddr);
 
     const dutchAuctionImpl = (await ethers.getContractAt('DutchAuction', dutchAuctionAddr)) as DutchAuction;
 
     const dutchAuctionData = dutchAuctionImpl.interface.encodeFunctionData('proxyInitialize', [
         other,
         FactoryERC721Addr,
-        1,
+        2,
         FactoryERC20Addr,
         100,
         10,
@@ -85,7 +84,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         .connect(otherSigner)
         .predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
 
-    if (network.name === 'hardhat') await ERC721Contract.connect(otherSigner).approve(dutchAuctionBPInstAddr, 1);
+    if (network.name === 'hardhat') await ERC721Contract.connect(otherSigner).approve(dutchAuctionBPInstAddr, 2);
 
     if ((await web3.eth.getCode(dutchAuctionBPInstAddr)) !== '0x') {
         console.log(`ERC721 beacon proxy already deployed ${network.name} at ${dutchAuctionBPInstAddr}`);
