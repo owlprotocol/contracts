@@ -132,7 +132,8 @@ describe('EnglishAuction.sol', function () {
 
             await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
 
-            await auction.claim();
+            await auction.connect(seller).ownerClaim();
+            await auction.connect(bidder1).winnerClaim();
 
             const totalERC20Minted: BigNumber = parseUnits('1000000000.0');
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(295));
@@ -165,7 +166,9 @@ describe('EnglishAuction.sol', function () {
 
             await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
 
-            await auction.claim();
+            await auction.connect(seller).ownerClaim();
+            await auction.connect(bidder1).winnerClaim();
+
             const totalERC20Minted: BigNumber = parseUnits('1000000000.0');
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(280));
             expect(await testNFT.balanceOf(bidder1.address)).to.equal(1);
@@ -203,7 +206,8 @@ describe('EnglishAuction.sol', function () {
 
             await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
 
-            await auction.claim();
+            await auction.connect(seller).ownerClaim();
+            await auction.connect(bidder1).winnerClaim();
             await expect(auction.connect(bidder2).bid(7)).to.be.revertedWith('ended');
         });
 
@@ -224,7 +228,9 @@ describe('EnglishAuction.sol', function () {
 
             await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
 
-            await auction.claim();
+            await auction.connect(seller).ownerClaim();
+            await auction.connect(bidder2).winnerClaim();
+
             const totalERC20Minted: BigNumber = parseUnits('1000000000.0');
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(290));
             await auction.connect(bidder1).withdraw();
@@ -249,13 +255,14 @@ describe('EnglishAuction.sol', function () {
             await expect(auction.connect(bidder2).withdraw()).to.be.revertedWith('the highest bidder cannot withdraw!');
 
             await network.provider.send('evm_increaseTime', [82800]); //advance timestamp in seconds
-            await expect(auction.claim()).to.be.revertedWith('not ended');
+            await expect(auction.connect(seller).ownerClaim()).to.be.revertedWith('not ended');
             await network.provider.send('evm_increaseTime', [60]);
             await auction.connect(bidder1).bid(15);
             await network.provider.send('evm_increaseTime', [3540]);
-            await expect(auction.claim()).to.be.revertedWith('not ended');
+            await expect(auction.connect(seller).ownerClaim()).to.be.revertedWith('not ended');
             await network.provider.send('evm_increaseTime', [60]);
-            await auction.claim();
+            await auction.connect(seller).ownerClaim();
+            await auction.connect(bidder1).winnerClaim();
         });
 
         afterEach(async () => {
