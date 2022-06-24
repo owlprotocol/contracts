@@ -82,13 +82,12 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         other,
         53,
-        [
-            // {
-            //     token: 2,
-            //     consumableType: 0,
-            //     contractAddr:
-            // }
-        ],
+        [],
+        // [{
+        //     token: 2,
+        //     consumableType: 0,
+        //     contractAddr:
+        // }],
         [
             {
                 token: 2,
