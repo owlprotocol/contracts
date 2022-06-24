@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2022-06-22T21:22:48.600Z" agent="5.0 (Windows)" etag="a54rD0_z_5P36Hsq9AlD" version="20.0.3" type="github">
+<mxfile host="app.diagrams.net" modified="2022-06-24T11:34:03.632Z" agent="5.0 (Windows)" etag="qdRE5FX4trgBonJO2kqe" version="20.0.3" type="github">
   <diagram id="e7Xeu3ZGWUXAZvRO6fgh" name="Page-1">
-    <mxGraphModel dx="4462" dy="1932" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="4118" dy="1743" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -232,6 +232,9 @@
         <mxCell id="F29buhv9PFu0Gap1kYDo-79" value="Launch(beaconAddr)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
           <mxGeometry x="-1780" y="525" width="130" height="30" as="geometry" />
         </mxCell>
+        <mxCell id="Zn6NjE9IryN0blh8tZBQ-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="F29buhv9PFu0Gap1kYDo-80" target="F29buhv9PFu0Gap1kYDo-18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="F29buhv9PFu0Gap1kYDo-80" value="initialize" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="-1310" y="20" width="60" height="30" as="geometry" />
         </mxCell>
@@ -382,9 +385,6 @@
         <mxCell id="F29buhv9PFu0Gap1kYDo-164" value="&lt;div&gt;address implementation&lt;br&gt;&lt;/div&gt;&lt;div&gt;Beacon&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;" parent="1" vertex="1">
           <mxGeometry x="-285" y="1110" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="F29buhv9PFu0Gap1kYDo-165" value="ERC721Implementation (No constructor)" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="-345" y="1295" width="160" height="90" as="geometry" />
-        </mxCell>
         <mxCell id="F29buhv9PFu0Gap1kYDo-166" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=12;" parent="1" source="F29buhv9PFu0Gap1kYDo-167" target="F29buhv9PFu0Gap1kYDo-170" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
@@ -478,7 +478,7 @@
           <mxGeometry x="-580" y="2300" width="260" height="130" as="geometry" />
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-9" value="ERC1155Implementation (No constructor)" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="-580" y="2440" width="260" height="130" as="geometry" />
+          <mxGeometry x="-580" y="2450" width="260" height="130" as="geometry" />
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-10" value="ERC721Beacon" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-1620" y="2010" width="140" height="90" as="geometry" />
@@ -613,16 +613,25 @@
           <mxGeometry x="-580" y="4350" width="260" height="130" as="geometry" />
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-66" value="address implementation&lt;div&gt;ERC721Beacon&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
-          <mxGeometry x="-1960" y="4140" width="140" height="90" as="geometry" />
+          <mxGeometry x="-1960" y="4125" width="140" height="90" as="geometry" />
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-67" value="address implementation&lt;div&gt;ERC1155Beacon&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-1960" y="4270" width="140" height="90" as="geometry" />
         </mxCell>
+        <mxCell id="Zn6NjE9IryN0blh8tZBQ-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=4;" edge="1" parent="1" source="rZRPHOX6fVJ8QpECsOCq-68" target="rZRPHOX6fVJ8QpECsOCq-63">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-68" value="&lt;div&gt;address ERC721BeaconAddr&lt;br&gt;&lt;/div&gt;&lt;div&gt;BeaconProxyInstance&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-845" y="3945" width="175" height="110" as="geometry" />
         </mxCell>
+        <mxCell id="Zn6NjE9IryN0blh8tZBQ-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=4;" edge="1" parent="1" source="rZRPHOX6fVJ8QpECsOCq-69" target="rZRPHOX6fVJ8QpECsOCq-63">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-69" value="address ERC721BeaconAddr&lt;div&gt;BeaconProxyInstance&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-845" y="4075" width="175" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="Zn6NjE9IryN0blh8tZBQ-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=4;" edge="1" parent="1" source="rZRPHOX6fVJ8QpECsOCq-70" target="rZRPHOX6fVJ8QpECsOCq-63">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-70" value="address ERC1155BeaconAddr&lt;div&gt;BeaconProxyInstance&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-845" y="4215" width="175" height="110" as="geometry" />
@@ -648,25 +657,45 @@
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-80" value="ERC1155Implementation (No constructor)" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="-580" y="4990" width="260" height="130" as="geometry" />
         </mxCell>
-        <mxCell id="rZRPHOX6fVJ8QpECsOCq-96" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.029;entryY=0.682;entryDx=0;entryDy=0;entryPerimeter=0;strokeWidth=1;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-81" target="rZRPHOX6fVJ8QpECsOCq-84" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="rZRPHOX6fVJ8QpECsOCq-97" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-81" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-580" y="4770" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="-1890" y="4770" />
+            </Array>
+          </mxGeometry>
         </mxCell>
-        <mxCell id="rZRPHOX6fVJ8QpECsOCq-97" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeWidth=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-81" target="rZRPHOX6fVJ8QpECsOCq-83" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="Zn6NjE9IryN0blh8tZBQ-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;fillColor=#fff2cc;strokeColor=#d6b656;" edge="1" parent="1" source="rZRPHOX6fVJ8QpECsOCq-81">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-580.0000000000005" y="4770" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="-580" y="4780" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-81" value="address implementation&lt;div&gt;ERC721Beacon&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-1960" y="4780" width="140" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="rZRPHOX6fVJ8QpECsOCq-94" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeWidth=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-82" target="rZRPHOX6fVJ8QpECsOCq-85" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="rZRPHOX6fVJ8QpECsOCq-94" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;fillColor=#ffe6cc;strokeColor=#d79b00;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-82" target="rZRPHOX6fVJ8QpECsOCq-78" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-1140" y="4955" />
+              <mxPoint x="-1140" y="4880" />
+              <mxPoint x="-670" y="4880" />
+              <mxPoint x="-670" y="4808" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-82" value="address implementation&lt;div&gt;ERC1155Beacon&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-1960" y="4910" width="140" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="rZRPHOX6fVJ8QpECsOCq-88" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-83" target="rZRPHOX6fVJ8QpECsOCq-81" edge="1">
+        <mxCell id="rZRPHOX6fVJ8QpECsOCq-88" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;fillColor=#d5e8d4;strokeColor=#82b366;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-78" target="rZRPHOX6fVJ8QpECsOCq-81" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="-1780" y="4615" />
+              <mxPoint x="-580" y="4740" />
+              <mxPoint x="-720" y="4740" />
+              <mxPoint x="-720" y="4630" />
+              <mxPoint x="-1780" y="4630" />
               <mxPoint x="-1780" y="4730" />
               <mxPoint x="-1890" y="4730" />
             </Array>
@@ -675,24 +704,30 @@
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-83" value="&lt;div&gt;address ERC721BeaconAddr&lt;br&gt;&lt;/div&gt;&lt;div&gt;BeaconProxyInstance&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-1065" y="4560" width="175" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="rZRPHOX6fVJ8QpECsOCq-89" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" edge="1">
+        <mxCell id="rZRPHOX6fVJ8QpECsOCq-89" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=1;fillColor=#d5e8d4;strokeColor=#82b366;exitX=-0.005;exitY=0.445;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" edge="1" source="rZRPHOX6fVJ8QpECsOCq-78">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="-1065" y="4801.058823529412" as="sourcePoint" />
-            <mxPoint x="-1890" y="4776" as="targetPoint" />
+            <mxPoint x="-585" y="4784" as="sourcePoint" />
+            <mxPoint x="-1895" y="4790" as="targetPoint" />
             <Array as="points">
-              <mxPoint x="-1140" y="4801" />
-              <mxPoint x="-1140" y="4616" />
-              <mxPoint x="-1780" y="4616" />
-              <mxPoint x="-1780" y="4730" />
-              <mxPoint x="-1890" y="4730" />
+              <mxPoint x="-581" y="4740" />
+              <mxPoint x="-1145" y="4740" />
+              <mxPoint x="-1145" y="4630" />
+              <mxPoint x="-1785" y="4630" />
+              <mxPoint x="-1785" y="4744" />
+              <mxPoint x="-1895" y="4744" />
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-84" value="address ERC721BeaconAddr&lt;div&gt;BeaconProxyInstance&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-1065" y="4750" width="175" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="rZRPHOX6fVJ8QpECsOCq-92" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.75;entryDx=0;entryDy=0;strokeWidth=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-85" target="rZRPHOX6fVJ8QpECsOCq-82" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="rZRPHOX6fVJ8QpECsOCq-92" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.75;entryDx=0;entryDy=0;strokeWidth=1;fillColor=#d5e8d4;strokeColor=#82b366;exitX=-0.008;exitY=0.855;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="rZRPHOX6fVJ8QpECsOCq-78" target="rZRPHOX6fVJ8QpECsOCq-82" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-780" y="4821" />
+              <mxPoint x="-780" y="4978" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-85" value="address ERC1155BeaconAddr&lt;div&gt;BeaconProxyInstance&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
           <mxGeometry x="-1065" y="4940" width="175" height="110" as="geometry" />
@@ -707,7 +742,7 @@
           <mxGeometry x="-1440" y="4940" width="230" height="30" as="geometry" />
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-98" value="ERC721ImplementationAddr" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="-1560" y="4790" width="230" height="30" as="geometry" />
+          <mxGeometry x="-1570" y="4730" width="230" height="30" as="geometry" />
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-99" value="initialize(ERC721BeaconAddr, abi.encode(&quot;proxyInitialize(Cool Cats)&quot;))" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="-1245" y="3960" width="225" height="40" as="geometry" />
@@ -777,6 +812,12 @@
         </mxCell>
         <mxCell id="rZRPHOX6fVJ8QpECsOCq-141" value="6" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="-1887.5" y="5720" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Zn6NjE9IryN0blh8tZBQ-3" value="ERC721Implementation (No constructor)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-335" y="1305" width="160" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="Zn6NjE9IryN0blh8tZBQ-10" value="EXECUTION HAPPENING HERE" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-517.5" y="5400" width="150" height="35" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
