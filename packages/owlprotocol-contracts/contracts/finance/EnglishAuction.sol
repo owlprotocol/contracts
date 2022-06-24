@@ -29,14 +29,14 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     address public acceptableToken;
 
     address payable public seller;
-
-    uint256 public auctionDuration;
+    bool public started;
+    bool public ownerClaimed;
+    bool public winnerClaimed;
+    
     uint256 public endAt;
+    uint256 public auctionDuration;
     uint256 public startingBid;
     uint256 public resetTime; //number of seconds the auction is reset to after a bid within this time
-
-    bool public started;
-    bool public claimed;
 
     address public highestBidder;
     mapping(address => uint256) public bids;
@@ -175,20 +175,30 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         emit Withdraw(_msgSender(), bal);
     }
 
-    //after auction ends, the seller must call end() to transfer nft and funds
-    function claim() external onlyOwner {
+    //after auction ends, the seller must call end() to transfer the erc20 to themselves
+    function ownerClaim() external onlyOwner {
         require(started, 'EnglishAuction: not started');
         require(block.timestamp >= endAt, 'EnglishAuction: not ended');
-        require(!claimed, 'EnglishAuction: already claimed');
+        require(!ownerClaimed, 'EnglishAuction: owner has already claimed');
 
-        claimed = true;
+        ownerClaimed = true;
         if (highestBidder != address(0)) {
-            IERC721Upgradeable(nft).safeTransferFrom(address(this), highestBidder, nftId);
             IERC20Upgradeable(acceptableToken).transfer(seller, bids[highestBidder]);
         } else IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
 
         emit End(highestBidder, bids[highestBidder]);
     }
+
+    function winnerClaim() external {
+        require(started, 'EnglishAuction: not started');
+        require(block.timestamp >= endAt, 'EnglishAuction: not ended');
+        require(!winnerClaimed, 'EnglishAuction: winner has already claimed');
+        require(_msgSender() == highestBidder, 'EnglishAuction: you are not the winner, you cannot claim!'); //highestBidder at end is the winning address
+
+        IERC721Upgradeable(nft).safeTransferFrom(address(this), highestBidder, nftId);
+    }
+
+
 
     /**
     Getters
