@@ -17,13 +17,19 @@ import '../utils/FractionalExponents.sol';
 
 import 'hardhat/console.sol';
 
-contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable, FractionalExponents {
+contract DutchAuction is
+    ERC721HolderUpgradeable,
+    ERC1155HolderUpgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    FractionalExponents
+{
     /**********************
              Types
     **********************/
-    event Start();
+    event Start(uint256 startTime);
     event Bid(address indexed sender, uint256 amount);
-    event Claim();
+    event Claim(address indexed seller, address indexed contractAddr, uint256 tokenId);
 
     address public nft;
     uint256 public nftId;
@@ -33,10 +39,10 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
 
     uint256 public auctionDuration;
     uint256 public startPrice; //starting maximum price
-    uint256 public endPrice; //once it hits this price the bids cannot go any lower
+    uint256 public endPrice; //floor price
     uint256 public startTime;
+
     bool public started;
-    uint256 public endAt; //keeps track of auction duration --> is this even needed if we already have auction duration?
     bool public isNonLinear;
 
     /**********************
@@ -137,7 +143,7 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
         uint256 _auctionDuration,
         bool _isNonLinear
     ) internal onlyInitializing {
-        require(_startPrice > _endPrice, "DutchAuction: start price must be greater than end price");
+        require(_startPrice > _endPrice, 'DutchAuction: start price must be greater than end price');
         nft = (_nft);
         nftId = _nftId;
 
@@ -165,9 +171,8 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
 
         started = true;
         startTime = block.timestamp;
-        endAt = block.timestamp + auctionDuration * 1 seconds; //should be controlled by startPrice/endPrice/timeIntervalLength
 
-        emit Start();
+        emit Start(startTime);
     }
 
     /**
@@ -176,13 +181,15 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
 
     function getCurrentPrice() public view returns (uint256) {
         //show the current price
-        if (block.timestamp >= endAt) return 1e18 * endPrice;
+        if (block.timestamp >= startTime + auctionDuration) return 1e18 * endPrice;
         if (isNonLinear) {
-            (uint256 result, uint8 precision) = (power(startPrice - endPrice, 1, uint32(block.timestamp - startTime), uint32( auctionDuration )));
-            uint256 exp = (1e18*result/(2 ** precision));
-            int256 const = int256(1e18 * int256(startPrice - endPrice) / (1 + int256(endPrice) - int256(startPrice)));
+            (uint256 result, uint8 precision) = (
+                power(startPrice - endPrice, 1, uint32(block.timestamp - startTime), uint32(auctionDuration))
+            );
+            uint256 exp = ((1e18 * result) / (2**precision));
+            int256 const = int256((1e18 * int256(startPrice - endPrice)) / (1 + int256(endPrice) - int256(startPrice)));
 
-            return uint256((const * int256(exp) / 1e18) - const + 1e18 * int256(startPrice));
+            return uint256(((const * int256(exp)) / 1e18) - const + 1e18 * int256(startPrice));
         }
         return (1e18 *
             startPrice -
@@ -191,28 +198,24 @@ contract DutchAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Owna
 
     function bid() external payable {
         require(started, 'DutchAuction: not started');
-        require(block.timestamp < endAt, 'DutchAuction: ended');
+        require(block.timestamp < startTime + auctionDuration, 'DutchAuction: ended');
 
         uint256 bidPrice = getCurrentPrice();
 
-        SafeERC20Upgradeable.safeTransferFrom(
-            IERC20Upgradeable(acceptableToken),
-            _msgSender(),
-            seller,
-            bidPrice
-        );
-        IERC721Upgradeable(nft).safeTransferFrom(address(this),  _msgSender(), nftId);
+        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), seller, bidPrice);
+        IERC721Upgradeable(nft).safeTransferFrom(address(this), _msgSender(), nftId);
 
         emit Bid(_msgSender(), bidPrice);
     }
 
-    function claim() external onlyOwner { //owner withdraws asset if nobody bids
+    function claim() external onlyOwner {
+        //owner withdraws asset if nobody bids
         require(started, 'DutchAuction: not started');
-        require(block.timestamp >= endAt, 'DutchAuction: cannot claim when auction is ongoing!');
+        require(block.timestamp >= startTime + auctionDuration, 'DutchAuction: cannot claim when auction is ongoing!');
 
         IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
 
-        emit Claim();
+        emit Claim(seller, nft, nftId);
     }
 
     /**
