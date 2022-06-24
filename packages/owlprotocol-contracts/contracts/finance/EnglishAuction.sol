@@ -19,7 +19,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     /**********************
              Types
     **********************/
-    event Start();
+    event Start(uint256 startTime);
     event Bid(address indexed sender, uint256 amount);
     event Withdraw(address indexed bidder, uint256 amount);
     event End(address winner, uint256 amount);
@@ -29,12 +29,14 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     address public acceptableToken;
 
     address payable public seller;
-    bool public started;
-    bool public claimed;
-    uint256 public endAt;
+
     uint256 public auctionDuration;
+    uint256 public endAt;
     uint256 public startingBid;
     uint256 public resetTime; //number of seconds the auction is reset to after a bid within this time
+
+    bool public started;
+    bool public claimed;
 
     address public highestBidder;
     mapping(address => uint256) public bids;
@@ -134,9 +136,9 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         require(!started, 'EnglishAuction: started');
 
         started = true;
-        endAt = block.timestamp + auctionDuration * 1 seconds; // can save gas here by changing endAt to auctionDuration (?)
+        endAt = block.timestamp + auctionDuration * 1 seconds;
 
-        emit Start();
+        emit Start(block.timestamp);
     }
 
     function bid(uint256 amount) external payable {
