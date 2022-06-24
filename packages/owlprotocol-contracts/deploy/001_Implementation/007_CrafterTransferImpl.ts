@@ -1,9 +1,10 @@
 import { web3, network } from 'hardhat';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
+import { burnNonce } from '../../constants/burnNonce';
 
-const address = '0xDdE49F4aC07CdFa60B0559803EeE4A520c2611ED';
-const nonceToDeploy = 2;
+const address = '0x1Fd2b65F7e23abC6f69EAf5ABf8db73e5a73B73b';
+const nonceToDeploy = 19;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
@@ -14,14 +15,16 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if ((await web3.eth.getCode(address)) != '0x')
         return console.log(`already deployed on ${network.name} at ${address}`);
 
-    if (network.name !== 'hardhat' && nonce != nonceToDeploy)
+    if (network.name === 'hardhat') await burnNonce(deployer, nonceToDeploy);
+    if ((await web3.eth.getTransactionCount(deployer)) != nonceToDeploy)
         return console.log(`wrong nonce ${nonce}; required ${nonceToDeploy}`);
 
-    await deploy('ERC1167Factory', {
+    await deploy('CrafterTransfer', {
         from: deployer,
         log: true,
     });
 };
 
 export default deploy;
-deploy.tags = ['ProxyFactoryImpl', 'ProxyFactory', 'Implementation'];
+deploy.tags = ['CrafterTransferImpl', 'CrafterTransfer', 'Implementation'];
+deploy.dependencies = ['ProxyFactory'];

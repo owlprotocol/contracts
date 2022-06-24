@@ -1,12 +1,12 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, web3, network } from 'hardhat';
-import { ERC1167Factory, UpgradeableBeaconInitializable } from '../typechain';
-//import { EnglishAuctionBeaconInstAddr } from './000_constants';
+import { ERC1167Factory, UpgradeableBeaconInitializable } from '../../typechain';
+import { englishAuctionBeaconInstAddr } from '../../constants/addresses';
 
 const salt = ethers.utils.formatBytes32String('1');
 
-let EnglishAuctionBeaconAddr = '';
+let englishAuctionBeaconAddr = englishAuctionBeaconInstAddr;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
@@ -30,30 +30,29 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const EnglishAuctionBeaconData = beacon.interface.encodeFunctionData('initialize', [other, EnglishAuctionAddr]);
 
     if (network.name === 'hardhat') {
-        EnglishAuctionBeaconAddr = await proxy
+        englishAuctionBeaconAddr = await proxy
             .connect(otherSigner)
             .predictDeterministicAddress(beaconAddr, salt, EnglishAuctionBeaconData);
     }
 
     let deployEnglishAuctionBeacon;
-    let EnglishAuctionBeaconTx;
+    let englishAuctionBeaconTx;
 
-    if ((await web3.eth.getCode(EnglishAuctionBeaconAddr)) != '0x')
-        console.log(`EnglishAuction beacon already deployed on ${network.name} at ${EnglishAuctionBeaconAddr}`);
+    if ((await web3.eth.getCode(englishAuctionBeaconAddr)) != '0x')
+        console.log(`EnglishAuction beacon already deployed on ${network.name} at ${englishAuctionBeaconAddr}`);
     else
         deployEnglishAuctionBeacon = await proxy
             .connect(otherSigner)
             .cloneDeterministic(beaconAddr, salt, EnglishAuctionBeaconData);
 
-    if (deployEnglishAuctionBeacon !== undefined) EnglishAuctionBeaconTx = await deployEnglishAuctionBeacon.wait();
+    if (deployEnglishAuctionBeacon !== undefined) englishAuctionBeaconTx = await deployEnglishAuctionBeacon.wait();
 
-    console.log();
-    if (EnglishAuctionBeaconTx)
+    if (englishAuctionBeaconTx)
         console.log(
-            `English Auction beacon deployed to ${EnglishAuctionBeaconAddr} with ${EnglishAuctionBeaconTx.gasUsed} gas`,
+            `English Auction beacon deployed to ${englishAuctionBeaconAddr} with ${englishAuctionBeaconTx.gasUsed} gas`,
         );
 };
 
 export default deploy;
-deploy.tags = ['EnglishAuctionBeacon'];
+deploy.tags = ['EnglishAuctionBeacon', 'EnglishAuction', 'Beacons'];
 deploy.dependencies = ['EnglishAuctionImpl', 'BeaconImpl', 'ProxyFactory'];

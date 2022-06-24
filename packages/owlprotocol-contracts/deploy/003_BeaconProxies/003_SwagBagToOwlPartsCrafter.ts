@@ -8,8 +8,8 @@ import {
     ERC1155Owl,
     ERC1167Factory,
     UpgradeableBeaconInitializable,
-} from '../typechain';
-import { ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from '../constants/addresses';
+} from '../../typechain';
+import { ERC1155BeaconInstAddr, crafterTransferBeaconInstAddr } from '../../constants/addresses';
 
 const ERC1115Amounts = [2, 2, 2, 1, 1, 1, 2];
 const ERC1155Ids = [0, 1, 2, 3, 4, 5, 6];

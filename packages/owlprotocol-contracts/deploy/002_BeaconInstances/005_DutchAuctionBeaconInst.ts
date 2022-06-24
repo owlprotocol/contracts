@@ -1,7 +1,7 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { ethers, web3, network } from 'hardhat';
-import { ERC1167Factory, UpgradeableBeaconInitializable } from '../typechain';
+import { ERC1167Factory, UpgradeableBeaconInitializable } from '../../typechain';
 //import {dutchAuctionBeaconInstAddr} from './000_constants';
 
 const salt = ethers.utils.formatBytes32String('1');
@@ -36,7 +36,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     }
 
     let deployDutchAuctionBeacon;
-
     let dutchAuctionBeaconTx;
 
     if ((await web3.eth.getCode(dutchAuctionBeaconAddr)) != '0x')
@@ -48,7 +47,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     if (deployDutchAuctionBeacon !== undefined) dutchAuctionBeaconTx = await deployDutchAuctionBeacon.wait();
 
-    console.log();
     if (dutchAuctionBeaconTx)
         console.log(
             `Dutch Auction beacon deployed to ${dutchAuctionBeaconAddr} with ${dutchAuctionBeaconTx.gasUsed} gas`,
@@ -56,5 +54,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default deploy;
-deploy.tags = ['DutchAuctionBeacon'];
-deploy.dependencies = ['BeaconImpl', 'ProxyFactory', 'DutchAuctionImpl'];
+deploy.tags = ['DutchAuctionBeacon', 'DutchAuction', 'Beacons'];
+deploy.dependencies = ['DutchAuctionImpl', 'BeaconImpl', 'ProxyFactory'];

@@ -7,7 +7,7 @@ import {
     DutchAuction,
     UpgradeableBeaconInitializable,
     FactoryERC721,
-} from '../typechain';
+} from '../../typechain';
 //import { ERC721BeaconInstAddr } from './000_constants';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
@@ -16,13 +16,10 @@ let dutchAuctionBeaconAddr = '';
 let ERC721Contract: FactoryERC721;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+    if (process.env.PROXY_PRIV_KEY === undefined) return;
+
     const { deployments, getNamedAccounts } = hre;
-    const { deploy } = deployments;
-
-    if (process.env.PRIV_KEY === undefined) return;
-
-    const { deployer, other } = await getNamedAccounts();
-
+    const { other } = await getNamedAccounts();
     const otherSigner = (await ethers.getSigners())[1];
 
     const { address: proxyAddr } = await deployments.get('ERC1167Factory');
@@ -41,23 +38,12 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     if (network.name === 'hardhat') {
         dutchAuctionBeaconAddr = await getBeaconAddr(proxy, otherSigner, beaconAddr, dutchAuctionAddr);
-        await deploy('FactoryERC20', {
-            from: deployer,
-            args: [0, 'name', 'ticker'],
-            log: true,
-        });
+
         const { address } = await deployments.get('FactoryERC20');
         FactoryERC20Addr = address;
-
-        await deploy('FactoryERC721', {
-            from: deployer,
-            args: ['name', 'symbol'],
-            log: true,
-        });
         const { address: address2 } = await deployments.get('FactoryERC721');
         FactoryERC721Addr = address2;
-        ERC721Contract = (await ethers.getContractAt('FactoryERC721', FactoryERC721Addr)) as FactoryERC721;
-        await ERC721Contract.mint(other, 2);
+        ERC721Contract = (await ethers.getContractAt('FactoryERC721', address2)) as FactoryERC721;
     }
 
     const dutchAuctionImpl = (await ethers.getContractAt('DutchAuction', dutchAuctionAddr)) as DutchAuction;
@@ -94,7 +80,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const deployTx = await proxy.connect(otherSigner).cloneDeterministic(beaconProxyAddr, salt, beaconProxyData);
     const receipt = await deployTx.wait();
 
-    console.log();
     console.log(`ERC721 beacon proxy deployed to ${dutchAuctionBPInstAddr} with ${receipt.gasUsed} gas`);
 };
 
