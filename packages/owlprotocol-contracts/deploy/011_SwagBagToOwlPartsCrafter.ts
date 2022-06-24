@@ -84,6 +84,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         other,
         53,
+        [],
         // [{
         //     token: 2,
         //     consumableType: 0,
@@ -111,7 +112,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         .predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
 
     //set approvals
-    await ERC721Inst.connect(otherSigner).setApprovalForAll(crafterTransferBPInstAddr, true);
     await ERC1155Inst.connect(otherSigner).setApprovalForAll(crafterTransferBPInstAddr, true);
 
     const deployCrafterTransfer = await proxy
