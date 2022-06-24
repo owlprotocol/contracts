@@ -33,16 +33,16 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         beaconProxyAddr,
     )) as BeaconProxyInitializable;
 
-    let FactoryERC20Addr = '';
-    let FactoryERC721Addr = '';
+    let acceptableTokenAddr = '';
+    let nftForSaleAddr = '';
 
     if (network.name === 'hardhat') {
         dutchAuctionBeaconAddr = await getBeaconAddr(proxy, otherSigner, beaconAddr, dutchAuctionAddr);
 
         const { address } = await deployments.get('FactoryERC20');
-        FactoryERC20Addr = address;
+        acceptableTokenAddr = address;
         const { address: address2 } = await deployments.get('FactoryERC721');
-        FactoryERC721Addr = address2;
+        nftForSaleAddr = address2;
         ERC721Contract = (await ethers.getContractAt('FactoryERC721', address2)) as FactoryERC721;
     }
 
@@ -50,9 +50,9 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const dutchAuctionData = dutchAuctionImpl.interface.encodeFunctionData('proxyInitialize', [
         other,
-        FactoryERC721Addr,
+        nftForSaleAddr,
         2,
-        FactoryERC20Addr,
+        acceptableTokenAddr,
         100,
         10,
         300,
