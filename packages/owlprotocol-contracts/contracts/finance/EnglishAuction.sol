@@ -22,7 +22,6 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     event Start(uint256 startTime);
     event Bid(address indexed sender, uint256 amount);
     event Withdraw(address indexed bidder, uint256 amount);
-    event End(address winner, uint256 amount);
 
     address public nft;
     uint256 public nftId;
@@ -32,7 +31,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     bool public started;
     bool public ownerClaimed;
     bool public winnerClaimed;
-    
+
     uint256 public endAt;
     uint256 public auctionDuration;
     uint256 public startingBid;
@@ -185,8 +184,6 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         if (highestBidder != address(0)) {
             IERC20Upgradeable(acceptableToken).transfer(seller, bids[highestBidder]);
         } else IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
-
-        emit End(highestBidder, bids[highestBidder]);
     }
 
     function winnerClaim() external {
@@ -197,8 +194,6 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
         IERC721Upgradeable(nft).safeTransferFrom(address(this), highestBidder, nftId);
     }
-
-
 
     /**
     Getters
