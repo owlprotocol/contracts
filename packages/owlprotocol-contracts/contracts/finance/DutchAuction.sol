@@ -14,6 +14,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '../utils/FractionalExponents.sol';
+import './AuctionLib.sol';
 
 import 'hardhat/console.sol';
 
@@ -31,8 +32,8 @@ contract DutchAuction is
     event Bid(address indexed sender, uint256 amount);
     event Claim(address indexed seller, address indexed contractAddr, uint256 tokenId);
 
-    address public nft;
-    uint256 public nftId;
+    AuctionLib.Asset asset;
+
     address public acceptableToken;
 
     address payable public seller;
@@ -44,6 +45,7 @@ contract DutchAuction is
 
     bool public started;
     bool public isNonLinear;
+    bool public isBought;
 
     /**********************
         Initialization
@@ -57,8 +59,7 @@ contract DutchAuction is
     /**
      * @dev Create auction instance
      * @param _seller address of seller for auction
-     * @param _nft address of nft for auction
-     * @param _nftId id of nft for auction
+     * @param _asset struct containing information of the asset to be listed
      * @param ERC20contractAddress address of ERC20 token accepted as payment
      * @param _startPrice highest starting price to start the auction
      * @param _endPrice lowest price that seller is willing to accept
@@ -67,8 +68,7 @@ contract DutchAuction is
      */
     function initialize(
         address payable _seller,
-        address _nft,
-        uint256 _nftId,
+        AuctionLib.Asset calldata _asset,
         address ERC20contractAddress,
         uint256 _startPrice,
         uint256 _endPrice,
@@ -77,8 +77,7 @@ contract DutchAuction is
     ) external initializer {
         __DutchAuction_init(
             _seller,
-            _nft,
-            _nftId,
+            _asset,
             ERC20contractAddress,
             _startPrice,
             _endPrice,
@@ -89,8 +88,7 @@ contract DutchAuction is
 
     function proxyInitialize(
         address payable _seller,
-        address _nft,
-        uint256 _nftId,
+        AuctionLib.Asset calldata _asset,
         address ERC20contractAddress,
         uint256 _startPrice,
         uint256 _endPrice,
@@ -99,8 +97,7 @@ contract DutchAuction is
     ) external onlyInitializing {
         __DutchAuction_init(
             _seller,
-            _nft,
-            _nftId,
+            _asset,
             ERC20contractAddress,
             _startPrice,
             _endPrice,
@@ -111,8 +108,7 @@ contract DutchAuction is
 
     function __DutchAuction_init(
         address payable _seller,
-        address _nft,
-        uint256 _nftId,
+        AuctionLib.Asset calldata _asset,
         address ERC20contractAddress,
         uint256 _startPrice,
         uint256 _endPrice,
@@ -123,8 +119,7 @@ contract DutchAuction is
         _transferOwnership(_seller);
         __DutchAuction_init_unchained(
             _seller,
-            _nft,
-            _nftId,
+            _asset,
             ERC20contractAddress,
             _startPrice,
             _endPrice,
@@ -135,8 +130,7 @@ contract DutchAuction is
 
     function __DutchAuction_init_unchained(
         address payable _seller,
-        address _nft,
-        uint256 _nftId,
+        AuctionLib.Asset memory _asset,
         address ERC20contractAddress,
         uint256 _startPrice,
         uint256 _endPrice,
@@ -144,17 +138,29 @@ contract DutchAuction is
         bool _isNonLinear
     ) internal onlyInitializing {
         require(_startPrice > _endPrice, 'DutchAuction: start price must be greater than end price');
-        nft = (_nft);
-        nftId = _nftId;
+        asset = _asset;
 
-        acceptableToken = (ERC20contractAddress);
+        acceptableToken = ERC20contractAddress;
 
         seller = _seller;
         auctionDuration = _auctionDuration;
         startPrice = _startPrice;
         endPrice = _endPrice;
         isNonLinear = _isNonLinear;
-        IERC721Upgradeable(nft).transferFrom(seller, address(this), nftId);
+        isBought = false;
+
+        //transferring ERC 721
+        if (_asset.token == AuctionLib.TokenType.erc721)
+            IERC721Upgradeable(_asset.contractAddr).transferFrom(seller, address(this), _asset.tokenId);
+        else if (_asset.token == AuctionLib.TokenType.erc1155)
+            //transferring ERC 1155
+            IERC1155Upgradeable(_asset.contractAddr).safeTransferFrom(
+                seller,
+                address(this),
+                _asset.tokenId,
+                1,
+                new bytes(0)
+            );
     }
 
     //this is the interval : (block.timestamp at view - block.timestamp at start) / auctionDuration
@@ -193,17 +199,30 @@ contract DutchAuction is
         }
         return (1e18 *
             startPrice -
-            (((1e18 * (block.timestamp - startTime)) / (auctionDuration)) * ((startPrice - endPrice)))); //round (block.timestamp - startTime) to nearest multiple of 30 seconds: x - x mod 30
+            (((1e18 * (block.timestamp - startTime)) / (auctionDuration)) * ((startPrice - endPrice))));
     }
 
     function bid() external payable {
         require(started, 'DutchAuction: not started');
         require(block.timestamp < startTime + auctionDuration, 'DutchAuction: ended');
+        require(!isBought, 'DutchAuction: somebody has already bought this item!');
 
         uint256 bidPrice = getCurrentPrice();
 
         SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), seller, bidPrice);
-        IERC721Upgradeable(nft).safeTransferFrom(address(this), _msgSender(), nftId);
+
+        if (asset.token == AuctionLib.TokenType.erc721)
+            IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
+        else if (asset.token == AuctionLib.TokenType.erc1155)
+            IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
+                address(this),
+                _msgSender(),
+                asset.tokenId,
+                1,
+                new bytes(0)
+            );
+
+        isBought = true;
 
         emit Bid(_msgSender(), bidPrice);
     }
@@ -213,9 +232,18 @@ contract DutchAuction is
         require(started, 'DutchAuction: not started');
         require(block.timestamp >= startTime + auctionDuration, 'DutchAuction: cannot claim when auction is ongoing!');
 
-        IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
+        if (asset.token == AuctionLib.TokenType.erc721)
+            IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);
+        else if (asset.token == AuctionLib.TokenType.erc1155)
+            IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
+                address(this),
+                seller,
+                asset.tokenId,
+                1,
+                new bytes(0)
+            );
 
-        emit Claim(seller, nft, nftId);
+        emit Claim(seller, asset.contractAddr, asset.tokenId);
     }
 
     /**
