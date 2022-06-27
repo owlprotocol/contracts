@@ -1,24 +1,23 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '../../../assets/ERC721/ERC721Owl.sol';
 import '../MinterCore.sol';
-import './IMinterBreeding.sol';
-import '../../Utils/SourceRandom.sol';
-import '../../Utils/RosalindDNA.sol';
+import '../../../utils/SourceRandom.sol';
+import '../../../utils/RosalindDNA.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterBreeding is MinterCore {
+contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     uint8 public constant defaultGenesNum = 8;
     uint8 public constant defaultRequiredParents = 2;
     uint256 public constant defaultBreedingCooldownSeconds = 604800; // 7 days
-
-    // Store data
-    mapping(uint256 => BreedingRules) private _breedingRules;
 
     // Store breeding details
     struct BreedingRules {
@@ -27,100 +26,111 @@ contract MinterBreeding is MinterCore {
         uint8[] genes;
         uint256 breedCooldownSeconds;
         uint256[] mutationRates;
-        mapping(uint256 => uint256) lastBredTime;
     }
 
-    // Events
-    event MintSpecies(uint256 indexed speciesId, address to, uint256 tokenId, uint256[] parents);
-    event SetBreedingRules(
-        uint256 speciesId,
-        uint8 requiredParents,
-        uint256 breedCooldownSeconds,
-        uint8[] genes,
-        uint256[] mutationRates
-    );
+    mapping(uint256 => uint256) lastBredTime;
+    BreedingRules private _breedingRules;
+
+    event SetBreedingRules(uint8 requiredParents, uint256 breedCooldownSeconds, uint8[] genes, uint256[] mutationRates);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor() initializer {
+        _disableInitializers();
+    }
 
     // Constructor
-    function initialize() public override initializer {
+    function initialize(
+        address _admin,
+        address _mintFeeToken,
+        address _mintFeeAddress,
+        uint256 _mintFeeAmount,
+        address _nftContractAddr,
+        BreedingRules calldata breedingRules_
+    ) external initializer {
+        __MinterBreeding_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, breedingRules_);
+    }
+
+    function proxyIntiialize(
+        address _admin,
+        address _mintFeeToken,
+        address _mintFeeAddress,
+        uint256 _mintFeeAmount,
+        address _nftContractAddr,
+        BreedingRules calldata breedingRules_
+    ) external onlyInitializing {
+        __MinterBreeding_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, breedingRules_);
+    }
+
+    function __MinterBreeding_init(
+        address _admin,
+        address _mintFeeToken,
+        address _mintFeeAddress,
+        uint256 _mintFeeAmount,
+        address _nftContractAddr,
+        BreedingRules calldata breedingRules_
+    ) internal onlyInitializing {
+        __MinterBreeding_init_unchained(_admin, breedingRules_);
+        __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+
+        __Ownable_init();
+    }
+
+    function __MinterBreeding_init_unchained(address _admin, BreedingRules calldata breedingRules_)
+        internal
+        onlyInitializing
+    {
         // Register ERC1820 Private Interface
         bytes32 interfaceName = keccak256('OWLProtocol://MinterBreeding');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
         // Register ERC165 Interface
         ERC165Storage._registerInterface(type(IMinterBreeding).interfaceId);
+
+        _breedingRules = breedingRules_;
+        _transferOwnership(_admin);
     }
 
     /**
      * @dev Create a new type of species and define attributes.
-     * @param speciesId address of associated NFT
-     * @return tokenId minted token id
      */
-    function breed(uint256 speciesId, uint256[] calldata parents)
-        public
-        speciesExists(speciesId)
-        returns (uint256 tokenId)
-    {
+    function breed(uint256[] calldata parents) public returns (uint256 tokenId) {
         // Check if user enabled generational species
-        bool gensEnabled = (_breedingRules[speciesId].generationCooldownMultiplier != 0);
+        bool gensEnabled = (_breedingRules.generationCooldownMultiplier != 0);
 
         // Breed species
-        tokenId = _breedSpecies(speciesId, parents, msg.sender);
-        if (gensEnabled)
-            // Add next gen to child
-            tokenId = RosalindDNA.breedDNAGenCount(tokenId, parents);
+        if (gensEnabled) tokenId = RosalindDNA.breedDNAGenCount(tokenId, parents);
+        else tokenId = _breedSpecies(parents, msg.sender);
 
         // Mint Operation
-        MinterCore._mintForFee(speciesId, msg.sender, tokenId);
-
-        emit MintSpecies(speciesId, msg.sender, tokenId, parents);
-
-        return tokenId;
+        MinterCore._mintForFee(msg.sender, tokenId);
     }
 
     /**
      * @dev Create a new type of species and define attributes.
-     * @param speciesId address of associated NFT
-     * @return tokenId minted token id
      */
-    function safeBreed(uint256 speciesId, uint256[] calldata parents)
-        public
-        speciesExists(speciesId)
-        returns (uint256 tokenId)
-    {
+    function safeBreed(uint256[] calldata parents) public returns (uint256 tokenId) {
         // Check if user enabled generational species
-        bool gensEnabled = (_breedingRules[speciesId].generationCooldownMultiplier != 0);
+        bool gensEnabled = (_breedingRules.generationCooldownMultiplier != 0);
 
         // Breed species
-        tokenId = _breedSpecies(speciesId, parents, msg.sender);
-        if (gensEnabled)
-            // Add next gen to child
-            tokenId = RosalindDNA.breedDNAGenCount(tokenId, parents);
+        if (gensEnabled) tokenId = RosalindDNA.breedDNAGenCount(tokenId, parents);
+        else tokenId = _breedSpecies(parents, msg.sender);
 
         // Mint Operation
-        MinterCore._safeMintForFee(speciesId, msg.sender, tokenId);
-
-        emit MintSpecies(speciesId, msg.sender, tokenId, parents);
-
-        return tokenId;
+        MinterCore._safeMintForFee(msg.sender, tokenId);
     }
 
     /**
      * @dev Create a new type of species and define attributes.
-     * @param speciesId address of associated NFT
-     * @return tokenId minted token id
      */
     function setBreedingRules(
-        uint256 speciesId,
         uint8 requiredParents,
         uint16 generationCooldownMultiplier,
         uint256 breedCooldownSeconds,
         uint8[] memory genes,
         uint256[] memory mutationRates
-    ) public speciesExists(speciesId) returns (uint256 tokenId) {
+    ) public onlyOwner {
         // Breed species
-        BreedingRules storage r = _breedingRules[speciesId];
+        BreedingRules storage r = _breedingRules;
 
         // Set values
         r.requiredParents = requiredParents;
@@ -137,19 +147,15 @@ contract MinterBreeding is MinterCore {
         for (uint256 i = 0; i < genes.length; i++) r.genes.push(genes[i]);
         for (uint256 i = 0; i < mutationRates.length; i++) r.mutationRates.push(mutationRates[i]);
 
-        emit SetBreedingRules(speciesId, requiredParents, breedCooldownSeconds, genes, mutationRates);
-
-        return tokenId;
+        emit SetBreedingRules(requiredParents, breedCooldownSeconds, genes, mutationRates);
     }
 
     /**
      * @dev Returns the current breeding rules used for a species
-     * @param speciesId species identifier
      */
-    function getBreedingRules(uint256 speciesId)
+    function getBreedingRules()
         public
         view
-        speciesExists(speciesId)
         returns (
             uint8 requiredParents,
             uint256 breedCooldownSeconds,
@@ -157,68 +163,59 @@ contract MinterBreeding is MinterCore {
             uint256[] memory mutationRates
         )
     {
-        (requiredParents, breedCooldownSeconds, genes, mutationRates) = _getBreedingRules(speciesId);
+        (requiredParents, breedCooldownSeconds, genes, mutationRates) = _getBreedingRules();
     }
 
     /**
      * @dev Internal function to do the heavy lifting for breeding
-     * @param speciesId address of associated NFT
      * @param parents parents to use for breeding
      * @param caller owner of parent NFTs (this will be verified)
-     * @return tokenId new token id
      */
-    function _breedSpecies(
-        uint256 speciesId,
-        uint256[] calldata parents,
-        address caller
-    ) internal returns (uint256 tokenId) {
+    function _breedSpecies(uint256[] calldata parents, address caller) internal returns (uint256 tokenId) {
         // Fetch breeding rules
         uint8 requiredParents;
         uint8[] memory genes;
         uint256[] memory mutationRates;
         uint256 breedCooldownSeconds;
-        uint16 generationCooldownMultiplier = _breedingRules[speciesId].generationCooldownMultiplier;
-        (requiredParents, breedCooldownSeconds, genes, mutationRates) = _getBreedingRules(speciesId);
+        uint16 generationCooldownMultiplier = _breedingRules.generationCooldownMultiplier;
+        (requiredParents, breedCooldownSeconds, genes, mutationRates) = _getBreedingRules();
 
         // Make sure we're following rules
-        {
-            require(parents.length == requiredParents, 'Invalid number of parents!');
-            IERC721 nft = IERC721(species[speciesId].contractAddr);
-            for (uint256 i = 0; i < parents.length; i++) {
-                uint8 parentGeneration = RosalindDNA.getGenCount(parents[i]);
-                // Require not on cooldown
-                require(
-                    breedCooldownSeconds + parentGeneration * generationCooldownMultiplier <
-                        block.timestamp - _breedingRules[speciesId].lastBredTime[parents[i]],
-                    'NFT currently on cooldown!'
-                );
-                // By updating the timestamp right after each check,
-                // we prevent the same parent from being entered twice.
-                _breedingRules[speciesId].lastBredTime[parents[i]] = block.timestamp;
 
-                // Require ownership of NFTs
-                require(caller == nft.ownerOf(parents[i]), 'You must own all parents!');
-            }
+        require(parents.length == requiredParents, 'Invalid number of parents!');
+        ERC721Owl nft = ERC721Owl(nftContractAddr);
+        for (uint256 i = 0; i < parents.length; i++) {
+            uint8 parentGeneration = RosalindDNA.getGenCount(parents[i]);
+            // Require not on cooldown
+            require(
+                breedCooldownSeconds + parentGeneration * generationCooldownMultiplier <
+                    block.timestamp - lastBredTime[parents[i]],
+                'NFT currently on cooldown!'
+            );
+            // By updating the timestamp right after each check,
+            // we prevent the same parent from being entered twice.
+            lastBredTime[parents[i]] = block.timestamp;
+
+            // Require ownership of NFTs
+            require(caller == nft.ownerOf(parents[i]), 'You must own all parents!');
         }
 
         // Breed the NFT
-        {
-            // Generate random seed
-            uint256 randomSeed = SourceRandom.getRandomDebug();
-            if (mutationRates.length == 0) tokenId = RosalindDNA.breedDNASimple(parents, genes, randomSeed);
-            else tokenId = RosalindDNA.breedDNAWithMutations(parents, genes, randomSeed, mutationRates);
-        }
+
+        // Generate random seed
+        uint256 randomSeed = SourceRandom.getRandomDebug();
+        if (mutationRates.length == 0) tokenId = RosalindDNA.breedDNASimple(parents, genes, randomSeed);
+        else tokenId = RosalindDNA.breedDNAWithMutations(parents, genes, randomSeed, mutationRates);
     }
 
     /**
      * @dev Internal function to do the heavy lifting for breeding
-     * @param speciesId species identifier
      * @return requiredParents number of parents required (defaults to 2)
      * @return breedCooldownSeconds number of seconds to cooldown (defaults to 7 days)
      * @return genes 256-bit gene split locations (defaults to 8 32-bit genes)
      * @return mutationRates mutation rate locations (defaults to none)
      */
-    function _getBreedingRules(uint256 speciesId)
+    function _getBreedingRules()
         internal
         view
         returns (
@@ -228,7 +225,7 @@ contract MinterBreeding is MinterCore {
             uint256[] memory mutationRates
         )
     {
-        BreedingRules storage rules = _breedingRules[speciesId];
+        BreedingRules storage rules = _breedingRules;
 
         // Require parents (2 by default)
         requiredParents = rules.requiredParents;
@@ -257,4 +254,47 @@ contract MinterBreeding is MinterCore {
             for (uint256 i = 0; i < mutationRates.length; i++) mutationRates[i] = rules.mutationRates[i];
         }
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
+    }
+}
+
+interface IMinterBreeding is IERC165Upgradeable {
+    /**
+     * @dev Create a new type of species and define attributes.
+     */
+    function breed(uint256[] calldata parents) external returns (uint256 tokenId);
+
+    /**
+     * @dev Create a new type of species and define attributes.
+     * @return tokenId minted token id
+     */
+    function safeBreed(uint256[] calldata parents) external returns (uint256 tokenId);
+
+    /**
+     * @dev Create a new type of species and define attributes.
+     * @return tokenId minted token id
+     */
+    function setBreedingRules(
+        uint8 requiredParents,
+        uint256 breedCooldownSeconds,
+        uint8[] memory genes,
+        uint256[] memory mutationRates
+    ) external returns (uint256 tokenId);
+
+    /**
+     * @dev Returns the current breeding rules used for a species
+     */
+    function getBreedingRules()
+        external
+        view
+        returns (
+            uint8 requiredParents,
+            uint256 breedCooldownSeconds,
+            uint8[] memory genes,
+            uint256[] memory mutationRates
+        );
 }
