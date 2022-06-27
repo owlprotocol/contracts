@@ -22,8 +22,7 @@ contract FixedPriceAuction is
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
     OwnableUpgradeable,
-    UUPSUpgradeable,
-    FractionalExponents
+    UUPSUpgradeable
 {
     /**********************
              Types
