@@ -10,10 +10,16 @@ import {
     ERC1167Factory,
     ERC1167Factory__factory,
     ERC721,
+    ERC1155,
 } from '../../typechain';
 
-import { createERC20, createERC721 } from '../utils';
+import { createERC20, createERC721, createERC1155 } from '../utils';
 import { BigNumber } from 'ethers';
+
+enum TokenType {
+    erc721,
+    erc1155,
+}
 
 describe('DutchAuction.sol', function () {
     //Extra time
@@ -57,18 +63,21 @@ describe('DutchAuction.sol', function () {
             [testNFT] = await createERC721(1, 1); //minting one token
 
             //DutchAuction Data
+            //@ts-ignore
             const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
                 //seller address
-                //NFT address
-                //NFT ID
+                //Asset
                 //ERC20 Contract address (acceptable token)
                 //start price
                 //end price
                 //auction duration
                 //isNonLinear
                 seller.address,
-                testNFT.address,
-                1,
+                {
+                    token: TokenType.erc721,
+                    contractAddr: testNFT.address,
+                    tokenId: 1,
+                },
                 acceptableERC20Token.address,
                 100, //in "eth"
                 10,
@@ -208,10 +217,10 @@ describe('DutchAuction.sol', function () {
             [testNFT] = await createERC721(1, 1); //minting one token
 
             //DutchAuction Data
+            //@ts-ignore
             const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
                 //seller address
-                //NFT address
-                //NFT ID
+                //Asset
                 //ERC20 Contract address (acceptable token)
                 //start price
                 //end price
@@ -219,8 +228,11 @@ describe('DutchAuction.sol', function () {
                 //isNonLinear
                 //priceChangeTimeInterval
                 seller.address,
-                testNFT.address,
-                1,
+                {
+                    token: TokenType.erc721,
+                    contractAddr: testNFT.address,
+                    tokenId: 1,
+                },
                 acceptableERC20Token.address,
                 100, //in "eth"
                 10,
@@ -346,5 +358,168 @@ describe('DutchAuction.sol', function () {
         //         console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
         //     }
         // });
+    });
+
+    describe('DutchAuction.sol ERC 1155', function () {
+        //Extra time
+        this.timeout(100000);
+        let seller: SignerWithAddress;
+        let bidder1: SignerWithAddress;
+
+        let DutchAuctionFactory: DutchAuction__factory;
+        let DutchAuctionImplementation: DutchAuction;
+
+        let ERC1167FactoryFactory: ERC1167Factory__factory;
+        let ERC1167Factory: ERC1167Factory;
+
+        before(async () => {
+            //launch Auction + implementation
+            DutchAuctionFactory = (await ethers.getContractFactory('DutchAuction')) as DutchAuction__factory;
+            DutchAuctionImplementation = await DutchAuctionFactory.deploy();
+
+            // Launch ERC1167 Factory
+            ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
+            ERC1167Factory = await ERC1167FactoryFactory.deploy();
+
+            await Promise.all([ERC1167Factory.deployed(), DutchAuctionImplementation.deployed()]);
+
+            //get users (seller + bidder?)
+            [seller, bidder1] = await ethers.getSigners();
+        });
+
+        describe('Linear Auction Tests', () => {
+            //define setup
+            let test1155: ERC1155;
+            let acceptableERC20Token: ERC20;
+            let DutchAuctionAddress: string;
+            let auction: DutchAuction;
+
+            let originalERC20Balance: BigNumber;
+
+            beforeEach(async () => {
+                //Deploy ERC20 and ERC721
+                [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
+                [test1155] = await createERC1155(); //minting one token
+
+                //DutchAuction Data
+                //@ts-ignore
+                const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //start price
+                    //end price
+                    //auction duration
+                    //isNonLinear
+                    seller.address,
+                    {
+                        token: TokenType.erc1155,
+                        contractAddr: test1155.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "eth"
+                    10,
+                    300,
+                    false,
+                ]);
+
+                //Predict address
+                const salt = ethers.utils.formatBytes32String('1');
+                DutchAuctionAddress = await ERC1167Factory.predictDeterministicAddress(
+                    DutchAuctionImplementation.address,
+                    salt,
+                    DutchAuctionData,
+                );
+
+                //need to look at three things now: seller, the contract, and the bidder
+                //as well as two assets: the NFT, and the ERC 20 token
+
+                //Set Approval ERC115 for sale
+                await test1155.connect(seller).setApprovalForAll(DutchAuctionAddress, true);
+                await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('100.0', 18));
+
+                // Transfer ERC20s to bidders
+                await acceptableERC20Token.connect(seller).transfer(bidder1.address, parseUnits('100.0', 18));
+
+                const totalERC20Minted: BigNumber = parseUnits('1.0', 27);
+                expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(
+                    totalERC20Minted.sub(parseUnits('100.0', 18)),
+                );
+
+                //deploy auction
+                //check balances
+                ///clone deterministic
+                await ERC1167Factory.cloneDeterministic(DutchAuctionImplementation.address, salt, DutchAuctionData);
+                auction = (await ethers.getContractAt('DutchAuction', DutchAuctionAddress)) as DutchAuction;
+
+                //assert initial token amounts
+
+                originalERC20Balance = parseUnits('100.0', 18);
+
+                expect(await test1155.balanceOf(seller.address, 1)).to.equal(99);
+                expect(await test1155.balanceOf(DutchAuctionAddress, 1)).to.equal(1);
+                expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(originalERC20Balance);
+
+                //storage tests
+            });
+
+            it('simple auction - 1 bidder', async () => {
+                const tx = await auction.start();
+                await tx.wait();
+
+                expect(await test1155.balanceOf(auction.address, 1)).to.equal(1);
+                expect(await test1155.balanceOf(seller.address, 1)).to.equal(99);
+
+                expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
+                await network.provider.send('evm_increaseTime', [23]); //advance timestamp in seconds
+                await network.provider.send('evm_mine');
+                expect(await auction.getCurrentPrice()).to.equal(parseUnits('93.100000000000000060', 18));
+                await network.provider.send('evm_increaseTime', [25]); //advance timestamp in seconds
+                await network.provider.send('evm_mine');
+
+                const sellerBalance = await acceptableERC20Token.balanceOf(seller.address);
+                const tx1 = await auction.connect(bidder1).bid();
+                await tx1.wait();
+                expect(await auction.getCurrentPrice()).to.equal(parseUnits('85.300000000000000030', 18));
+
+                const balance: BigNumber = parseUnits('100.0', 18);
+                expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(
+                    balance.sub(parseUnits('85.300000000000000030', 18)),
+                );
+                expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(
+                    sellerBalance.add(parseUnits('85.300000000000000030', 18)),
+                );
+                expect(await test1155.balanceOf(bidder1.address, 1)).to.equal(1);
+                expect(await test1155.balanceOf(auction.address, 1)).to.equal(0);
+            });
+
+            it('simple auction - no bidder, auction ends', async () => {
+                //await auction.withdraw();
+                const tx = await auction.start();
+                await tx.wait();
+
+                expect(await test1155.balanceOf(auction.address, 1)).to.equal(1);
+                expect(await test1155.balanceOf(seller.address, 1)).to.equal(99);
+
+                await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
+                await network.provider.send('evm_mine');
+                expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
+                await auction.claim();
+
+                expect(await test1155.balanceOf(seller.address, 1)).to.equal(100);
+                expect(await test1155.balanceOf(auction.address, 1)).to.equal(0);
+            });
+
+            it('error: bid after auction ends', async () => {
+                const tx = await auction.start();
+                await tx.wait();
+
+                await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
+                await network.provider.send('evm_mine');
+                expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
+                await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
+            });
+        });
     });
 });
