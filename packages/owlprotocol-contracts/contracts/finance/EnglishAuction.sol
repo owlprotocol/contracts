@@ -14,6 +14,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import 'hardhat/console.sol';
+import './AuctionLib.sol';
 
 contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     /**********************
@@ -23,8 +24,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     event Bid(address indexed sender, uint256 amount);
     event Withdraw(address indexed bidder, uint256 amount);
 
-    address public nft;
-    uint256 public nftId;
+    AuctionLib.Asset public asset;
     address public acceptableToken;
 
     address payable public seller;
@@ -52,8 +52,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     /**
      * @dev Create auction instance
      * @param _seller address of seller for auction
-     * @param _nft address of nft for auction
-     * @param _nftId id of nft for auction
+     * @param _asset asset for auction
      * @param ERC20contractAddress address of ERC20 token accepted as payment
      * @param _startingBid start bid on nft
      * @param _auctionDuration duration of auction (in seconds)
@@ -61,32 +60,29 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
      */
     function initialize(
         address payable _seller,
-        address _nft,
-        uint256 _nftId,
+        AuctionLib.Asset calldata _asset,
         address ERC20contractAddress,
         uint256 _startingBid,
         uint256 _auctionDuration,
         uint256 _resetTime
     ) external initializer {
-        __EnglishAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration, _resetTime);
+        __EnglishAuction_init(_seller, _asset, ERC20contractAddress, _startingBid, _auctionDuration, _resetTime);
     }
 
     function proxyInitialize(
         address payable _seller,
-        address _nft,
-        uint256 _nftId,
+        AuctionLib.Asset calldata _asset,
         address ERC20contractAddress,
         uint256 _startingBid,
         uint256 _auctionDuration,
         uint256 _resetTime
     ) external onlyInitializing {
-        __EnglishAuction_init(_seller, _nft, _nftId, ERC20contractAddress, _startingBid, _auctionDuration, _resetTime);
+        __EnglishAuction_init(_seller, _asset, ERC20contractAddress, _startingBid, _auctionDuration, _resetTime);
     }
 
     function __EnglishAuction_init(
         address payable _seller,
-        address _nft,
-        uint256 _nftId,
+        AuctionLib.Asset calldata _asset,
         address ERC20contractAddress,
         uint256 _startingBid,
         uint256 _auctionDuration,
@@ -97,8 +93,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
         __EnglishAuction_init_unchained(
             _seller,
-            _nft,
-            _nftId,
+            _asset,
             ERC20contractAddress,
             _startingBid,
             _auctionDuration,
@@ -108,23 +103,30 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
     function __EnglishAuction_init_unchained(
         address payable _seller,
-        address _nft,
-        uint256 _nftId,
+        AuctionLib.Asset calldata _asset,
         address ERC20contractAddress,
         uint256 _startingBid,
         uint256 _auctionDuration,
         uint256 _resetTime
     ) internal onlyInitializing {
-        nft = (_nft);
-        nftId = _nftId;
+        asset = _asset;
 
-        acceptableToken = (ERC20contractAddress);
+        acceptableToken = ERC20contractAddress;
 
         seller = _seller;
         auctionDuration = _auctionDuration;
         startingBid = _startingBid;
         resetTime = _resetTime;
-        IERC721Upgradeable(nft).transferFrom(seller, address(this), nftId);
+        if (asset.token == AuctionLib.TokenType.erc721)
+            IERC721Upgradeable(asset.contractAddr).transferFrom(seller, address(this), asset.tokenId);
+        else if (asset.token == AuctionLib.TokenType.erc1155)
+            IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
+                seller,
+                address(this),
+                asset.tokenId,
+                1,
+                new bytes(0)
+            );
     }
 
     /**********************
@@ -181,9 +183,19 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         require(!ownerClaimed, 'EnglishAuction: owner has already claimed');
 
         ownerClaimed = true;
-        if (highestBidder != address(0)) {
-            IERC20Upgradeable(acceptableToken).transfer(seller, bids[highestBidder]);
-        } else IERC721Upgradeable(nft).safeTransferFrom(address(this), seller, nftId);
+        if (highestBidder != address(0)) IERC20Upgradeable(acceptableToken).transfer(seller, bids[highestBidder]);
+        else {
+            if (asset.token == AuctionLib.TokenType.erc721)
+                IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);
+            else if (asset.token == AuctionLib.TokenType.erc1155)
+                IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
+                    seller,
+                    address(this),
+                    asset.tokenId,
+                    1,
+                    new bytes(0)
+                );
+        }
     }
 
     function winnerClaim() external {
@@ -192,7 +204,16 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         require(!winnerClaimed, 'EnglishAuction: winner has already claimed');
         require(_msgSender() == highestBidder, 'EnglishAuction: you are not the winner, you cannot claim!'); //highestBidder at end is the winning address
 
-        IERC721Upgradeable(nft).safeTransferFrom(address(this), highestBidder, nftId);
+        if (asset.token == AuctionLib.TokenType.erc721)
+            IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), highestBidder, asset.tokenId);
+        else if (asset.token == AuctionLib.TokenType.erc1155)
+            IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
+                address(this),
+                highestBidder,
+                asset.tokenId,
+                1,
+                new bytes(0)
+            );
     }
 
     /**
