@@ -14,8 +14,8 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-import './ICrafter.sol';
-import './CraftLib.sol';
+import './../ICrafter.sol';
+import './../CraftLib.sol';
 
 /**
  * @dev Pluggable Crafting Contract.

@@ -14,12 +14,12 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-import '../../assets/ERC20/ERC20Owl.sol';
-import '../../assets/ERC721/ERC721Owl.sol';
-import '../../assets/ERC1155/ERC1155Owl.sol';
+import '../../../assets/ERC20/ERC20Owl.sol';
+import '../../../assets/ERC721/ERC721Owl.sol';
+import '../../../assets/ERC1155/ERC1155Owl.sol';
 
-import './ICrafter.sol';
-import './CraftLib.sol';
+import './../ICrafter.sol';
+import './../CraftLib.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
