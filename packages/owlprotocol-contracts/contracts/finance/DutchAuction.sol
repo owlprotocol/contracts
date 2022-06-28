@@ -44,7 +44,6 @@ contract DutchAuction is
     uint256 public startTime;
     uint256 public saleFee; 
 
-    bool public started;
     bool public isNonLinear;
     bool public isBought;
 
@@ -180,6 +179,7 @@ contract DutchAuction is
                 1,
                 new bytes(0)
             );
+        startTime = block.timestamp;
     }
 
     //this is the interval : (block.timestamp at view - block.timestamp at start) / auctionDuration
@@ -190,15 +190,6 @@ contract DutchAuction is
     /**********************
          Interaction
     **********************/
-
-    function start() external onlyOwner {
-        require(!started, 'DutchAuction: started');
-
-        started = true;
-        startTime = block.timestamp;
-
-        emit Start(startTime);
-    }
 
     /**
     Getters
@@ -222,7 +213,6 @@ contract DutchAuction is
     }
 
     function bid() external payable {
-        require(started, 'DutchAuction: not started');
         require(block.timestamp < startTime + auctionDuration, 'DutchAuction: ended');
         require(!isBought, 'DutchAuction: somebody has already bought this item!');
 
@@ -249,7 +239,6 @@ contract DutchAuction is
 
     function claim() external onlyOwner {
         //owner withdraws asset if nobody bids
-        require(started, 'DutchAuction: not started');
         require(block.timestamp >= startTime + auctionDuration, 'DutchAuction: cannot claim when auction is ongoing!');
 
         if (asset.token == AuctionLib.TokenType.erc721)
