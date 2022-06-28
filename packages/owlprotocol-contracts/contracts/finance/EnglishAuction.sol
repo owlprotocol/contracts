@@ -14,6 +14,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import './AuctionLib.sol';
+import 'hardhat/console.sol';
 
 contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     /**********************
@@ -27,6 +28,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     address public acceptableToken;
 
     address payable public seller;
+    address payable public saleFeeAddress;
     bool public started;
     bool public ownerClaimed;
     bool public winnerClaimed;
@@ -35,6 +37,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     uint256 public auctionDuration;
     uint256 public startPrice;
     uint256 public resetTime; //number of seconds the auction is reset to after a bid within this time
+    uint256 public saleFee;
 
     address public highestBidder;
     mapping(address => uint256) public bids;
@@ -56,6 +59,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
      * @param _startPrice start bid on nft
      * @param _auctionDuration duration of auction (in seconds)
      * @param _resetTime time at which the auction resets when a bid is made within this time frame (in seconds)
+     * @param _saleFee the percentage of the sale to be sent to the original owner as commission
+     * @param _saleFeeAddress the address to which the sale fee is sent
      */
     function initialize(
         address payable _seller,
@@ -63,9 +68,11 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         address ERC20contractAddress,
         uint256 _startPrice,
         uint256 _auctionDuration,
-        uint256 _resetTime
+        uint256 _resetTime,
+        uint256 _saleFee,
+        address payable _saleFeeAddress
     ) external initializer {
-        __EnglishAuction_init(_seller, _asset, ERC20contractAddress, _startPrice, _auctionDuration, _resetTime);
+        __EnglishAuction_init(_seller, _asset, ERC20contractAddress, _startPrice, _auctionDuration, _resetTime, _saleFee, _saleFeeAddress);
     }
 
     function proxyInitialize(
@@ -74,9 +81,11 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         address ERC20contractAddress,
         uint256 _startPrice,
         uint256 _auctionDuration,
-        uint256 _resetTime
+        uint256 _resetTime,
+        uint256 _saleFee,
+        address payable _saleFeeAddress
     ) external onlyInitializing {
-        __EnglishAuction_init(_seller, _asset, ERC20contractAddress, _startPrice, _auctionDuration, _resetTime);
+        __EnglishAuction_init(_seller, _asset, ERC20contractAddress, _startPrice, _auctionDuration, _resetTime, _saleFee, _saleFeeAddress);
     }
 
     function __EnglishAuction_init(
@@ -85,7 +94,10 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         address ERC20contractAddress,
         uint256 _startPrice,
         uint256 _auctionDuration,
-        uint256 _resetTime
+        uint256 _resetTime,
+        uint256 _saleFee,
+        address payable _saleFeeAddress
+        
     ) internal onlyInitializing {
         __Ownable_init();
         _transferOwnership(_seller);
@@ -96,7 +108,9 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
             ERC20contractAddress,
             _startPrice,
             _auctionDuration,
-            _resetTime
+            _resetTime,
+            _saleFee,
+            _saleFeeAddress
         );
     }
 
@@ -106,8 +120,11 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         address ERC20contractAddress,
         uint256 _startPrice,
         uint256 _auctionDuration,
-        uint256 _resetTime
+        uint256 _resetTime,
+        uint256 _saleFee,
+        address payable _saleFeeAddress
     ) internal onlyInitializing {
+        require(_saleFee <= 100, 'EnglishAuction: saleFee cannot be above 100 percent!');
         asset = _asset;
 
         acceptableToken = ERC20contractAddress;
@@ -116,6 +133,9 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         auctionDuration = _auctionDuration;
         startPrice = _startPrice;
         resetTime = _resetTime;
+        saleFee = _saleFee;
+        saleFeeAddress = _saleFeeAddress;
+
         //transferring ERC 721
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).transferFrom(seller, address(this), asset.tokenId);
@@ -184,14 +204,18 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         require(!ownerClaimed, 'EnglishAuction: owner has already claimed');
 
         ownerClaimed = true;
-        if (highestBidder != address(0)) IERC20Upgradeable(acceptableToken).transfer(seller, bids[highestBidder]);
+        if (highestBidder != address(0)) {
+            IERC20Upgradeable(acceptableToken).transfer(saleFeeAddress, saleFee * bids[highestBidder] / 100);
+            
+            IERC20Upgradeable(acceptableToken).transfer(seller, bids[highestBidder] - saleFee * bids[highestBidder] / 100); 
+        }
         else {
             if (asset.token == AuctionLib.TokenType.erc721)
                 IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);
             else if (asset.token == AuctionLib.TokenType.erc1155)
                 IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
-                    seller,
                     address(this),
+                    seller,
                     asset.tokenId,
                     1,
                     new bytes(0)

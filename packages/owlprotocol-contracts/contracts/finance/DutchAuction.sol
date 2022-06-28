@@ -16,6 +16,8 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '../utils/FractionalExponents.sol';
 import './AuctionLib.sol';
 
+import "hardhat/console.sol";
+
 contract DutchAuction is
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
@@ -27,21 +29,21 @@ contract DutchAuction is
              Types
     **********************/
     event Start(uint256 startTime);
-    event Bid(address indexed sender, uint256 amount);
+    event Bid(address indexed sender, uint256 indexed amount);
     event Claim(address indexed seller, address indexed contractAddr, uint256 tokenId);
 
-    AuctionLib.Asset asset;
-
+    AuctionLib.Asset public asset;
     address public acceptableToken;
 
     address payable public seller;
+    address payable public saleFeeAddress;
 
     uint256 public auctionDuration;
     uint256 public startPrice; //starting maximum price
     uint256 public endPrice; //floor price
     uint256 public startTime;
+    uint256 public saleFee; 
 
-    bool public started;
     bool public isNonLinear;
     bool public isBought;
 
@@ -63,6 +65,8 @@ contract DutchAuction is
      * @param _endPrice lowest price that seller is willing to accept
      * @param _auctionDuration duration of auction (in seconds)
      * @param _isNonLinear set true if the seller wants to set a nonlinear decrease in price
+     * @param _saleFee the percentage of the sale to be sent to the original owner as commission
+     * @param _saleFeeAddress the address to which the sale fee is sent
      */
     function initialize(
         address payable _seller,
@@ -71,7 +75,9 @@ contract DutchAuction is
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _auctionDuration,
-        bool _isNonLinear
+        bool _isNonLinear,
+        uint256 _saleFee,
+        address payable _saleFeeAddress
     ) external initializer {
         __DutchAuction_init(
             _seller,
@@ -80,7 +86,9 @@ contract DutchAuction is
             _startPrice,
             _endPrice,
             _auctionDuration,
-            _isNonLinear
+            _isNonLinear,
+            _saleFee,
+            _saleFeeAddress
         );
     }
 
@@ -91,7 +99,9 @@ contract DutchAuction is
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _auctionDuration,
-        bool _isNonLinear
+        bool _isNonLinear,
+        uint256 _saleFee,
+        address payable _saleFeeAddress
     ) external onlyInitializing {
         __DutchAuction_init(
             _seller,
@@ -100,7 +110,9 @@ contract DutchAuction is
             _startPrice,
             _endPrice,
             _auctionDuration,
-            _isNonLinear
+            _isNonLinear,
+            _saleFee,
+            _saleFeeAddress
         );
     }
 
@@ -111,7 +123,9 @@ contract DutchAuction is
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _auctionDuration,
-        bool _isNonLinear
+        bool _isNonLinear,
+        uint256 _saleFee,
+        address payable _saleFeeAddress
     ) internal onlyInitializing {
         __Ownable_init();
         _transferOwnership(_seller);
@@ -122,7 +136,9 @@ contract DutchAuction is
             _startPrice,
             _endPrice,
             _auctionDuration,
-            _isNonLinear
+            _isNonLinear,
+            _saleFee,
+            _saleFeeAddress
         );
     }
 
@@ -133,7 +149,9 @@ contract DutchAuction is
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _auctionDuration,
-        bool _isNonLinear
+        bool _isNonLinear,
+        uint256 _saleFee,
+        address payable _saleFeeAddress
     ) internal onlyInitializing {
         require(_startPrice > _endPrice, 'DutchAuction: start price must be greater than end price');
         asset = _asset;
@@ -146,6 +164,8 @@ contract DutchAuction is
         endPrice = _endPrice;
         isNonLinear = _isNonLinear;
         isBought = false;
+        saleFee = _saleFee;
+        saleFeeAddress = _saleFeeAddress;
 
         //transferring ERC 721
         if (_asset.token == AuctionLib.TokenType.erc721)
@@ -159,6 +179,7 @@ contract DutchAuction is
                 1,
                 new bytes(0)
             );
+        startTime = block.timestamp;
     }
 
     //this is the interval : (block.timestamp at view - block.timestamp at start) / auctionDuration
@@ -169,15 +190,6 @@ contract DutchAuction is
     /**********************
          Interaction
     **********************/
-
-    function start() external onlyOwner {
-        require(!started, 'DutchAuction: started');
-
-        started = true;
-        startTime = block.timestamp;
-
-        emit Start(startTime);
-    }
 
     /**
     Getters
@@ -201,13 +213,13 @@ contract DutchAuction is
     }
 
     function bid() external payable {
-        require(started, 'DutchAuction: not started');
         require(block.timestamp < startTime + auctionDuration, 'DutchAuction: ended');
         require(!isBought, 'DutchAuction: somebody has already bought this item!');
 
         uint256 bidPrice = getCurrentPrice();
 
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), seller, bidPrice);
+        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), saleFeeAddress, saleFee * bidPrice / 100);
+        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), seller, bidPrice - saleFee * bidPrice / 100);
 
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
@@ -227,7 +239,6 @@ contract DutchAuction is
 
     function claim() external onlyOwner {
         //owner withdraws asset if nobody bids
-        require(started, 'DutchAuction: not started');
         require(block.timestamp >= startTime + auctionDuration, 'DutchAuction: cannot claim when auction is ongoing!');
 
         if (asset.token == AuctionLib.TokenType.erc721)
