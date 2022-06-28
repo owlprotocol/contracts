@@ -15,6 +15,6 @@ library AuctionLib {
     struct Asset {
         TokenType token;
         address contractAddr;
-        uint256 tokenId;
+        uint256 tokenId; 
     }
 }
