@@ -13,10 +13,7 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-import '../utils/FractionalExponents.sol';
 import './AuctionLib.sol';
-
-import 'hardhat/console.sol';
 
 contract FixedPriceAuction is
     ERC721HolderUpgradeable,
@@ -28,7 +25,7 @@ contract FixedPriceAuction is
              Types
     **********************/
     event Start(uint256 startTime);
-    event Buy(address indexed sender);
+    event Buy(address indexed buyer, uint256 indexed buyPrice);
     event Claim(address indexed seller, address indexed contractAddr, uint256 tokenId);
 
     AuctionLib.Asset asset;
@@ -185,9 +182,10 @@ contract FixedPriceAuction is
         require(block.timestamp < startTime + auctionDuration, 'FixedPriceAuction: ended');
         require(!isBought, 'FixedPriceAuction: somebody has already bought this item!');
 
+        isBought = true; 
 
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), saleFeeAddress, 10 ** 18 * saleFee * price / 100);
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), seller, 10 ** 18 * price - 10 ** 18 * saleFee * price / 100);
+        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), saleFeeAddress, saleFee * price / 100);
+        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), seller, price - saleFee * price / 100);
         
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
@@ -200,16 +198,15 @@ contract FixedPriceAuction is
                 new bytes(0)
             );
         }
-        isBought = true; 
-        
 
-        emit Buy(_msgSender());
+        emit Buy(_msgSender(), price);
     }
 
     function claim() external onlyOwner {
         //owner withdraws asset if nobody buys
         require(started, 'FixedPriceAuction: not started');
         require(block.timestamp >= startTime + auctionDuration, 'FixedPriceAuction: cannot claim when auction is ongoing!');
+        require(!isBought, 'FixedPriceAuction: cannot claim when the token has been sold already!');
 
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);

@@ -79,7 +79,7 @@ describe('FixedPriceAuction.sol', function () {
                     tokenId: 1,
                 },
                 acceptableERC20Token.address,
-                100, //in "eth"
+                parseUnits('100.0', 18), //in "wei"
                 300,
                 0,
                 owner.address,
@@ -202,7 +202,7 @@ describe('FixedPriceAuction.sol', function () {
                     tokenId: 1,
                 },
                 acceptableERC20Token.address,
-                100, //in "eth"
+                parseUnits('100.0', 18), //in "wei"
                 300,
                 10,
                 owner.address,
