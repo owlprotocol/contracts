@@ -72,7 +72,16 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _saleFee,
         address payable _saleFeeAddress
     ) external initializer {
-        __EnglishAuction_init(_seller, _asset, ERC20contractAddress, _startPrice, _auctionDuration, _resetTime, _saleFee, _saleFeeAddress);
+        __EnglishAuction_init(
+            _seller,
+            _asset,
+            ERC20contractAddress,
+            _startPrice,
+            _auctionDuration,
+            _resetTime,
+            _saleFee,
+            _saleFeeAddress
+        );
     }
 
     function proxyInitialize(
@@ -85,7 +94,16 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _saleFee,
         address payable _saleFeeAddress
     ) external onlyInitializing {
-        __EnglishAuction_init(_seller, _asset, ERC20contractAddress, _startPrice, _auctionDuration, _resetTime, _saleFee, _saleFeeAddress);
+        __EnglishAuction_init(
+            _seller,
+            _asset,
+            ERC20contractAddress,
+            _startPrice,
+            _auctionDuration,
+            _resetTime,
+            _saleFee,
+            _saleFeeAddress
+        );
     }
 
     function __EnglishAuction_init(
@@ -97,7 +115,6 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _resetTime,
         uint256 _saleFee,
         address payable _saleFeeAddress
-        
     ) internal onlyInitializing {
         __Ownable_init();
         _transferOwnership(_seller);
@@ -205,11 +222,13 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
         ownerClaimed = true;
         if (highestBidder != address(0)) {
-            IERC20Upgradeable(acceptableToken).transfer(saleFeeAddress, saleFee * bids[highestBidder] / 100);
-            
-            IERC20Upgradeable(acceptableToken).transfer(seller, bids[highestBidder] - saleFee * bids[highestBidder] / 100); 
-        }
-        else {
+            IERC20Upgradeable(acceptableToken).transfer(saleFeeAddress, (saleFee * bids[highestBidder]) / 100);
+
+            IERC20Upgradeable(acceptableToken).transfer(
+                seller,
+                bids[highestBidder] - (saleFee * bids[highestBidder]) / 100
+            );
+        } else {
             if (asset.token == AuctionLib.TokenType.erc721)
                 IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);
             else if (asset.token == AuctionLib.TokenType.erc1155)
