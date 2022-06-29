@@ -16,7 +16,7 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     uint256 nextTokenId;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {
+    constructor() {
         _disableInitializers();
     }
 
@@ -66,16 +66,20 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
 
     /**
      * @dev Create a new type of species and define attributes.
+     * @return nextTokenId
      */
-    function mint() public {
-        MinterCore._mintForFee(msg.sender, nextTokenId++);
+    function mint(address buyer) public returns (uint256) {
+        MinterCore._mintForFee(buyer, nextTokenId++);
+        return nextTokenId;
     }
 
     /**
      * @dev Create a new type of species and define attributes.
+     * @return nextTokenId
      */
-    function safeMint() public {
-        MinterCore._safeMintForFee(msg.sender, nextTokenId++);
+    function safeMint(address buyer) public returns (uint256) {
+        MinterCore._safeMintForFee(buyer, nextTokenId++);
+        return nextTokenId;
     }
 
     /**
@@ -102,24 +106,17 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
 interface IMinterAutoId is IERC165Upgradeable {
     /**
      * @dev Create a new type of species and define attributes.
-     * @param speciesId address of associated NFT
-     * @return tokenId minted token id
      */
-    function mint(uint256 speciesId) external returns (uint256 tokenId);
+    function mint() external returns (uint256 nextTokenId);
 
     /**
      * @dev Create a new type of species and define attributes.
-     * @param speciesId address of associated NFT
-     * @return tokenId minted token id
      */
-    function safeMint(uint256 speciesId) external returns (uint256 tokenId);
+    function safeMint() external returns (uint256 nextTokenId);
 
     /**
      * @dev Used to set the starting nextTokenId value.
      * Used to save situtations where someone mints directly
-     * and we get out of sync.
-     * @param speciesId species identifier
-     * @param nextTokenId_ next token id to be minted
      */
-    function setNextTokenId(uint256 speciesId, uint256 nextTokenId_) external;
+    function setNextTokenId(uint256 nextTokenId_) external;
 }

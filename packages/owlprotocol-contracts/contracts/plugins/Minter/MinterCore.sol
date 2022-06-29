@@ -31,25 +31,6 @@ abstract contract MinterCore is Initializable, ERC165Storage, ERC1820Implementer
         _;
     }
 
-    // Constructor
-    function initialize(
-        address _mintFeeToken,
-        address _mintFeeAddress,
-        uint256 _mintFeeAmount,
-        address _nftContractAddr
-    ) external virtual initializer {
-        __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-    }
-
-    function proxyInitialize(
-        address _mintFeeToken,
-        address _mintFeeAddress,
-        uint256 _mintFeeAmount,
-        address _nftContractAddr
-    ) external virtual onlyInitializing {
-        __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-    }
-
     function __MinterCore_init(
         address _mintFeeToken,
         address _mintFeeAddress,
