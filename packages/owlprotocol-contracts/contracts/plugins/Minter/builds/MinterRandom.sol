@@ -28,7 +28,9 @@ contract MinterRandom is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr
-    ) external initializer {}
+    ) external initializer {
+        __MinterRandom_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+    }
 
     function proxyInitialize(
         address _admin,
@@ -36,7 +38,9 @@ contract MinterRandom is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr
-    ) external onlyInitializing {}
+    ) external onlyInitializing {
+        __MinterRandom_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+    }
 
     function __MinterRandom_init(
         address _admin,
@@ -64,25 +68,25 @@ contract MinterRandom is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     /**
      * @dev Create a new type of species and define attributes.
      */
-    function mint() public {
+    function mint(address buyer) public {
         // Generate tokenid
         uint256 random = SourceRandom.getRandomDebug();
         uint256 tokenId = SourceRandom.getSeededRandom(random, _numMinted++);
 
         // Mint Operation
-        MinterCore._mintForFee(msg.sender, tokenId);
+        MinterCore._mintForFee(buyer, tokenId);
     }
 
     /**
      * @dev Create a new type of species and define attributes.
      */
-    function safeMint() public {
+    function safeMint(address buyer) public {
         // Generate tokenId
         uint256 random = SourceRandom.getRandomDebug();
         uint256 tokenId = SourceRandom.getSeededRandom(random, _numMinted++);
 
         // Mint Operation
-        MinterCore._safeMintForFee(msg.sender, tokenId);
+        MinterCore._safeMintForFee(buyer, tokenId);
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
@@ -96,10 +100,10 @@ interface IMinterRandom is IERC165Upgradeable {
     /**
      * @dev Create a new type of species and define attributes.
      */
-    function mint() external;
+    function mint(address buyer) external;
 
     /**
      * @dev Create a new type of species and define attributes.
      */
-    function safeMint() external;
+    function safeMint(address buyer) external;
 }
