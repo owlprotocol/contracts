@@ -26,7 +26,9 @@ contract MinterSimple is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr
-    ) external initializer {}
+    ) external initializer {
+        __MinterSimple_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+    }
 
     function proxyInitialize(
         address _admin,
@@ -34,7 +36,9 @@ contract MinterSimple is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr
-    ) external onlyInitializing {}
+    ) external onlyInitializing {
+        __MinterSimple_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+    }
 
     function __MinterSimple_init(
         address _admin,
