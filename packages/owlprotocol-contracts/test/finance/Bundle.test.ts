@@ -1,4 +1,4 @@
-import { ethers, network } from 'hardhat';
+import { ethers } from 'hardhat';
 const { utils } = ethers;
 const { parseUnits } = utils;
 import { expect } from 'chai';
@@ -17,7 +17,6 @@ import {
 
 import { createERC20, createERC721, createERC1155 } from '../utils';
 import { BigNumber } from 'ethers';
-import { pick } from 'lodash';
 import { ERC721Owl__factory } from '../../typechain';
 import { ERC721Owl } from '../../typechain';
 
@@ -59,7 +58,7 @@ describe('Bundle.sol', function () {
         MinterAutoIdFactory = (await ethers.getContractFactory('MinterAutoId')) as MinterAutoId__factory;
         MinterAutoId = await MinterAutoIdFactory.deploy();
 
-        ERC721Factory = (await ethers.getContractFactory('ERC721')) as ERC721Owl__factory;
+        ERC721Factory = (await ethers.getContractFactory('ERC721Owl')) as ERC721Owl__factory;
         ERC721 = await ERC721Factory.deploy();
 
         await Promise.all([ERC1167Factory.deployed(), BundleImplementation.deployed()]);
@@ -70,7 +69,6 @@ describe('Bundle.sol', function () {
 
     describe('No fee tests', () => {
         //define setup
-        let lootbox: ERC721;
         let testERC721: ERC721;
         let testERC20: ERC20;
         let testERC1155: ERC1155;
@@ -85,7 +83,16 @@ describe('Bundle.sol', function () {
             [testERC721] = await createERC721(1, 2);
             [testERC1155] = await createERC1155(1);
 
-            const ERC721Data = ERC721Owl.interface.encodeFunctionData('initialize', [admin.address]);
+            const ERC721Data = ERC721.interface.encodeFunctionData('initialize', [
+                admin.address,
+                'name',
+                'symb',
+                'uri',
+            ]);
+
+            const lootboxAddress = await ERC1167Factory.predictDeterministicAddress(ERC721.address, salt, ERC721Data);
+
+            await ERC1167Factory.cloneDeterministic(ERC721.address, salt, ERC721Data);
 
             //Bundle Data
             const MinterAutoIdData = MinterAutoId.interface.encodeFunctionData('initialize', [
@@ -95,8 +102,10 @@ describe('Bundle.sol', function () {
                 testERC721.address,
                 admin.address,
                 0,
-                lootbox.address,
+                lootboxAddress,
             ]);
+
+            const lootboxContr = await ethers.getContractAt('ERC721Owl', lootboxAddress);
 
             //Predict address
             MinterAutoIdAddress = await ERC1167Factory.predictDeterministicAddress(
@@ -131,27 +140,23 @@ describe('Bundle.sol', function () {
             await testERC20.connect(client).approve(BundleAddress, parseUnits('100.0', 18));
             await testERC721.connect(client).approve(BundleAddress, 1);
             await testERC1155.connect(client).setApprovalForAll(BundleAddress, true);
+            await lootboxContr.connect(admin).grantMinter(MinterAutoIdAddress);
 
             const totalERC20Minted: BigNumber = parseUnits('1.0', 27);
 
-            //deploy bundle
-            //check balances
             ///clone deterministic
             await ERC1167Factory.cloneDeterministic(BundleImplementation.address, salt, BundleData);
             bundle = (await ethers.getContractAt('Bundle', BundleAddress)) as Bundle;
 
             //assert initial token amounts
-
-            expect(await lootbox.balanceOf(client.address)).to.equal(1);
+            expect(await lootboxContr.balanceOf(client.address)).to.equal(0);
             expect(await testERC20.balanceOf(client.address)).to.equal(totalERC20Minted);
-            expect(await testERC721.balanceOf(client.address)).to.equal(1);
+            expect(await testERC721.balanceOf(client.address)).to.equal(2);
             //expect(await testERC1155.balanceOf(client.address)).to.equal(1);
             //storage tests
         });
 
         it('simple bundle - 1 bidder', async () => {
-            console.log('yee');
-
             await bundle.lock([
                 {
                     token: TokenType.erc721,
@@ -160,13 +165,6 @@ describe('Bundle.sol', function () {
                     amount: 1,
                 },
             ]);
-
-            console.log('hi');
-
-            const storage = await bundle.getLootboxStorage(1);
-            console.log('hey');
-
-            expect(storage.length).to.equal(1);
 
             // expect(pick(storage[0], ['token', 'contractAddr', 'tokenId', 'amount'])).to.deep.equal({
             //     token: TokenType.erc721,

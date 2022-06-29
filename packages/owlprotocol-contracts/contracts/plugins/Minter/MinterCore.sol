@@ -65,7 +65,13 @@ abstract contract MinterCore is Initializable, ERC165Storage, ERC1820Implementer
      */
     function _mintForFee(address buyer, uint256 tokenId) internal {
         // Transfer ERC20
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(mintFeeToken), buyer, mintFeeAddress, mintFeeAmount);
+        if (mintFeeAmount != 0)
+            SafeERC20Upgradeable.safeTransferFrom(
+                IERC20Upgradeable(mintFeeToken),
+                buyer,
+                mintFeeAddress,
+                mintFeeAmount
+            );
 
         // Call minting operation
         ERC721Owl(nftContractAddr).mint(buyer, tokenId);
@@ -79,7 +85,13 @@ abstract contract MinterCore is Initializable, ERC165Storage, ERC1820Implementer
      */
     function _safeMintForFee(address buyer, uint256 tokenId) internal {
         // Transfer ERC20
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(mintFeeToken), buyer, mintFeeAddress, mintFeeAmount);
+        if (mintFeeAmount != 0)
+            SafeERC20Upgradeable.safeTransferFrom(
+                IERC20Upgradeable(mintFeeToken),
+                buyer,
+                mintFeeAddress,
+                mintFeeAmount
+            );
 
         // Call minting operation
         ERC721Owl(nftContractAddr).safeMint(buyer, tokenId);
