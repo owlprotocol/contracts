@@ -132,9 +132,6 @@ describe('DutchAuction.sol No Fees', function () {
         });
 
         it('simple auction - 1 bidder', async () => {
-            const tx = await auction.start();
-            await tx.wait();
-
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -164,8 +161,6 @@ describe('DutchAuction.sol No Fees', function () {
 
         it('simple auction - no bidder, auction ends', async () => {
             //await auction.withdraw();
-            const tx = await auction.start();
-            await tx.wait();
 
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
@@ -180,9 +175,6 @@ describe('DutchAuction.sol No Fees', function () {
         });
 
         it('error: bid after auction ends', async () => {
-            const tx = await auction.start();
-            await tx.wait();
-
             await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
             await network.provider.send('evm_mine');
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
@@ -190,8 +182,6 @@ describe('DutchAuction.sol No Fees', function () {
         });
 
         // it('visual price change', async () => {
-        //     const tx = await auction.start();
-        //     await tx.wait();
 
         //     expect(await testNFT.balanceOf(auction.address)).to.equal(1);
         //     expect(await testNFT.balanceOf(seller.address)).to.equal(0);
@@ -294,9 +284,6 @@ describe('DutchAuction.sol No Fees', function () {
         });
 
         it('simple auction - 1 bidder', async () => {
-            const tx = await auction.start();
-            await tx.wait();
-
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -327,8 +314,6 @@ describe('DutchAuction.sol No Fees', function () {
 
         it('simple auction - no bidder, auction ends', async () => {
             //await auction.withdraw();
-            const tx = await auction.start();
-            await tx.wait();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -345,16 +330,12 @@ describe('DutchAuction.sol No Fees', function () {
         });
 
         it('error: bid after auction ends', async () => {
-            await auction.start();
-            await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
             await network.provider.send('evm_mine');
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
 
         // it('visual price change', async () => {
-        //     const tx = await auction.start();
-        //     await tx.wait();
 
         //     expect(await testNFT.balanceOf(auction.address)).to.equal(1);
         //     expect(await testNFT.balanceOf(seller.address)).to.equal(0);
@@ -484,9 +465,6 @@ describe('DutchAuction.sol No Fees', function () {
             });
 
             it('simple auction - 1 bidder', async () => {
-                const tx = await auction.start();
-                await tx.wait();
-
                 expect(await test1155.balanceOf(auction.address, 1)).to.equal(1);
                 expect(await test1155.balanceOf(seller.address, 1)).to.equal(99);
 
@@ -515,8 +493,6 @@ describe('DutchAuction.sol No Fees', function () {
 
             it('simple auction - no bidder, auction ends', async () => {
                 //await auction.withdraw();
-                const tx = await auction.start();
-                await tx.wait();
 
                 expect(await test1155.balanceOf(auction.address, 1)).to.equal(1);
                 expect(await test1155.balanceOf(seller.address, 1)).to.equal(99);
@@ -531,9 +507,6 @@ describe('DutchAuction.sol No Fees', function () {
             });
 
             it('error: bid after auction ends', async () => {
-                const tx = await auction.start();
-                await tx.wait();
-
                 await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
                 await network.provider.send('evm_mine');
                 expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
@@ -719,9 +692,6 @@ describe('DutchAuction.sol 10% Fees', function () {
         });
 
         it('simple auction - 1 bidder', async () => {
-            const tx = await auction.start();
-            await tx.wait();
-
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
