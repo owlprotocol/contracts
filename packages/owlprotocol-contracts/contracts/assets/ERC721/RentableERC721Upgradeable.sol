@@ -45,6 +45,8 @@ contract RentableERC721Upgradeable is Initializable, ContextUpgradeable, ERC165U
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
+    mapping(uint256 => uint256) internal rentalExpires;
+
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
@@ -230,7 +232,8 @@ contract RentableERC721Upgradeable is Initializable, ContextUpgradeable, ERC165U
      * and stop existing when they are burned (`_burn`).
      */
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return _owners[tokenId] != address(0);
+        if (rentalExpires[tokenId] > block.timestamp) return false;
+        else return true;
     }
 
     /**

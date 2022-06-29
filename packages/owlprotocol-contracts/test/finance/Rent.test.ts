@@ -13,7 +13,6 @@ import {
     ERC721,
     RentableERC721Owl,
     RentableERC721Owl__factory,
-    ProxyUpgradeable,
 } from '../../typechain';
 
 import { createERC20, createERC721 } from '../utils';
@@ -94,7 +93,7 @@ describe('Rent.sol', function () {
         beforeEach(async () => {
             //Deploy ERC20 and ERC721
             [acceptableERC20Token] = await createERC20(1); //mints 1,000,000,000 by default
-            [testNFT] = await createERC721(1, 1); //minting one token
+            [testNFT] = await createERC721(1, 10); //minting one token
 
             //Rent Data
             const RentData = RentImplementation.interface.encodeFunctionData('initialize', [
@@ -118,8 +117,10 @@ describe('Rent.sol', function () {
 
             // Transfer ERC20s to bidders
             await testNFT.connect(admin).transferFrom(admin.address, _owner.address, 1);
+            await testNFT.connect(admin).transferFrom(admin.address, _owner.address, 2);
             await testNFT.connect(admin).setApprovalForAll(_owner.address, true);
             await testNFT.connect(_owner).setApprovalForAll(RentAddress, true);
+
             await acceptableERC20Token.connect(admin).transfer(_renter.address, 100);
             const totalERC20Minted: BigNumber = parseUnits('1000000000.0');
             expect(await acceptableERC20Token.balanceOf(admin.address)).to.equal(totalERC20Minted.sub(100));
@@ -135,11 +136,14 @@ describe('Rent.sol', function () {
             originalERC20Balance = 100;
 
             expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
-            expect(await testNFT.balanceOf(_owner.address)).to.equal(1);
-            expect(await testNFT.balanceOf(admin.address)).to.equal(0);
+            expect(await testNFT.ownerOf(2)).to.equal(_owner.address);
+            expect(await testNFT.balanceOf(_owner.address)).to.equal(2);
+            expect(await testNFT.balanceOf(admin.address)).to.equal(8);
+
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(originalERC20Balance);
 
-            rentable.connect(admin).grantMinter(rent.address);
+            rentable.connect(admin).grantMinter(RentAddress);
+            rentable.connect(admin).grantRenter(RentAddress);
             rentable.connect(admin).grantRenter(_renter.address);
         });
 
@@ -148,9 +152,10 @@ describe('Rent.sol', function () {
                 nftId: 1,
                 owner: _owner.address,
                 renter: _renter.address,
+                ended: false,
                 timePeriods: 3,
                 pricePerPeriod: 10,
-                expireTime: 86400,
+                expireTimePerPeriod: 86400,
             });
             expect(await testNFT.balanceOf(RentAddress)).to.equal(1);
             expect(await testNFT.ownerOf(1)).to.equal(RentAddress);
@@ -164,10 +169,6 @@ describe('Rent.sol', function () {
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(80);
             expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(20);
 
-            await network.provider.send('evm_increaseTime', [82400]);
-
-            await rentable.connect(_renter).extendRental(1, 86400);
-
             await rent.connect(_renter).payRent(0, 1);
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(70);
             expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(30);
@@ -176,12 +177,197 @@ describe('Rent.sol', function () {
 
             await rent.connect(_owner).endRental(0);
             expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
-            expect(await testNFT.balanceOf(_owner.address)).to.equal(1);
+            expect(await testNFT.balanceOf(_owner.address)).to.equal(2);
 
             await rent.connect(_owner).ownerClaim(0);
             expect(await acceptableERC20Token.balanceOf(_owner.address)).to.equal(30);
 
             await expect(rentable.ownerOf(1)).to.revertedWith('ERC721: owner query for nonexistent token');
+        });
+
+        it('multiple rent', async () => {
+            await rent.createRental({
+                nftId: 1,
+                owner: _owner.address,
+                renter: _renter.address,
+                ended: false,
+                timePeriods: 3,
+                pricePerPeriod: 10,
+                expireTimePerPeriod: 86400,
+            });
+
+            await rent.createRental({
+                nftId: 2,
+                owner: _owner.address,
+                renter: _renter.address,
+                ended: false,
+                timePeriods: 2,
+                pricePerPeriod: 5,
+                expireTimePerPeriod: 86400,
+            });
+
+            expect(await testNFT.balanceOf(RentAddress)).to.equal(2);
+            expect(await testNFT.ownerOf(1)).to.equal(RentAddress);
+            expect(await testNFT.ownerOf(2)).to.equal(RentAddress);
+            expect(await rent.getNumRentals()).to.equal(2);
+
+            await rent.connect(_renter).startRent(0);
+            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(90);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(10);
+
+            await rent.connect(_renter).payRent(0, 1);
+            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(80);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(20);
+
+            await rent.connect(_renter).startRent(1);
+            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(75);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(25);
+
+            await rent.connect(_renter).payRent(1, 1);
+            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(70);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(30);
+
+            await rent.connect(_owner).endRental(1);
+            expect(await testNFT.ownerOf(2)).to.equal(_owner.address);
+            await rent.connect(_owner).ownerClaim(1);
+            expect(await acceptableERC20Token.balanceOf(_owner.address)).to.equal(10);
+            await expect(rentable.ownerOf(2)).to.revertedWith('ERC721: owner query for nonexistent token');
+
+            await rent.connect(_renter).payRent(0, 1);
+            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(60);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(30);
+
+            await network.provider.send('evm_increaseTime', [82400]);
+
+            await rent.connect(_owner).endRental(0);
+            expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
+            expect(await testNFT.balanceOf(_owner.address)).to.equal(2);
+
+            await rent.connect(_owner).ownerClaim(0);
+            expect(await acceptableERC20Token.balanceOf(_owner.address)).to.equal(40);
+
+            await expect(rentable.ownerOf(1)).to.revertedWith('ERC721: owner query for nonexistent token');
+        });
+
+        it('errors - start rental', async () => {
+            await rent.createRental({
+                nftId: 1,
+                owner: _owner.address,
+                renter: _renter.address,
+                ended: false,
+                timePeriods: 3,
+                pricePerPeriod: 10,
+                expireTimePerPeriod: 86400,
+            });
+            await expect(rent.connect(_owner).startRent(0)).to.be.revertedWith(
+                'you are not the renter and cannot pay rent',
+            );
+        });
+
+        it('errors - already started', async () => {
+            await rent.createRental({
+                nftId: 1,
+                owner: _owner.address,
+                renter: _renter.address,
+                ended: false,
+                timePeriods: 3,
+                pricePerPeriod: 10,
+                expireTimePerPeriod: 86400,
+            });
+            await rent.connect(_renter).startRent(0);
+            expect(await rent.getTimePeriodsPaid(0)).to.equal(1);
+            await expect(rent.connect(_renter).startRent(0)).to.be.revertedWith('rent has already been started');
+        });
+
+        it('errors - pay too much', async () => {
+            await rent.createRental({
+                nftId: 1,
+                owner: _owner.address,
+                renter: _renter.address,
+                ended: false,
+                timePeriods: 3,
+                pricePerPeriod: 10,
+                expireTimePerPeriod: 86400,
+            });
+            await rent.connect(_renter).startRent(0);
+            await expect(rent.connect(_renter).payRent(0, 3)).to.be.revertedWith(
+                'you are trying to pay for extra periods!',
+            );
+        });
+
+        it('errors - pay after ending', async () => {
+            await rent.createRental({
+                nftId: 1,
+                owner: _owner.address,
+                renter: _renter.address,
+                ended: false,
+                timePeriods: 3,
+                pricePerPeriod: 10,
+                expireTimePerPeriod: 86400,
+            });
+            expect(await testNFT.balanceOf(RentAddress)).to.equal(1);
+            expect(await testNFT.ownerOf(1)).to.equal(RentAddress);
+            expect(await rent.getNumRentals()).to.equal(1);
+
+            await rent.connect(_renter).startRent(0);
+            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(90);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(10);
+
+            await rent.connect(_owner).endRental(0);
+            expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
+            expect(await testNFT.balanceOf(_owner.address)).to.equal(2);
+
+            await expect(rent.connect(_renter).payRent(0, 1)).to.be.revertedWith('Rent has been terminated');
+        });
+
+        it('errors - renter trying to end', async () => {
+            await rent.createRental({
+                nftId: 1,
+                owner: _owner.address,
+                renter: _renter.address,
+                ended: false,
+                timePeriods: 3,
+                pricePerPeriod: 10,
+                expireTimePerPeriod: 86400,
+            });
+            expect(await testNFT.balanceOf(RentAddress)).to.equal(1);
+            expect(await testNFT.ownerOf(1)).to.equal(RentAddress);
+            expect(await rent.getNumRentals()).to.equal(1);
+
+            await rent.connect(_renter).startRent(0);
+            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(90);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(10);
+
+            await expect(rent.connect(_renter).endRental(0)).to.be.revertedWith(
+                'you are not the owner and cannot end the rental',
+            );
+        });
+
+        it('errors - renter trying to claim', async () => {
+            await rent.createRental({
+                nftId: 1,
+                owner: _owner.address,
+                renter: _renter.address,
+                ended: false,
+                timePeriods: 3,
+                pricePerPeriod: 10,
+                expireTimePerPeriod: 86400,
+            });
+            expect(await testNFT.balanceOf(RentAddress)).to.equal(1);
+            expect(await testNFT.ownerOf(1)).to.equal(RentAddress);
+            expect(await rent.getNumRentals()).to.equal(1);
+
+            await rent.connect(_renter).startRent(0);
+            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(90);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(10);
+
+            await rent.connect(_owner).endRental(0);
+            expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
+            expect(await testNFT.balanceOf(_owner.address)).to.equal(2);
+
+            await expect(rent.connect(_renter).ownerClaim(0)).to.be.revertedWith(
+                'you are not the owner and cannot claim funds',
+            );
         });
     });
 });

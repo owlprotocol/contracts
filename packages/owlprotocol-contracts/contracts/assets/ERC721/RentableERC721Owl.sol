@@ -12,8 +12,6 @@ contract RentableERC721Owl is RentableERC721Upgradeable, AccessControlUpgradeabl
 
     string public baseURI;
 
-    mapping(uint256 => uint256) rentalExpires;
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
