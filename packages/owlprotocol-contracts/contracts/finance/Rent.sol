@@ -22,10 +22,18 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     /**********************
              Types
     **********************/
-    event Create(uint256 rentId, uint256 nftId, address indexed owner, address indexed renter, uint256 timePeriods, uint256 pricePerPeriod, uint256 expireTimePerPeriod);
-    event Pay(uint256 amountPaid, uint256 rentId, uint256 nftId, address indexed owner, address indexed renter, uint256 timePeriods, uint256 pricePerPeriod, uint256 expireTimePerPeriod);
-    event End(uint256 amountPaid, uint256 rentId, uint256 nftId, address indexed owner, address indexed renter, uint256 timePeriods, uint256 pricePerPeriod, uint256 expireTimePerPeriod);
-    event Claim(uint256 rentId, uint256 amountClaimed);
+    event Create(
+        uint256 indexed rentId,
+        address indexed owner,
+        address indexed renter,
+        uint256 nftId,
+        uint256 timePeriods,
+        uint256 pricePerPeriod,
+        uint256 expireTimePerPeriod
+    );
+    event Pay(uint256 indexed rentId, uint256 amountPaid);
+    event End(uint256 indexed rentId, uint256 amountPaid);
+    event Claim(address owner, uint256 amountClaimed);
 
     //Rental Terms Struct
     struct RentalTerms {
@@ -45,6 +53,7 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
 
     mapping(uint256 => RentalTerms) public rentTermsId; //maps a rent ID to its specific Rental Terms
     mapping(uint256 => uint256) timePeriodsPaid; //maps the rental id to the number of time periods paid
+    mapping(address => uint256) balances; //maps an owner to the balances they can claim
 
     /**********************
         Initialization
@@ -107,58 +116,81 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
          Interaction
     **********************/
 
-    function createRental (RentalTerms calldata rentalTerm) external {
-        //transfer nft from rental term from the owner to this contract address
-        IERC721Upgradeable(contractAddr).safeTransferFrom(rentalTerm.owner, address(this), rentalTerm.nftId);
-
+    function createRental(RentalTerms calldata rentalTerm) external {
         rentTermsId[numRentals] = rentalTerm; //maps ID = numRentals to passed in rentalTerm
         timePeriodsPaid[numRentals] = 0; //initial number of rent periods paid set to 0
 
-        emit Create(numRentals, rentalTerm.nftId, rentalTerm.owner, rentalTerm.renter, rentalTerm.timePeriods, rentalTerm.pricePerPeriod, rentalTerm.expireTimePerPeriod);
+        //transfer nft from rental term from the owner to this contract address
+        IERC721Upgradeable(contractAddr).safeTransferFrom(rentalTerm.owner, address(this), rentalTerm.nftId);
+
+        emit Create(
+            numRentals,
+            rentalTerm.owner,
+            rentalTerm.renter,
+            rentalTerm.nftId,
+            rentalTerm.timePeriods,
+            rentalTerm.pricePerPeriod,
+            rentalTerm.expireTimePerPeriod
+        );
         numRentals++; //increment rentId counter
     }
 
-    function startRent(uint256 rentId) external payable { //should be called by the renter
+    function startRent(uint256 rentId) external payable {
+        //should be called by the renter
         require(timePeriodsPaid[rentId] == 0, 'rent has already been started');
         RentalTerms memory r = rentTermsId[rentId];
+
         payRent(rentId, 1);
         RentableERC721Owl(shadowAddr).mint(r.renter, r.nftId, r.expireTimePerPeriod); //mints shadow nft
 
-        emit Pay(r.pricePerPeriod, rentId, r.nftId, r.owner, r.renter, r.timePeriods, r.pricePerPeriod, r.expireTimePerPeriod);
+        emit Pay(rentId, r.pricePerPeriod);
     }
 
     function payRent(uint256 rentId, uint256 timePeriodsToPay) public payable {
         require(_msgSender() == rentTermsId[rentId].renter, 'you are not the renter and cannot pay rent');
-        require(!rentTermsId[rentId].ended, 'Rent has been terminated' );
-        require(timePeriodsPaid[rentId] + timePeriodsToPay <= rentTermsId[rentId].timePeriods, 'you are trying to pay for extra periods!');
+        require(!rentTermsId[rentId].ended, 'Rent has been terminated');
+        require(
+            timePeriodsPaid[rentId] + timePeriodsToPay <= rentTermsId[rentId].timePeriods,
+            'you are trying to pay for extra periods!'
+        );
+
         timePeriodsPaid[rentId] += timePeriodsToPay;
         RentalTerms memory r = rentTermsId[rentId];
+        balances[r.owner] += timePeriodsToPay * r.pricePerPeriod;
+
         SafeERC20Upgradeable.safeTransferFrom(
             IERC20Upgradeable(acceptableToken),
             r.renter,
             address(this),
             timePeriodsToPay * r.pricePerPeriod
         );
+
         RentableERC721Owl(shadowAddr).extendRental(rentId, timePeriodsToPay * r.expireTimePerPeriod);
-        emit Pay(timePeriodsToPay * r.pricePerPeriod, rentId, r.nftId, r.owner, r.renter, r.timePeriods, r.pricePerPeriod, r.expireTimePerPeriod);
+
+        emit Pay(rentId, timePeriodsToPay * r.pricePerPeriod);
     }
 
-    function endRental(uint256 rentalId) external payable{
+    function endRental(uint256 rentalId) external payable {
         //make sure its owner calling function and transfer nft back to them from this contract
         require(_msgSender() == rentTermsId[rentalId].owner, 'you are not the owner and cannot end the rental');
+
         rentTermsId[rentalId].ended = true;
 
-        IERC721Upgradeable(contractAddr).safeTransferFrom(address(this), rentTermsId[rentalId].owner, rentTermsId[rentalId].nftId);
+        IERC721Upgradeable(contractAddr).safeTransferFrom(
+            address(this),
+            rentTermsId[rentalId].owner,
+            rentTermsId[rentalId].nftId
+        );
 
-        emit End(timePeriodsPaid[rentalId] * rentTermsId[rentalId].pricePerPeriod, rentalId, rentTermsId[rentalId].nftId, rentTermsId[rentalId].owner, rentTermsId[rentalId].renter, rentTermsId[rentalId].timePeriods, rentTermsId[rentalId].pricePerPeriod, rentTermsId[rentalId].expireTimePerPeriod);
-
+        emit End(rentalId, timePeriodsPaid[rentalId] * rentTermsId[rentalId].pricePerPeriod);
     }
 
-    function ownerClaim(uint256 rentId) external payable {
-        require(_msgSender() == rentTermsId[rentId].owner, 'you are not the owner and cannot claim funds');
-        IERC20Upgradeable(acceptableToken).transfer(rentTermsId[rentId].owner, timePeriodsPaid[rentId] * rentTermsId[rentId].pricePerPeriod);
+    function ownerClaim() external payable {
+        uint256 bal = balances[_msgSender()];
+        balances[_msgSender()] = 0;
+        IERC20Upgradeable(acceptableToken).transfer(_msgSender(), bal);
 
-        emit Claim(rentId, timePeriodsPaid[rentId] * rentTermsId[rentId].pricePerPeriod);
+        emit Claim(_msgSender(), bal);
     }
 
     /**
@@ -177,6 +209,16 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     function getTimePeriodsPaid(uint256 rentalId) external view returns (uint256) {
         //returns number of time periods paid based on the rentalId
         return timePeriodsPaid[rentalId];
+    }
+
+    function getTimePeriodsLeftToPay(uint256 rentalId) external view returns (uint256) {
+        //returns number of time periods left to pay
+        return rentTermsId[rentalId].timePeriods - timePeriodsPaid[rentalId];
+    }
+
+    function getBalance(address owner) external view returns (uint256) {
+        //returns claimable funds for an owner
+        return balances[owner];
     }
 
     /**

@@ -179,7 +179,7 @@ describe('Rent.sol', function () {
             expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
             expect(await testNFT.balanceOf(_owner.address)).to.equal(2);
 
-            await rent.connect(_owner).ownerClaim(0);
+            await rent.connect(_owner).ownerClaim();
             expect(await acceptableERC20Token.balanceOf(_owner.address)).to.equal(30);
 
             await expect(rentable.ownerOf(1)).to.revertedWith('ERC721: owner query for nonexistent token');
@@ -229,13 +229,13 @@ describe('Rent.sol', function () {
 
             await rent.connect(_owner).endRental(1);
             expect(await testNFT.ownerOf(2)).to.equal(_owner.address);
-            await rent.connect(_owner).ownerClaim(1);
-            expect(await acceptableERC20Token.balanceOf(_owner.address)).to.equal(10);
+            await rent.connect(_owner).ownerClaim();
+            expect(await acceptableERC20Token.balanceOf(_owner.address)).to.equal(30);
             await expect(rentable.ownerOf(2)).to.revertedWith('ERC721: owner query for nonexistent token');
 
             await rent.connect(_renter).payRent(0, 1);
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(60);
-            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(30);
+            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(10);
 
             await network.provider.send('evm_increaseTime', [82400]);
 
@@ -243,7 +243,7 @@ describe('Rent.sol', function () {
             expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
             expect(await testNFT.balanceOf(_owner.address)).to.equal(2);
 
-            await rent.connect(_owner).ownerClaim(0);
+            await rent.connect(_owner).ownerClaim();
             expect(await acceptableERC20Token.balanceOf(_owner.address)).to.equal(40);
 
             await expect(rentable.ownerOf(1)).to.revertedWith('ERC721: owner query for nonexistent token');
@@ -340,33 +340,6 @@ describe('Rent.sol', function () {
 
             await expect(rent.connect(_renter).endRental(0)).to.be.revertedWith(
                 'you are not the owner and cannot end the rental',
-            );
-        });
-
-        it('errors - renter trying to claim', async () => {
-            await rent.createRental({
-                nftId: 1,
-                owner: _owner.address,
-                renter: _renter.address,
-                ended: false,
-                timePeriods: 3,
-                pricePerPeriod: 10,
-                expireTimePerPeriod: 86400,
-            });
-            expect(await testNFT.balanceOf(RentAddress)).to.equal(1);
-            expect(await testNFT.ownerOf(1)).to.equal(RentAddress);
-            expect(await rent.getNumRentals()).to.equal(1);
-
-            await rent.connect(_renter).startRent(0);
-            expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(90);
-            expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(10);
-
-            await rent.connect(_owner).endRental(0);
-            expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
-            expect(await testNFT.balanceOf(_owner.address)).to.equal(2);
-
-            await expect(rent.connect(_renter).ownerClaim(0)).to.be.revertedWith(
-                'you are not the owner and cannot claim funds',
             );
         });
     });
