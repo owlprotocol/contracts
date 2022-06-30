@@ -115,9 +115,8 @@ library RosalindDNA {
         for (uint256 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
             // Decide if we want to mutate
             uint256 geneMutationSeed = SourceRandom.getSeededRandom(randomSeed, geneIdx);
-            if (geneMutationSeed > mutationRates[geneIdx])
-                // Skip to the next gene if we shouldn't mutate
-                continue;
+            // Skip to the next gene if we shouldn't mutate
+            if (geneMutationSeed > mutationRates[geneIdx]) continue;
 
             // Note our mutation in mutationMask
             uint16 geneStartIdx = genes[geneIdx];
