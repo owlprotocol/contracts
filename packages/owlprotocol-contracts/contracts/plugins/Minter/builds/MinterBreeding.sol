@@ -19,8 +19,8 @@ contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     uint8 public constant defaultRequiredParents = 2;
     uint256 public constant defaultBreedingCooldownSeconds = 604800; // 7 days
     // Specification + ERC165
-    string private constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterBreeding/', VERSION)));
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterBreeding/', version)));
 
     // Store breeding details
     struct BreedingRules {

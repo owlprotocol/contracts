@@ -28,8 +28,8 @@ contract CrafterTransfer is
     UUPSUpgradeable
 {
     // Specification + ERC165
-    string private constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterTransfer/', VERSION)));
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterTransfer/', version)));
 
     /**********************
              Types

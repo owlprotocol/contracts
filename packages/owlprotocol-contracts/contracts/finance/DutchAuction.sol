@@ -26,8 +26,8 @@ contract DutchAuction is
     FractionalExponents
 {
     // Specification + ERC165
-    string private constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://DutchAuction/', VERSION)));
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://DutchAuction/', version)));
 
     /**********************
              Types

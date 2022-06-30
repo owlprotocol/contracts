@@ -17,9 +17,9 @@ import './AuctionLib.sol';
 
 contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
-    string private constant VERSION = 'v0.1';
+    string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG =
-        bytes4(keccak256(abi.encodePacked('OWLProtocol://FixedPriceAuction/', VERSION)));
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://FixedPriceAuction/', version)));
 
     /**********************
              Types

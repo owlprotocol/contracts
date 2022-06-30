@@ -14,8 +14,8 @@ import 'hardhat/console.sol';
  */
 contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
-    string private constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', VERSION)));
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', version)));
 
     // Track our next tokenId for each species
     uint256 nextTokenId;
