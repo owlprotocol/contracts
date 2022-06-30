@@ -14,8 +14,8 @@ import '../../../utils/SourceRandom.sol';
  */
 contract MinterRandom is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
-    string private constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterRandom/', VERSION)));
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterRandom/', version)));
 
     // Nonce
     uint256 private _numMinted;

@@ -20,8 +20,8 @@ import 'hardhat/console.sol';
 
 contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
-    string private constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Rent/', VERSION)));
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Rent/', version)));
 
     /**********************
              Types
