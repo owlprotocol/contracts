@@ -31,6 +31,10 @@ contract CrafterMint is
     OwnableUpgradeable,
     UUPSUpgradeable
 {
+    // Specification + ERC165
+    string private constant VERSION = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterMint/', VERSION)));
+
     /**********************
              Types
     **********************/
@@ -444,5 +448,14 @@ contract CrafterMint is
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
+    }
+
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }

@@ -15,12 +15,12 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import './AuctionLib.sol';
 
-contract FixedPriceAuction is
-    ERC721HolderUpgradeable,
-    ERC1155HolderUpgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable
-{
+contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+    // Specification + ERC165
+    string private constant VERSION = 'v0.1';
+    bytes4 private constant ERC165TAG =
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://FixedPriceAuction/', VERSION)));
+
     /**********************
              Types
     **********************/
@@ -35,7 +35,7 @@ contract FixedPriceAuction is
     address payable public saleFeeAddress;
 
     uint256 public auctionDuration;
-    uint256 public price; //in "eth"    
+    uint256 public price; //in "eth"
     uint256 public startTime;
     uint256 public saleFee; //integer percentage of sale set aside for owner commission
 
@@ -72,7 +72,7 @@ contract FixedPriceAuction is
     ) external initializer {
         __FixedPriceAuction_init(
             _seller,
-            _asset, 
+            _asset,
             ERC20contractAddress,
             _price,
             _auctionDuration,
@@ -133,7 +133,7 @@ contract FixedPriceAuction is
         address payable _saleFeeAddress
     ) internal onlyInitializing {
         require(_seller != _saleFeeAddress, 'FixedPriceAuction: seller cannot be the same as the owner!');
-        require(saleFee <= 100, "FixedPriceAuction: sale fee cannot be greater than 100 percent!");
+        require(saleFee <= 100, 'FixedPriceAuction: sale fee cannot be greater than 100 percent!');
         asset = _asset;
 
         acceptableToken = ERC20contractAddress;
@@ -145,10 +145,11 @@ contract FixedPriceAuction is
         saleFee = _saleFee;
         saleFeeAddress = _saleFeeAddress;
 
-        //transferring ERC 721 
-        if (_asset.token == AuctionLib.TokenType.erc721) 
+        //transferring ERC 721
+        if (_asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(_asset.contractAddr).transferFrom(seller, address(this), _asset.tokenId);
-        else if (_asset.token == AuctionLib.TokenType.erc1155) { //transferring ERC 1155
+        else if (_asset.token == AuctionLib.TokenType.erc1155) {
+            //transferring ERC 1155
             IERC1155Upgradeable(_asset.contractAddr).safeTransferFrom(
                 seller,
                 address(this),
@@ -157,7 +158,6 @@ contract FixedPriceAuction is
                 new bytes(0)
             );
         }
-
     }
 
     /**********************
@@ -177,16 +177,27 @@ contract FixedPriceAuction is
     Getters
     */
 
-    function buy() external payable { //operations done in "wei"
+    function buy() external payable {
+        //operations done in "wei"
         require(started, 'FixedPriceAuction: not started');
         require(block.timestamp < startTime + auctionDuration, 'FixedPriceAuction: ended');
         require(!isBought, 'FixedPriceAuction: somebody has already bought this item!');
 
-        isBought = true; 
+        isBought = true;
 
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), saleFeeAddress, saleFee * price / 100);
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), seller, price - saleFee * price / 100);
-        
+        SafeERC20Upgradeable.safeTransferFrom(
+            IERC20Upgradeable(acceptableToken),
+            _msgSender(),
+            saleFeeAddress,
+            (saleFee * price) / 100
+        );
+        SafeERC20Upgradeable.safeTransferFrom(
+            IERC20Upgradeable(acceptableToken),
+            _msgSender(),
+            seller,
+            price - (saleFee * price) / 100
+        );
+
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
         else if (asset.token == AuctionLib.TokenType.erc1155) {
@@ -205,7 +216,10 @@ contract FixedPriceAuction is
     function claim() external onlyOwner {
         //owner withdraws asset if nobody buys
         require(started, 'FixedPriceAuction: not started');
-        require(block.timestamp >= startTime + auctionDuration, 'FixedPriceAuction: cannot claim when auction is ongoing!');
+        require(
+            block.timestamp >= startTime + auctionDuration,
+            'FixedPriceAuction: cannot claim when auction is ongoing!'
+        );
         require(!isBought, 'FixedPriceAuction: cannot claim when the token has been sold already!');
 
         if (asset.token == AuctionLib.TokenType.erc721)
@@ -230,5 +244,14 @@ contract FixedPriceAuction is
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
+    }
+
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
