@@ -9,9 +9,9 @@ contract RentableERC721Owl is RentableERC721Upgradeable, AccessControlUpgradeabl
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
     bytes32 private constant RENTER_ROLE = keccak256('RENTER_ROLE');
-    string private constant VERSION = 'v0.1';
+    string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG =
-        bytes4(keccak256(abi.encodePacked('OWLProtocol://RentableERC721Owl/', VERSION)));
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://RentableERC721Owl/', version)));
 
     string public baseURI;
 
