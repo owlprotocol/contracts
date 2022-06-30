@@ -9,6 +9,9 @@ contract RentableERC721Owl is RentableERC721Upgradeable, AccessControlUpgradeabl
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
     bytes32 private constant RENTER_ROLE = keccak256('RENTER_ROLE');
+    string private constant VERSION = 'v0.1';
+    bytes4 private constant ERC165TAG =
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://RentableERC721Owl/', VERSION)));
 
     string public baseURI;
 
@@ -88,7 +91,11 @@ contract RentableERC721Owl is RentableERC721Upgradeable, AccessControlUpgradeabl
      * @param to address to
      * @param tokenId tokenId value
      */
-    function mint(address to, uint256 tokenId, uint256 expireTime) public onlyRole(MINTER_ROLE) {
+    function mint(
+        address to,
+        uint256 tokenId,
+        uint256 expireTime
+    ) public onlyRole(MINTER_ROLE) {
         rentalExpires[tokenId] = expireTime + block.timestamp;
         _mint(to, tokenId);
     }
@@ -119,26 +126,17 @@ contract RentableERC721Owl is RentableERC721Upgradeable, AccessControlUpgradeabl
         return baseURI;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(RentableERC721Upgradeable, AccessControlUpgradeable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
-
     function exists(uint256 tokenId) external view returns (bool) {
         return _exists(tokenId);
     }
 
     function burn(uint256 tokenId) public virtual {
         //solhint-disable-next-line max-line-length
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721Burnable: caller is not owner nor approved");
+        require(_isApprovedOrOwner(_msgSender(), tokenId), 'ERC721Burnable: caller is not owner nor approved');
         _burn(tokenId);
     }
 
-    function extendRental(uint256 tokenId, uint256 extendAmount) external onlyRole(RENTER_ROLE){
+    function extendRental(uint256 tokenId, uint256 extendAmount) external onlyRole(RENTER_ROLE) {
         rentalExpires[tokenId] += extendAmount;
     }
 
@@ -146,7 +144,22 @@ contract RentableERC721Owl is RentableERC721Upgradeable, AccessControlUpgradeabl
         address owner;
         if (rentalExpires[tokenId] > block.timestamp) owner = address(0);
         else owner = _owners[tokenId];
-        require(owner != address(0), "ERC721: owner query for nonexistent token");
+        require(owner != address(0), 'ERC721: owner query for nonexistent token');
         return owner;
+    }
+
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(RentableERC721Upgradeable, AccessControlUpgradeable)
+        returns (bool)
+    {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }

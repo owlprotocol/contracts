@@ -16,7 +16,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '../utils/FractionalExponents.sol';
 import './AuctionLib.sol';
 
-import "hardhat/console.sol";
+import 'hardhat/console.sol';
 
 contract DutchAuction is
     ERC721HolderUpgradeable,
@@ -25,6 +25,10 @@ contract DutchAuction is
     UUPSUpgradeable,
     FractionalExponents
 {
+    // Specification + ERC165
+    string private constant VERSION = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://DutchAuction/', VERSION)));
+
     /**********************
              Types
     **********************/
@@ -42,7 +46,7 @@ contract DutchAuction is
     uint256 public startPrice; //starting maximum price
     uint256 public endPrice; //floor price
     uint256 public startTime;
-    uint256 public saleFee; 
+    uint256 public saleFee;
 
     bool public isNonLinear;
     bool public isBought;
@@ -218,8 +222,18 @@ contract DutchAuction is
 
         uint256 bidPrice = getCurrentPrice();
 
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), saleFeeAddress, saleFee * bidPrice / 100);
-        SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(acceptableToken), _msgSender(), seller, bidPrice - saleFee * bidPrice / 100);
+        SafeERC20Upgradeable.safeTransferFrom(
+            IERC20Upgradeable(acceptableToken),
+            _msgSender(),
+            saleFeeAddress,
+            (saleFee * bidPrice) / 100
+        );
+        SafeERC20Upgradeable.safeTransferFrom(
+            IERC20Upgradeable(acceptableToken),
+            _msgSender(),
+            seller,
+            bidPrice - (saleFee * bidPrice) / 100
+        );
 
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
@@ -262,5 +276,14 @@ contract DutchAuction is
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
+    }
+
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
