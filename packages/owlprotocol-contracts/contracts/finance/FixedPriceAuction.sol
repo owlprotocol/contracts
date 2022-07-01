@@ -177,7 +177,7 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
     Getters
     */
 
-    function buy() external payable {
+    function buy() external {
         //operations done in "wei"
         require(started, 'FixedPriceAuction: not started');
         require(block.timestamp < startTime + auctionDuration, 'FixedPriceAuction: ended');

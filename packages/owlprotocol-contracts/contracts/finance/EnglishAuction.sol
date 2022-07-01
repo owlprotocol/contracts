@@ -175,6 +175,10 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
          Interaction
     **********************/
 
+    /**
+     * @notice Must be called by owner!
+     * @dev Allows the owner to start the auction
+     */
     function start() external onlyOwner {
         require(!started, 'EnglishAuction: started');
 
@@ -184,7 +188,11 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         emit Start(block.timestamp);
     }
 
-    function bid(uint256 amount) external payable {
+    /**
+     * @dev Allow a user to place a bid
+     * @param amount to bid
+     */
+    function bid(uint256 amount) external {
         require(started, 'EnglishAuction: not started');
         require(block.timestamp < endAt, 'EnglishAuction: ended');
         require(amount > bids[highestBidder], 'EnglishAuction: value <= highest');
@@ -206,6 +214,10 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         emit Bid(_msgSender(), amount);
     }
 
+    /**
+     * @notice Highest bid cannot withdraw
+     * @dev Allow a user to withdraw their bid
+     */
     function withdraw() external {
         //added from parameter as above
         require(_msgSender() != highestBidder, 'EnglishAuction: the highest bidder cannot withdraw!');
@@ -218,7 +230,9 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         emit Withdraw(_msgSender(), bal);
     }
 
-    //after auction ends, the seller must call end() to transfer the erc20 to themselves
+    /**
+     * @dev Allows owner to claim bid. The seller must call to transfer the erc20 to themselves
+     */
     function ownerClaim() external onlyOwner {
         require(started, 'EnglishAuction: not started');
         require(block.timestamp >= endAt, 'EnglishAuction: not ended');
@@ -246,6 +260,9 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         }
     }
 
+    /**
+     * @dev Allows auction winner to claim the asset they won.
+     */
     function winnerClaim() external {
         require(started, 'EnglishAuction: not started');
         require(block.timestamp >= endAt, 'EnglishAuction: not ended');
@@ -268,11 +285,17 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     Getters
     */
 
+    /**
+     * @dev Returns the current highest bid
+     */
     function getCurrentBid() external view returns (uint256) {
         //show the current price
         return bids[highestBidder];
     }
 
+    /**
+     * @dev Returns the remaining time
+     */
     function getRemainingTime() external view returns (uint256) {
         if (block.timestamp >= endAt) return 0;
         return endAt - block.timestamp; //in seconds
@@ -281,8 +304,15 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
     /**
     Upgradeable functions
     */
+
+    /**
+     * @dev Returns the address of the implementation contract.
+     */
     function _authorizeUpgrade(address) internal override onlyOwner {}
 
+    /**
+     * @dev Returns the address of the implementation contract.
+     */
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }

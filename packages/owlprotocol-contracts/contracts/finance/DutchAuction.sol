@@ -199,6 +199,10 @@ contract DutchAuction is
     Getters
     */
 
+    /**
+     * @dev Returns the current price of the asset
+     * @return uint256 price of the asset
+     */
     function getCurrentPrice() public view returns (uint256) {
         //show the current price
         if (block.timestamp >= startTime + auctionDuration) return 1e18 * endPrice;
@@ -216,7 +220,11 @@ contract DutchAuction is
             (((1e18 * (block.timestamp - startTime)) / (auctionDuration)) * ((startPrice - endPrice))));
     }
 
-    function bid() external payable {
+    /**
+     * @notice The required ERC20 tokens must be pre-approved before calling!
+     * @dev Allows a user to bid at the current price
+     */
+    function bid() external {
         require(block.timestamp < startTime + auctionDuration, 'DutchAuction: ended');
         require(!isBought, 'DutchAuction: somebody has already bought this item!');
 
@@ -251,6 +259,9 @@ contract DutchAuction is
         emit Bid(_msgSender(), bidPrice);
     }
 
+    /**
+     * @dev Allows the owner to claim back the asset if nobody bids and auction expires
+     */
     function claim() external onlyOwner {
         //owner withdraws asset if nobody bids
         require(block.timestamp >= startTime + auctionDuration, 'DutchAuction: cannot claim when auction is ongoing!');
@@ -272,8 +283,16 @@ contract DutchAuction is
     /**
     Upgradeable functions
     */
+
+    /**
+     * @notice Must be called by owner!
+     * @dev Authorizes the contract upgrade. Called before upgrades are authorized.
+     */
     function _authorizeUpgrade(address) internal override onlyOwner {}
 
+    /**
+     * @dev Returns the address of the implementation contract.
+     */
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
