@@ -10,11 +10,11 @@
     "copyright": "Copyright 2021 OYUNPROTOCOL",
     "license": "MIT",
     "scripts": {
-        "clean": "npm-run-all -p clean:types",
+        "hardhat:compile": "npx hardhat compile",
+        "hardhat:node": "npx hardhat node",
         "clean:types": "rimraf types typechain",
         "test": "npx hardhat test",
-        "start": "npx hardhat run --network localhost scripts/deploy.ts",
-        "compile": "npx hardhat clean && npx hardhat compile && npx generate-types",
+        "compile": "npx hardhat clean && npx hardhat compile",
         "test:parallel": "npx hardhat test --parallel",
         "build": "npm run compile"
     },
@@ -97,5 +97,8 @@
         "artifacts/contracts",
         "contracts",
         "types"
-    ]
+    ],
+    "dependencies": {
+        "@prb/math": "^2.5.0"
+    }
 }

@@ -3,14 +3,8 @@
     "description": "Schema for a valid Specie Metadata",
     "type": "object",
     "properties": {
-        "name": {
-            "type": "string",
-            "description": "Name of the item",
-            "examples": ["Bored Ape Yacht Club", "Cool Cats"]
-        },
-        "description": {
-            "type": "string",
-            "description": "These are the attributes for the item, which will show up on the OpenSea page for the item."
+        "overrides": {
+            "type": "object"
         },
         "traits": {
             "type": "array",

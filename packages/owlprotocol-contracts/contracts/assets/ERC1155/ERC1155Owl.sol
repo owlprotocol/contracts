@@ -5,10 +5,15 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 
+import 'hardhat/console.sol';
+
 contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessControlUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
     string private contractURI_;
+
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC1155Owl/', version)));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -16,10 +21,21 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
     }
 
     function initialize(address _admin, string calldata uri_, string calldata newContractURI) external initializer {
+        __ERC1155Owl_init(_admin, uri_, newContractURI);
+    }
+
+    function proxyInitialize(address _admin, string calldata uri_, string calldata newContractURI) external onlyInitializing {
+        __ERC1155Owl_init(_admin, uri_, newContractURI);
+    }
+
+    function __ERC1155Owl_init(address _admin, string memory uri_, string calldata newContractURI) internal onlyInitializing {
+        __ERC1155Owl_init_unchained(_admin, newContractURI);
         __ERC1155_init(uri_);
         __ERC1155Burnable_init();
         __AccessControl_init();
+    }
 
+    function __ERC1155Owl_init_unchained(address _admin, string calldata newContractURI) internal onlyInitializing {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
@@ -106,12 +122,17 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         return contractURI_;
     }
 
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
     function supportsInterface(bytes4 interfaceId)
         public
         view
+        virtual
         override(ERC1155Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
