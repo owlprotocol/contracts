@@ -31,7 +31,7 @@ enum TokenType {
 
 const salt = ethers.utils.formatBytes32String('1');
 
-describe('Bundle.sol', function () {
+describe.skip('Bundle.sol', function () {
     //Extra time
     this.timeout(100000);
     let client: SignerWithAddress;
