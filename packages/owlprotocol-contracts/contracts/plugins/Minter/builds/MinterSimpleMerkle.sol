@@ -13,7 +13,7 @@ import '../MinterCore.sol';
  */
 contract MinterSimpleMerkle is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     // @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {
+    constructor() {
         _disableInitializers();
     }
 

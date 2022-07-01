@@ -13,6 +13,10 @@ import 'hardhat/console.sol';
  *
  */
 contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
+    // Specification + ERC165
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', version)));
+
     // Track our next tokenId for each species
     uint256 nextTokenId;
 
@@ -97,6 +101,15 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
+    }
+
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol';
@@ -8,6 +8,8 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
 contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', version)));
 
     string public baseURI;
 
@@ -108,16 +110,22 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         return baseURI;
     }
 
+    function exists(uint256 tokenId) external view returns (bool) {
+        return _exists(tokenId);
+    }
+
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
     function supportsInterface(bytes4 interfaceId)
         public
         view
+        virtual
         override(ERC721Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
-    }
-
-    function exists(uint256 tokenId) external view returns (bool) {
-        return _exists(tokenId);
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }

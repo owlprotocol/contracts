@@ -10,6 +10,8 @@ import 'hardhat/console.sol';
 contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessControlUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC1155Owl/', version)));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -99,12 +101,18 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         _setURI(newuri);
     }
 
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
     function supportsInterface(bytes4 interfaceId)
         public
         view
+        virtual
         override(ERC1155Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }

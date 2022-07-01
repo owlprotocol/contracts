@@ -17,6 +17,10 @@ import './AuctionLib.sol';
 import 'hardhat/console.sol';
 
 contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+    // Specification + ERC165
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://EnglishAuction/', version)));
+
     /**********************
              Types
     **********************/
@@ -281,5 +285,14 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
+    }
+
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
