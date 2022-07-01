@@ -130,8 +130,6 @@ describe('FixedPriceAuction.sol', function () {
         });
 
         it('simple auction - 1 bidder', async () => {
-            await auction.start();
-
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -148,7 +146,6 @@ describe('FixedPriceAuction.sol', function () {
 
         it('simple auction - no bidder, auction ends', async () => {
             //await auction.withdraw();
-            await auction.start();
 
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
@@ -162,9 +159,6 @@ describe('FixedPriceAuction.sol', function () {
         });
 
         it('error: bid after auction ends', async () => {
-            const tx = await auction.start();
-            await tx.wait();
-
             await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
             await network.provider.send('evm_mine');
 
@@ -253,8 +247,6 @@ describe('FixedPriceAuction.sol', function () {
         });
 
         it('simple auction - 1 bidder', async () => {
-            await auction.start();
-
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
