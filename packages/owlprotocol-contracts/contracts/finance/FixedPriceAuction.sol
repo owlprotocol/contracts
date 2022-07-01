@@ -170,7 +170,6 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
 
     function buy() external {
         //operations done in "wei"
-        require(started, 'FixedPriceAuction: not started');
         require(block.timestamp < startTime + auctionDuration, 'FixedPriceAuction: ended');
         require(!isBought, 'FixedPriceAuction: somebody has already bought this item!');
 
@@ -206,7 +205,10 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
 
     function claim() external onlyOwner {
         //owner withdraws asset if nobody buys
-        require(block.timestamp >= startTime + auctionDuration, 'FixedPriceAuction: cannot claim when auction is ongoing!');
+        require(
+            block.timestamp >= startTime + auctionDuration,
+            'FixedPriceAuction: cannot claim when auction is ongoing!'
+        );
         require(!isBought, 'FixedPriceAuction: cannot claim when the token has been sold already!');
 
         if (asset.token == AuctionLib.TokenType.erc721)
