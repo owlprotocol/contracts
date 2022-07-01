@@ -39,7 +39,6 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
     uint256 public startTime;
     uint256 public saleFee; //integer percentage of sale set aside for owner commission
 
-    bool public started;
     bool public isBought;
 
     /**********************
@@ -135,6 +134,7 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
         require(_seller != _saleFeeAddress, 'FixedPriceAuction: seller cannot be the same as the owner!');
         require(saleFee <= 100, 'FixedPriceAuction: sale fee cannot be greater than 100 percent!');
         asset = _asset;
+        startTime = block.timestamp;
 
         acceptableToken = ERC20contractAddress;
 
@@ -163,15 +163,6 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
     /**********************
          Interaction
     **********************/
-
-    function start() external onlyOwner {
-        require(!started, 'FixedPriceAuction: started');
-
-        started = true;
-        startTime = block.timestamp;
-
-        emit Start(startTime);
-    }
 
     /**
     Getters
@@ -215,11 +206,7 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
 
     function claim() external onlyOwner {
         //owner withdraws asset if nobody buys
-        require(started, 'FixedPriceAuction: not started');
-        require(
-            block.timestamp >= startTime + auctionDuration,
-            'FixedPriceAuction: cannot claim when auction is ongoing!'
-        );
+        require(block.timestamp >= startTime + auctionDuration, 'FixedPriceAuction: cannot claim when auction is ongoing!');
         require(!isBought, 'FixedPriceAuction: cannot claim when the token has been sold already!');
 
         if (asset.token == AuctionLib.TokenType.erc721)
