@@ -204,7 +204,10 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
 
     function claim() external onlyOwner {
         //owner withdraws asset if nobody buys
-        require(block.timestamp >= startTime + auctionDuration, 'FixedPriceAuction: cannot claim when auction is ongoing!');
+        require(
+            block.timestamp >= startTime + auctionDuration,
+            'FixedPriceAuction: cannot claim when auction is ongoing!'
+        );
         require(!isBought, 'FixedPriceAuction: cannot claim when the token has been sold already!');
 
         if (asset.token == AuctionLib.TokenType.erc721)

@@ -3,7 +3,7 @@ import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import { expect } from "chai";
 
 
-describe.only('ERC165 Testing', async () => {
+describe('ERC165 Testing', async () => {
     const assertSupportsInterface = async (name: string, contractVersion = 'v0.1') => {
         // Get contract factory
         const factory = await ethers.getContractFactory(name);
