@@ -65,7 +65,7 @@ contract Bundle is
         address _lootBoxMinterAddress,
         address _forwarder
     ) external initializer {
-        __Bundle_init(_admin, _client, _lootBoxMinterAddress, _forwarder);
+        __Bundle_init(_admin, _client, _lootBoxMinterAddress);
     }
 
     function proxyInitialize(
@@ -74,7 +74,7 @@ contract Bundle is
         address _lootBoxMinterAddress,
         address _forwarder
     ) external onlyInitializing {
-        __Bundle_init(_admin, _client, _lootBoxMinterAddress, _forwarder);
+        __Bundle_init(_admin, _client, _lootBoxMinterAddress);
     }
 
     function __Bundle_init(
@@ -84,7 +84,8 @@ contract Bundle is
         address _forwarder
     ) internal onlyInitializing {
         _transferOwnership(_admin);
-        __Bundle_init_unchained(_admin, _client, _lootBoxMinterAddress, _forwarder);
+
+        __Bundle_init_unchained(_admin, _client, _lootBoxMinterAddress);
     }
 
     function __Bundle_init_unchained(
@@ -137,6 +138,8 @@ contract Bundle is
             }
         }
         nextLootBoxId++;
+        //mint lootbox to msg sender
+        //console.log(MinterAutoId(lootBoxMinterAddress).nextTokenId());
         MinterAutoId(lootBoxMinterAddress).mint(_msgSender());
 
         emit Lock(assetsToLock);
@@ -145,10 +148,10 @@ contract Bundle is
     function unlock(uint256 lootBoxId) external {
         require(_msgSender() == client, 'Bundle.sol: you are not authorized to call the unlock function!');
         // following check doesnt work since nftContractAddr variable is private in MinterCore
+        //require(IERC721Upgradeable(MinterCore(lootBoxMinterAddress).nftContractAddr()).ownerOf(lootBoxId) == _msgSender(), 'Bundle.sol: you do not hold that lootbox!');
 
         uint256 arrayLength = lootBoxStorage[lootBoxId].length;
-        for (uint256 i = arrayLength; i >= 1; i--) {
-            //loop variables set to avoid uint underflow on decrementing loop
+        for (uint256 i = arrayLength; i >= 1; i--) { //loop variables set to avoid uint underflow on decrementing loop
             if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc20) {
                 BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1];
                 lootBoxStorage[lootBoxId].pop();
@@ -156,7 +159,11 @@ contract Bundle is
             } else if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc721) {
                 BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1];
                 lootBoxStorage[lootBoxId].pop();
-                IERC721Upgradeable(temp.contractAddr).transferFrom(address(this), _msgSender(), temp.tokenId);
+                IERC721Upgradeable(temp.contractAddr).transferFrom(
+                    address(this),
+                    _msgSender(),
+                    temp.tokenId
+                );
             } else if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc1155) {
                 BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1];
                 lootBoxStorage[lootBoxId].pop();
@@ -183,7 +190,7 @@ contract Bundle is
     Getters
     */
 
-    function getLootboxStorage(uint256 tokenId) external view onlyOwner returns (BundleLib.Asset[] memory _storage) {
+    function getLootboxStorage(uint256 tokenId) external view onlyOwner returns (BundleLib.Asset[] memory _storage)  {
         return lootBoxStorage[tokenId];
     }
 
