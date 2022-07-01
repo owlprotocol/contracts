@@ -34,7 +34,7 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
 
     uint256 public nextLootBoxId;
 
-    mapping(uint256 => BundleLib.Asset[]) public lootBoxStorage; //maps token id of lootbox to assets in bundle
+    mapping(uint256 => BundleLib.Asset[]) public lootBoxStorage; //maps token id of _lootBoxMinterAddress to assets in bundle
 
     /**********************
         Initialization
@@ -55,7 +55,7 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
         address payable _client,
         address _lootBoxMinterAddress
     ) external initializer {
-        __EnglishAuction_init(_admin, _client, _lootBoxMinterAddress);
+        __Bundle_init(_admin, _client, _lootBoxMinterAddress);
     }
 
     function proxyInitialize(
@@ -63,10 +63,10 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
         address payable _client,
         address _lootBoxMinterAddress
     ) external onlyInitializing {
-        __EnglishAuction_init(_admin, _client, _lootBoxMinterAddress);
+        __Bundle_init(_admin, _client, _lootBoxMinterAddress);
     }
 
-    function __EnglishAuction_init(
+    function __Bundle_init(
         address _admin,
         address payable _client,
         address _lootBoxMinterAddress
@@ -74,10 +74,10 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
         __Ownable_init();
         _transferOwnership(_admin);
 
-        __EnglishAuction_init_unchained(_admin, _client, _lootBoxMinterAddress);
+        __Bundle_init_unchained(_admin, _client, _lootBoxMinterAddress);
     }
 
-    function __EnglishAuction_init_unchained(
+    function __Bundle_init_unchained(
         address _admin,
         address payable _client,
         address _lootBoxMinterAddress
@@ -92,9 +92,8 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
     **********************/
 
     function lock(BundleLib.Asset[] calldata assetsToLock) external payable {
-        // require (lockBoxStorage[lootbox.tokenId].length == 0, 'Bundle.sol: there are already assets locked in that lootbox!');
         require(_msgSender() == client, 'Bundle.sol: you are not authorized to call the lock function!');
-        require(lootBoxMinterAddress != address(0), 'Bundle.sol: set lootbox address first!');
+        require(lootBoxMinterAddress != address(0), 'Bundle.sol: set _lootBoxMinterAddress address first!');
 
         for (uint256 i = 0; i < assetsToLock.length; i++) {
             if (assetsToLock[i].token == BundleLib.TokenType.erc20) {
@@ -124,34 +123,40 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
             }
         }
         nextLootBoxId++;
-        //mint lockbox to msg sender
+        //mint lootbox to msg sender
+        //console.log(MinterAutoId(lootBoxMinterAddress).nextTokenId());
         MinterAutoId(lootBoxMinterAddress).mint(_msgSender());
 
         emit Lock(assetsToLock);
     }
 
     function unlock(uint256 lootBoxId) external {
-        //require (_msg.sender() == IERC721Upgradeable(lootbox.contractAddr).ownerOf(lootbox.tokenId), 'Bundle.sol: not owned by this lootbox!');
         require(_msgSender() == client, 'Bundle.sol: you are not authorized to call the unlock function!');
+        // following check doesnt work since nftContractAddr variable is private in MinterCore
+        //require(IERC721Upgradeable(MinterCore(lootBoxMinterAddress).nftContractAddr()).ownerOf(lootBoxId) == _msgSender(), 'Bundle.sol: you do not hold that lootbox!');
 
-        for (uint256 i = lootBoxStorage[lootBoxId].length - 1; i >= 0; i--) {
-            if (lootBoxStorage[lootBoxId][i].token == BundleLib.TokenType.erc20) {
+        uint256 arrayLength = lootBoxStorage[lootBoxId].length;
+        for (uint256 i = arrayLength; i >= 1; i--) { //loop variables set to avoid uint underflow on decrementing loop
+            if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc20) {
+                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1]; 
                 lootBoxStorage[lootBoxId].pop();
-                IERC20Upgradeable(lootBoxStorage[lootBoxId][i].contractAddr).transfer(_msgSender(), 1);
-            } else if (lootBoxStorage[lootBoxId][i].token == BundleLib.TokenType.erc721) {
+                IERC20Upgradeable(temp.contractAddr).transfer(_msgSender(), temp.amount);
+            } else if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc721) {
+                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1];               
                 lootBoxStorage[lootBoxId].pop();
-                IERC721Upgradeable(lootBoxStorage[lootBoxId][i].contractAddr).transferFrom(
+                IERC721Upgradeable(temp.contractAddr).transferFrom(
                     address(this),
                     _msgSender(),
-                    lootBoxStorage[lootBoxId][i].tokenId
+                    temp.tokenId
                 );
-            } else if (lootBoxStorage[lootBoxId][i].token == BundleLib.TokenType.erc1155) {
+            } else if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc1155) {
+                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1]; 
                 lootBoxStorage[lootBoxId].pop();
-                IERC1155Upgradeable(lootBoxStorage[lootBoxId][i].contractAddr).safeTransferFrom(
+                IERC1155Upgradeable(temp.contractAddr).safeTransferFrom(
                     address(this),
                     _msgSender(),
-                    lootBoxStorage[lootBoxId][i].tokenId,
-                    lootBoxStorage[lootBoxId][i].amount,
+                    temp.tokenId,
+                    temp.amount,
                     new bytes(0)
                 );
             }
@@ -160,17 +165,17 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
         emit Unlock();
     }
 
-    function setLootboxAddress(address lootbox) external onlyOwner {
-        //if id is 0, mint a new lootbox id, else access the inputted lootbox id
-        lootBoxMinterAddress = lootbox;
-        MinterAutoId(lootbox).setNextTokenId(nextLootBoxId);
+    function setLootboxAddress(address _lootBoxMinterAddress) external onlyOwner {
+        //if id is 0, mint a new lootBoxMinterAddress id, else access the inputted lootBoxMinterAddress id
+        lootBoxMinterAddress = _lootBoxMinterAddress;
+        MinterAutoId(_lootBoxMinterAddress).setNextTokenId(nextLootBoxId);
     }
 
     /**
     Getters
     */
 
-    function getLootboxStorage(uint256 tokenId) external view returns (BundleLib.Asset[] memory _storage) {
+    function getLootboxStorage(uint256 tokenId) external view onlyOwner returns (BundleLib.Asset[] memory _storage)  {
         return lootBoxStorage[tokenId];
     }
 
