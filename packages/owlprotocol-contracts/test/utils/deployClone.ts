@@ -7,7 +7,7 @@ export default async (
     initializerArgs: any[],
     cloneFactory?: ERC1167Factory,
     salt?: string,
-): Promise<string> => {
+) => {
     let ERC1167Factory;
     if (cloneFactory) ERC1167Factory = cloneFactory;
     else {
@@ -24,11 +24,11 @@ export default async (
         saltString,
         deploymentData,
     );
+    let receipt;
     if ((await web3.eth.getCode(deploymentAddress)) == '0x') {
         const tx = await ERC1167Factory.cloneDeterministic(implementation.address, saltString, deploymentData);
-        const receipt = await tx.wait();
-        // console.log('receipt:', receipt.events);
+        receipt = await tx.wait();
     }
 
-    return deploymentAddress;
+    return { address: deploymentAddress, receipt };
 };
