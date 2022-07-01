@@ -10,6 +10,8 @@ import 'hardhat/console.sol';
 contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessControlUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
+    string private contractURI_;
+
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC1155Owl/', version)));
 
@@ -18,25 +20,27 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         _disableInitializers();
     }
 
-    function initialize(address _admin, string calldata uri_) external initializer {
-        __ERC1155Owl_init(_admin, uri_);
+    function initialize(address _admin, string calldata uri_, string calldata newContractURI) external initializer {
+        __ERC1155Owl_init(_admin, uri_, newContractURI);
     }
 
-    function proxyInitialize(address _admin, string calldata uri_) external onlyInitializing {
-        __ERC1155Owl_init(_admin, uri_);
+    function proxyInitialize(address _admin, string calldata uri_, string calldata newContractURI) external onlyInitializing {
+        __ERC1155Owl_init(_admin, uri_, newContractURI);
     }
 
-    function __ERC1155Owl_init(address _admin, string memory uri_) internal onlyInitializing {
-        __ERC1155Owl_init_unchained(_admin);
+    function __ERC1155Owl_init(address _admin, string memory uri_, string calldata newContractURI) internal onlyInitializing {
+        __ERC1155Owl_init_unchained(_admin, newContractURI);
         __ERC1155_init(uri_);
         __ERC1155Burnable_init();
         __AccessControl_init();
     }
 
-    function __ERC1155Owl_init_unchained(address _admin) internal onlyInitializing {
+    function __ERC1155Owl_init_unchained(address _admin, string calldata newContractURI) internal onlyInitializing {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
+
+        contractURI_ = newContractURI;
     }
 
     /**
@@ -102,6 +106,22 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
     }
 
     /**
+     * @notice Must have URI_ROLE role!
+     * @dev Allows setting the contract uri
+     * @param newContractURI set the contractURI_ value.
+     */
+    function setContractURI(string calldata newContractURI) public onlyRole(URI_ROLE) {
+        contractURI_ = newContractURI;
+    }
+
+    /**
+     * @dev Defines collection-wide metadata that is URI-accessible
+     * 
+     */
+    function contractURI() public view returns (string memory) {
+        return contractURI_;
+    }
+
      * @dev ERC165 Support
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported

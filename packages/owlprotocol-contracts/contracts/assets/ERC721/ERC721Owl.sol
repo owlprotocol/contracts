@@ -110,6 +110,14 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         return baseURI;
     }
 
+
+    /**
+     * @dev Returns collection-wide URI-accessible metadata 
+     */
+    function contractURI() public view returns (string memory) {
+        return string(abi.encodePacked(baseURI, 'metadata.json'));
+    }
+
     function exists(uint256 tokenId) external view returns (bool) {
         return _exists(tokenId);
     }
