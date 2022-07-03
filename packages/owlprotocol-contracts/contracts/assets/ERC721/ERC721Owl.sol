@@ -136,4 +136,6 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
+
+    uint256[49] private __gap;
 }
