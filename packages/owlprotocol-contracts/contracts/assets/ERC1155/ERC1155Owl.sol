@@ -20,15 +20,27 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         _disableInitializers();
     }
 
-    function initialize(address _admin, string calldata uri_, string calldata newContractURI) external initializer {
+    function initialize(
+        address _admin,
+        string calldata uri_,
+        string calldata newContractURI
+    ) external initializer {
         __ERC1155Owl_init(_admin, uri_, newContractURI);
     }
 
-    function proxyInitialize(address _admin, string calldata uri_, string calldata newContractURI) external onlyInitializing {
+    function proxyInitialize(
+        address _admin,
+        string calldata uri_,
+        string calldata newContractURI
+    ) external onlyInitializing {
         __ERC1155Owl_init(_admin, uri_, newContractURI);
     }
 
-    function __ERC1155Owl_init(address _admin, string memory uri_, string calldata newContractURI) internal onlyInitializing {
+    function __ERC1155Owl_init(
+        address _admin,
+        string memory uri_,
+        string calldata newContractURI
+    ) internal onlyInitializing {
         __ERC1155Owl_init_unchained(_admin, newContractURI);
         __ERC1155_init(uri_);
         __ERC1155Burnable_init();
@@ -116,13 +128,13 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
 
     /**
      * @dev Defines collection-wide metadata that is URI-accessible
-     * 
+     *
      */
     function contractURI() public view returns (string memory) {
         return contractURI_;
     }
 
-     * @dev ERC165 Support
+    /* @dev ERC165 Support
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
