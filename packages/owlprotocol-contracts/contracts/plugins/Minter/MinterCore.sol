@@ -109,4 +109,6 @@ abstract contract MinterCore is Initializable, ERC165Storage, ERC1820Implementer
     //             'Mint denied!'
     //         );
     // }
+
+    uint256[46] private __gap;
 }
