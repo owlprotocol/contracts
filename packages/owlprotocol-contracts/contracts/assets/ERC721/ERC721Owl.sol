@@ -6,9 +6,10 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721Burnab
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 
 contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable {
-    bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
-    bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
-    string public constant version = 'v0.1';
+    bytes32 internal constant MINTER_ROLE = keccak256('MINTER_ROLE');
+    bytes32 internal constant URI_ROLE = keccak256('URI_ROLE');
+
+    string private constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', version)));
 
     string public baseURI;
@@ -23,7 +24,7 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         string calldata _name,
         string calldata _symbol,
         string calldata baseURI_
-    ) external initializer {
+    ) external virtual initializer {
         __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
     }
 
@@ -32,7 +33,7 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         string calldata _name,
         string calldata _symbol,
         string calldata baseURI_
-    ) external onlyInitializing {
+    ) external virtual onlyInitializing {
         __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
     }
 
@@ -80,7 +81,7 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
      * @param to address to
      * @param tokenId tokenId value
      */
-    function mint(address to, uint256 tokenId) public onlyRole(MINTER_ROLE) {
+    function mint(address to, uint256 tokenId) public virtual onlyRole(MINTER_ROLE) {
         _mint(to, tokenId);
     }
 
@@ -90,7 +91,7 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
      * @param to address to
      * @param tokenId tokenId value
      */
-    function safeMint(address to, uint256 tokenId) public onlyRole(MINTER_ROLE) {
+    function safeMint(address to, uint256 tokenId) public virtual onlyRole(MINTER_ROLE) {
         _safeMint(to, tokenId);
     }
 
@@ -110,9 +111,8 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         return baseURI;
     }
 
-
     /**
-     * @dev Returns collection-wide URI-accessible metadata 
+     * @dev Returns collection-wide URI-accessible metadata
      */
     function contractURI() public view returns (string memory) {
         return string(abi.encodePacked(baseURI, 'metadata.json'));

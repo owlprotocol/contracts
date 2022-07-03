@@ -11,7 +11,6 @@ import '@nomiclabs/hardhat-etherscan';
 import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
-import 'solidity-docgen';
 
 import { ethers } from 'ethers';
 
