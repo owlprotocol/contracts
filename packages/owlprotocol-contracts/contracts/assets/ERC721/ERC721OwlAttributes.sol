@@ -5,22 +5,20 @@ import './ERC721Owl.sol';
 import '@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol';
 
 contract ERC721OwlAttributes is ERC721Owl {
-    using Counters for Counters.Counter;
+    using CountersUpgradeable for CountersUpgradeable.Counter;
     using StringsUpgradeable for uint256;
 
     bytes32 private constant DNA_ROLE = keccak256('DNA_ROLE');
 
     mapping(uint256 => uint256) private dnas;
-    Counters.Counter private nextId;
+    CountersUpgradeable.Counter private nextId;
 
     string private constant _version = 'v0.1';
     bytes4 private constant ERC165TAG =
         bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlAttributes/', _version)));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
+    constructor() {}
 
     function initialize(
         address _admin,
