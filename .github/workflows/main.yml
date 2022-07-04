@@ -34,9 +34,4 @@ jobs:
       # Install
       - run: pnpm i
       - run: pnpm run build
-      - name: build files
-        env: 
-          PRIV_KEY: f40d99a142302f3ee15ba30339fb30dd0e5073dfa49f449f02982e68915562fa
-          PROXY_PRIV_KEY: 4688f661095f699be837a99b5c857a99b51a8659ee87b3f9a1f04d244df763ba
-
       - run: npm run test
