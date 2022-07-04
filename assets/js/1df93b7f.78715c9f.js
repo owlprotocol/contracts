@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkowlprotocol_contracts_docs=self.webpackChunkowlprotocol_contracts_docs||[]).push([[237],{7391:(o,c,t)=>{t.r(c),t.d(c,{default:()=>a});var r=t(9901),e=(t(7807),t(8746),t(5912));var s=t(7736);function a(){var o=(0,s.Z)("/docs");return r.createElement(e.l_,{to:o})}}}]);
