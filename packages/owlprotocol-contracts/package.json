@@ -15,7 +15,7 @@
         "clean:types": "rimraf types && npx hardhat clean",
         "coverage": "npx hardhat coverage --solcoverjs .solcover.js --testfiles 'test/**/*.test.ts'",
         "test": "npx hardhat test",
-        "compile": "npx hardhat clean && npx hardhat compile && npx generate-types",
+        "compile": "npx hardhat clean && npx hardhat compile",
         "test:parallel": "npx hardhat test --parallel",
         "build": "npm run compile",
         "docs": "DOCS=../owlprotocol-contracts-docs/docs/contract-docs && rm -f $DOCS/* && hardhat docgen && echo '# Solidity Reference' > $DOCS/index.md",
