@@ -429,7 +429,7 @@ contract CrafterMint is
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
                 //Pop token ids from storage
                 for (uint256 j = 0; j < craftAmount; j++) {
-                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[j - 1]);
+                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
                     
                     //Update ingredient, remove withdrawn tokenId
                     ingredient.tokenIds.pop();
