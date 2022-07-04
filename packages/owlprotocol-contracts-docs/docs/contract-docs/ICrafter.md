@@ -2,7 +2,11 @@
 
 ## ICrafter
 
-_Pluggable Crafting Contract._
+_Pluggable Crafting Contract.
+Each contract is it&#x27;s own recipe definition.
+Players can interact with the contract to have
+recipie outputs either minted or transferred 
+from a deposit._
 
 ### initialize
 

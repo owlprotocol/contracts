@@ -41,13 +41,13 @@ constructor() public
 ### initialize
 
 ```solidity
-function initialize(address _admin, string _name, string _symbol, string baseURI_) external
+function initialize(address _admin, string _name, string _symbol, string baseURI_) external virtual
 ```
 
 ### proxyInitialize
 
 ```solidity
-function proxyInitialize(address _admin, string _name, string _symbol, string baseURI_) external
+function proxyInitialize(address _admin, string _name, string _symbol, string baseURI_) external virtual
 ```
 
 ### __ERC721Owl_init
@@ -93,7 +93,7 @@ _Grants URI_ROLE to {a}_
 ### mint
 
 ```solidity
-function mint(address to, uint256 tokenId) public
+function mint(address to, uint256 tokenId) public virtual
 ```
 
 Must have MINTER_ROLE
@@ -108,7 +108,7 @@ _Allows MINTER_ROLE to mint NFTs_
 ### safeMint
 
 ```solidity
-function safeMint(address to, uint256 tokenId) public
+function safeMint(address to, uint256 tokenId) public virtual
 ```
 
 Must have MINTER_ROLE
@@ -142,6 +142,14 @@ function _baseURI() internal view returns (string)
 
 _Overrides OZ internal baseURI getter._
 
+### contractURI
+
+```solidity
+function contractURI() public view returns (string)
+```
+
+_Returns collection-wide URI-accessible metadata_
+
 ### exists
 
 ```solidity
@@ -163,4 +171,10 @@ _ERC165 Support_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | [0] | bool | bool whether interface is supported |
+
+### __gap
+
+```solidity
+uint256[49] __gap
+```
 

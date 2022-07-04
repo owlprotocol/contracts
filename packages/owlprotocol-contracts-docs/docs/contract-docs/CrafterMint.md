@@ -2,7 +2,9 @@
 
 ## CrafterMint
 
-_Pluggable Crafting Contract._
+_Pluggable Crafting Contract.
+Players can interact with the contract to have
+recipie outputs minted._
 
 ### version
 

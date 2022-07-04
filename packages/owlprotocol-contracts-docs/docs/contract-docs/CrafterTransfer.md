@@ -2,7 +2,9 @@
 
 ## CrafterTransfer
 
-_Pluggable Crafting Contract._
+_Pluggable Crafting Contract.
+Players can interact with the contract to have
+recipie outputs transferred from a deposit._
 
 ### version
 

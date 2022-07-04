@@ -14,6 +14,12 @@ bytes32 MINTER_ROLE
 bytes32 URI_ROLE
 ```
 
+### contractURI_
+
+```solidity
+string contractURI_
+```
+
 ### version
 
 ```solidity
@@ -35,25 +41,25 @@ constructor() public
 ### initialize
 
 ```solidity
-function initialize(address _admin, string uri_) external
+function initialize(address _admin, string uri_, string newContractURI) external
 ```
 
 ### proxyInitialize
 
 ```solidity
-function proxyInitialize(address _admin, string uri_) external
+function proxyInitialize(address _admin, string uri_, string newContractURI) external
 ```
 
 ### __ERC1155Owl_init
 
 ```solidity
-function __ERC1155Owl_init(address _admin, string uri_) internal
+function __ERC1155Owl_init(address _admin, string uri_, string newContractURI) internal
 ```
 
 ### __ERC1155Owl_init_unchained
 
 ```solidity
-function __ERC1155Owl_init_unchained(address _admin) internal
+function __ERC1155Owl_init_unchained(address _admin, string newContractURI) internal
 ```
 
 ### grantMinter
@@ -132,19 +138,31 @@ _Allows setting the uri_
 | ---- | ---- | ----------- |
 | newuri | string | set the baseURI value. |
 
+### setContractURI
+
+```solidity
+function setContractURI(string newContractURI) public
+```
+
+Must have URI_ROLE role!
+
+_Allows setting the contract uri_
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| newContractURI | string | set the contractURI_ value. |
+
+### contractURI
+
+```solidity
+function contractURI() public view returns (string)
+```
+
+_Defines collection-wide metadata that is URI-accessible_
+
 ### supportsInterface
 
 ```solidity
 function supportsInterface(bytes4 interfaceId) public view virtual returns (bool)
 ```
-
-_ERC165 Support_
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| interfaceId | bytes4 | hash of the interface testing for |
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | bool | bool whether interface is supported |
 
