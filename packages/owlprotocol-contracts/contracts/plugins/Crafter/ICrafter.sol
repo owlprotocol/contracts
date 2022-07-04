@@ -4,6 +4,10 @@ import './CraftLib.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
+ * Each contract is it's own recipe definition.
+ * Players can interact with the contract to have
+ * recipie outputs either minted or transferred 
+ * from a deposit.
  */
 interface ICrafter {
     /**

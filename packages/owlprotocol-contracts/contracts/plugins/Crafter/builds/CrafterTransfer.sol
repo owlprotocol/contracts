@@ -19,6 +19,8 @@ import './../CraftLib.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
+ * Players can interact with the contract to have
+ * recipie outputs transferred from a deposit.
  */
 contract CrafterTransfer is
     ICrafter,

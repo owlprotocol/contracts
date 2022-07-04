@@ -23,6 +23,8 @@ import './../CraftLib.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
+ * Players can interact with the contract to have
+ * recipie outputs minted.
  */
 contract CrafterMint is
     ICrafter,
