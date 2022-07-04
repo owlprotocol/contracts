@@ -21,15 +21,15 @@ abstract contract MinterCore is Initializable, ERC165Storage, ERC1820Implementer
     uint256 mintFeeAmount;
     address nftContractAddr;
 
-    modifier mintAllowedMerkle(
-        uint256 speciesId,
-        bytes32 merkleRoot,
-        bytes32[] calldata merkleProof
-    ) {
-        // Verify mint guard function (WITH merkle overload)
-        // _verifyMintGuard(speciesId, merkleRoot, merkleProof);
-        _;
-    }
+    // modifier mintAllowedMerkle(
+    //     uint256 speciesId,
+    //     bytes32 merkleRoot,
+    //     bytes32[] calldata merkleProof
+    // ) {
+    //     // Verify mint guard function (WITH merkle overload)
+    //     // _verifyMintGuard(speciesId, merkleRoot, merkleProof);
+    //     _;
+    // }
 
     function __MinterCore_init(
         address _mintFeeToken,
