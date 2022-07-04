@@ -17,7 +17,7 @@
         "compile": "npx hardhat clean && npx hardhat compile",
         "test:parallel": "npx hardhat test --parallel",
         "build": "npm run compile",
-        "docs": "DOCS=../owlprotocol-contracts-docs/docs/contract-docs && rm $DOCS/* && hardhat docgen && echo '# Solidity Reference' > $DOCS/index.md"
+        "docs": "DOCS=../owlprotocol-contracts-docs/docs/contract-docs && rm -f $DOCS/* && hardhat docgen && echo '# Solidity Reference' > $DOCS/index.md"
     },
     "peerDependencies": {
         "@ethersproject/abi": "^5.4.0",
