@@ -1,4 +1,4 @@
-//@ts-nocheck
+// @ts-nocheck
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
