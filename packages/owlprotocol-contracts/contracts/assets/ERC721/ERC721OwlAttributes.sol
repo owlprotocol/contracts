@@ -11,7 +11,6 @@ contract ERC721OwlAttributes is ERC721Owl {
     mapping(uint256 => uint256) private dnas;
     uint256 nextId = 0;
 
-    string private constant version = 'v0.1';
     bytes4 private constant ERC165TAG =
         bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlAttributes/', version)));
 
