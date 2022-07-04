@@ -2,14 +2,16 @@
 pragma solidity ^0.8.9;
 
 import './ERC721Owl.sol';
+import '@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol';
 
 contract ERC721OwlAttributes is ERC721Owl {
+    using Counters for Counters.Counter;
     using StringsUpgradeable for uint256;
 
     bytes32 private constant DNA_ROLE = keccak256('DNA_ROLE');
 
     mapping(uint256 => uint256) private dnas;
-    uint256 nextId = 0;
+    Counters.Counter private nextId;
 
     string private constant _version = 'v0.1';
     bytes4 private constant ERC165TAG =
@@ -69,8 +71,9 @@ contract ERC721OwlAttributes is ERC721Owl {
      * @param dna of next tokenId
      */
     function mint(address to, uint256 dna) public virtual override onlyRole(MINTER_ROLE) {
-        dnas[nextId] = dna;
-        _mint(to, nextId++);
+        dnas[nextId.current()] = dna;
+        _mint(to, nextId.current());
+        nextId.increment();
     }
 
     /**
@@ -80,8 +83,9 @@ contract ERC721OwlAttributes is ERC721Owl {
      * @param dna of next tokenId
      */
     function safeMint(address to, uint256 dna) public virtual override onlyRole(MINTER_ROLE) {
-        dnas[nextId] = dna;
-        _safeMint(to, nextId++);
+        dnas[nextId.current()] = dna;
+        _safeMint(to, nextId.current());
+        nextId.increment();
     }
 
     /**
