@@ -14,10 +14,13 @@
         "hardhat:node": "npx hardhat node",
         "clean:types": "rimraf types typechain",
         "test": "npx hardhat test",
-        "compile": "npx hardhat clean && npx hardhat compile",
+        "compile": "npx hardhat clean && npx hardhat compile && npx generate-types",
         "test:parallel": "npx hardhat test --parallel",
         "build": "npm run compile",
-        "docs": "DOCS=../owlprotocol-contracts-docs/docs/contract-docs && rm -f $DOCS/* && hardhat docgen && echo '# Solidity Reference' > $DOCS/index.md"
+        "docs": "DOCS=../owlprotocol-contracts-docs/docs/contract-docs && rm -f $DOCS/* && hardhat docgen && echo '# Solidity Reference' > $DOCS/index.md",
+        "generate-types": "npm-run-all -p generate-types:web3 generate-types:ethers",
+        "generate-types:web3": "typechain --target web3-v1 --out-dir=types/web3 'artifacts/contracts/**/+([a-zA-Z0-9_]).json'",
+        "generate-types:ethers": "typechain --target=ethers-v5 --out-dir=types/ethers 'artifacts/contracts/**/+([a-zA-Z0-9_]).json'"
     },
     "peerDependencies": {
         "@ethersproject/abi": "^5.4.0",
@@ -95,11 +98,8 @@
         "web3-utils": "^1.6.1"
     },
     "files": [
-        "artifacts/contracts",
-        "contracts",
+        "artifacts/contracts/**/*.json",
+        "contracts/**/*.sol",
         "types"
-    ],
-    "dependencies": {
-        "@prb/math": "^2.5.0"
-    }
+    ]
 }

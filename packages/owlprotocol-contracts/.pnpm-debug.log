@@ -1,35 +1,23 @@
 {
   "0 debug pnpm:scope": {
-    "selected": 4,
-    "total": 4,
-    "workspacePrefix": "/home/VulcanLinkProjects/nft-launcher-contracts"
+    "selected": 1,
+    "workspacePrefix": "/Users/animcogn/github/nft-launcher-contracts"
   },
-  "1 info pnpm": {
-    "message": "Recreating /home/VulcanLinkProjects/nft-launcher-contracts/packages/owlprotocol-contracts/node_modules",
-    "prefix": "/home/VulcanLinkProjects/nft-launcher-contracts/packages/owlprotocol-contracts"
-  },
-  "2 info pnpm": {
-    "message": "Recreating /home/VulcanLinkProjects/nft-launcher-contracts/node_modules",
-    "prefix": "/home/VulcanLinkProjects/nft-launcher-contracts"
-  },
-  "3 info pnpm": {
-    "message": "Recreating /home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib/node_modules",
-    "prefix": "/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib"
-  },
-  "4 info pnpm": {
-    "message": "Recreating /home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-sol/node_modules",
-    "prefix": "/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-sol"
-  },
-  "5 error pnpm": {
-    "errno": -13,
-    "code": "EACCES",
-    "syscall": "rmdir",
-    "path": "/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib/node_modules/.bin",
+  "1 error pnpm": {
+    "code": "ELIFECYCLE",
+    "errno": "ENOENT",
+    "syscall": "spawn",
+    "file": "sh",
+    "pkgid": "@owlprotocol/contracts@0.1.0",
+    "stage": "clean:types",
+    "script": "rimraf types typechain",
+    "pkgname": "@owlprotocol/contracts",
     "err": {
       "name": "pnpm",
-      "message": "EACCES: permission denied, rmdir '/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib/node_modules/.bin'",
-      "code": "EACCES",
-      "stack": "pnpm: EACCES: permission denied, rmdir '/home/VulcanLinkProjects/nft-launcher-contracts/packages/nft-launcher-contracts-lib/node_modules/.bin'"
+      "message": "@owlprotocol/contracts@0.1.0 clean:types: `rimraf types typechain`\nspawn ENOENT",
+      "code": "ELIFECYCLE",
+      "stack": "pnpm: @owlprotocol/contracts@0.1.0 clean:types: `rimraf types typechain`\nspawn ENOENT\n    at ChildProcess.<anonymous> (/opt/homebrew/lib/node_modules/pnpm/dist/pnpm.cjs:95169:22)\n    at ChildProcess.emit (node:events:527:28)\n    at maybeClose (node:internal/child_process:1092:16)\n    at Process.ChildProcess._handle.onexit (node:internal/child_process:302:5)"
     }
-  }
+  },
+  "2 warn pnpm:global": " Local package.json exists, but node_modules missing, did you mean to install?"
 }
