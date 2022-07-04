@@ -25,10 +25,10 @@ describe('Contract Version Testing', async () => {
             // 'Rent',
             'CrafterMint',
             'CrafterTransfer',
-            // 'MinterAutoId',
-            // 'MinterBreeding',
-            // 'MinterRandom',
-            // 'MinterSimple',
+            'MinterAutoId',
+            'MinterBreeding',
+            'MinterRandom',
+            'MinterSimple',
         ];
 
         const correctVersion = contracts.map((c) => assertCorrectVersion(c));
