@@ -9,7 +9,7 @@ const config = {
     title: 'Owl Protocol Contracts Documentation',
     tagline: 'WEB3.0 Made Easy',
     url: 'https://owlprotocol.github.io',
-    baseUrl: '/owlprotocol-contracts/',
+    baseUrl: '/contracts/',
     deploymentBranch: 'gh-pages',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
@@ -34,7 +34,7 @@ const config = {
         */
 
     ],
-    projectName: 'owlprotocol-contracts', // Usually your repo name.
+    projectName: 'contracts', // Usually your repo name.
 
     presets: [
         [
@@ -44,7 +44,7 @@ const config = {
                 docs: {
                     sidebarPath: require.resolve('./sidebars.js'),
                     // Please change this to your repo.
-                    editUrl: 'https://github.com/owlprotocol/solidity-cbor/',
+                    editUrl: 'https://github.com/owlprotocol/contracts/',
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css'),
@@ -86,7 +86,7 @@ const config = {
                     },
                     */
                     {
-                        href: 'https://github.com/owlprotocol/nft-launcher-contracts/tree/develop/packages/owlprotocol-contracts',
+                        href: 'https://github.com/owlprotocol/contracts/tree/develop/packages/owlprotocol-contracts',
                         label: 'GitHub',
                         position: 'right',
                     },
@@ -133,7 +133,7 @@ const config = {
                         items: [
                             {
                                 label: 'GitHub',
-                                href: 'https://github.com/owlprotocol/nft-launcher-contracts/tree/develop/packages/owlprotocol-contracts',
+                                href: 'https://github.com/owlprotocol/contracts/tree/develop/packages/owlprotocol-contracts',
                             },
                         ],
                     },
