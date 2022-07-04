@@ -11,8 +11,9 @@ contract ERC721OwlAttributes is ERC721Owl {
     mapping(uint256 => uint256) private dnas;
     uint256 nextId = 0;
 
+    string private constant _version = 'v0.1';
     bytes4 private constant ERC165TAG =
-        bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlAttributes/', version)));
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlAttributes/', _version)));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -25,7 +26,7 @@ contract ERC721OwlAttributes is ERC721Owl {
         string calldata _symbol,
         string calldata baseURI_
     ) external virtual override initializer {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlAttributes_init(_admin, _name, _symbol, baseURI_);
     }
 
     function proxyInitialize(
@@ -34,7 +35,7 @@ contract ERC721OwlAttributes is ERC721Owl {
         string calldata _symbol,
         string calldata baseURI_
     ) external virtual override onlyInitializing {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlAttributes_init(_admin, _name, _symbol, baseURI_);
     }
 
     function __ERC721OwlAttributes_init(
@@ -92,6 +93,10 @@ contract ERC721OwlAttributes is ERC721Owl {
     function udpateDna(uint256 tokenId, uint256 dna) external onlyRole(DNA_ROLE) {
         require(_exists(tokenId), 'ERC721Metadata: URI query for nonexistent token');
         dnas[tokenId] = dna;
+    }
+
+    function version() public pure override returns (string memory) {
+        return _version;
     }
 
     /**

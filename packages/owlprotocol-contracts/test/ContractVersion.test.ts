@@ -1,7 +1,6 @@
-import { ethers } from "hardhat";
-import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
-import { expect } from "chai";
-
+import { ethers } from 'hardhat';
+import { keccak256, toUtf8Bytes } from 'ethers/lib/utils';
+import { expect } from 'chai';
 
 describe('Contract Version Testing', async () => {
     const assertCorrectVersion = async (name: string, contractVersion = 'v0.1') => {
@@ -18,6 +17,7 @@ describe('Contract Version Testing', async () => {
             'ERC1155Owl',
             'ERC20Owl',
             'ERC721Owl',
+            'ERC721OwlAttributes',
             // 'RentableERC721Owl',
             // 'Bundle',
             // 'DutchAuction',

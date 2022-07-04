@@ -9,8 +9,8 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
     bytes32 internal constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 internal constant URI_ROLE = keccak256('URI_ROLE');
 
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', version)));
+    string private constant _version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', _version)));
 
     string public baseURI;
 
@@ -120,6 +120,10 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
 
     function exists(uint256 tokenId) external view returns (bool) {
         return _exists(tokenId);
+    }
+
+    function version() public pure virtual returns (string memory) {
+        return _version;
     }
 
     /**
