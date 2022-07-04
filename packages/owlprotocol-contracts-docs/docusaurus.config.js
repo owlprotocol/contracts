@@ -70,9 +70,9 @@ const config = {
                     },
                     {
                         type: 'doc',
-                        docId: 'quickstart',
+                        docId: 'contracts',
                         position: 'left',
-                        label: 'Quickstart',
+                        label: 'Contracts',
                     },
                     {
                         type: 'doc',

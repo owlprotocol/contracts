@@ -11,11 +11,6 @@ We're developing plug-and-play smart contracts and libraries to make it easier f
 
 With [our platform](https://owlprotocol.xyz), you can easily deploy contracts which implement complex functionality like item crafting and breeding.
 
-## TLDR
-Comprehensive documentation [can be found here](https://owlprotocol.github.io/contracts/docs).
-
-See [contracts](/contracts) for more info on using the smart contracts.
-
 ## Deploy it yourself
 
 If you want to deploy our contracts yourself, we have some scripts to make it slightly easier to manage the proxies and contracts. It also helps when deploying on many networks at once, and maintains the same deterministic address on all chains.
