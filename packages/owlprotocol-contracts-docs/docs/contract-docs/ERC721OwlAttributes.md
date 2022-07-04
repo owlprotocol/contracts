@@ -20,12 +20,6 @@ mapping(uint256 &#x3D;&gt; uint256) dnas
 uint256 nextId
 ```
 
-### version
-
-```solidity
-string version
-```
-
 ### ERC165TAG
 
 ```solidity

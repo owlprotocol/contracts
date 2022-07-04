@@ -2,6 +2,9 @@
 
 ## FactoryERC20
 
+_**INTERNAL TOOL**
+Used to factory ERC20 coins for unit testing_
+
 ### constructor
 
 ```solidity
