@@ -1,9 +1,9 @@
-# Project Title
+# OWL Protocol Contracts
 
-See [TEMPLATE.md](./TEMPLATE.md) for more info on cloning.
+See [OWLArchitecture](../../OWLArchitecture.drawio) for more info on cloning.
 
-See [CONTRACTS.md]('./CONTRACTS.md) for more info on using the smart contracts.
+See [contracts](./contracts) for more info on using the smart contracts.
 
 DEPLOYMENT
 
-Run `ProxyFactory.ts` script. Take the address outputted and place it in variable `ProxyFactoryAddress` in `CrafterTransfer.ts`
+In [deploy](./deploy/), run `ProxyFactory.ts` script. Take the address outputted and place it in variable `ProxyFactoryAddress` in `CrafterTransfer.ts`

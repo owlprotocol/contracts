@@ -12,4 +12,4 @@ Game developers will interact, again, through a front-end, with the initializer 
 
 To specify a recipe through the initializer, a list of input and output ingredients must be provided. Similarly, the `deposit()` and `withdraw()` functions allow interaction with the output ingredients stored on the contract.
 
-Additional documentation can be found at [a relative link](../../../../owlprotocol-contracts-docs/docs/contract-docs/CrafterTransfer.md) and [a relative link](../../../../owlprotocol-contracts-docs/docs/contract-docs/CrafterMint.md)
+Additional documentation can be found at [CrafterTransferDocs](../../../../owlprotocol-contracts-docs/docs/contract-docs/CrafterTransfer.md) and [CrafterMintDocs](../../../../owlprotocol-contracts-docs/docs/contract-docs/CrafterMint.md)
