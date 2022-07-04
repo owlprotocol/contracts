@@ -1,22 +1,20 @@
 {
   "0 debug pnpm:scope": {
     "selected": 1,
-    "workspacePrefix": "/Users/animcogn/github/nft-launcher-contracts"
+    "workspacePrefix": "/Users/andrew/Desktop/GitHub/OWL/nft-launcher-contracts"
   },
   "1 error pnpm": {
+    "errno": 1,
     "code": "ELIFECYCLE",
-    "errno": "ENOENT",
-    "syscall": "spawn",
-    "file": "sh",
     "pkgid": "@owlprotocol/contracts@0.1.0",
-    "stage": "clean:types",
-    "script": "rimraf types typechain",
+    "stage": "compile",
+    "script": "npx hardhat clean && npx hardhat compile && npx generate-types",
     "pkgname": "@owlprotocol/contracts",
     "err": {
       "name": "pnpm",
-      "message": "@owlprotocol/contracts@0.1.0 clean:types: `rimraf types typechain`\nspawn ENOENT",
+      "message": "@owlprotocol/contracts@0.1.0 compile: `npx hardhat clean && npx hardhat compile && npx generate-types`\nExit status 1",
       "code": "ELIFECYCLE",
-      "stack": "pnpm: @owlprotocol/contracts@0.1.0 clean:types: `rimraf types typechain`\nspawn ENOENT\n    at ChildProcess.<anonymous> (/opt/homebrew/lib/node_modules/pnpm/dist/pnpm.cjs:95169:22)\n    at ChildProcess.emit (node:events:527:28)\n    at maybeClose (node:internal/child_process:1092:16)\n    at Process.ChildProcess._handle.onexit (node:internal/child_process:302:5)"
+      "stack": "pnpm: @owlprotocol/contracts@0.1.0 compile: `npx hardhat clean && npx hardhat compile && npx generate-types`\nExit status 1\n    at EventEmitter.<anonymous> (/Users/andrew/.nvm/versions/node/v16.15.1/lib/node_modules/pnpm/dist/pnpm.cjs:107358:20)\n    at EventEmitter.emit (node:events:527:28)\n    at ChildProcess.<anonymous> (/Users/andrew/.nvm/versions/node/v16.15.1/lib/node_modules/pnpm/dist/pnpm.cjs:93924:18)\n    at ChildProcess.emit (node:events:527:28)\n    at maybeClose (node:internal/child_process:1092:16)\n    at Process.ChildProcess._handle.onexit (node:internal/child_process:302:5)"
     }
   },
   "2 warn pnpm:global": " Local package.json exists, but node_modules missing, did you mean to install?"
