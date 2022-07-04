@@ -109,6 +109,10 @@ contract ERC721OwlAttributes is ERC721Owl {
         dnas[tokenId] = dna;
     }
 
+    function version() public pure override returns (string memory) {
+        return _version;
+    }
+
     /**
      * @dev Getter for dna of tokenId
      * @param tokenId whose dna to change
