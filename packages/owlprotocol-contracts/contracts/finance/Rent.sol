@@ -13,8 +13,7 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-import '../assets/ERC721/RentableERC721Owl.sol';
-import '../assets/ERC721/RentableERC721Upgradeable.sol';
+import '../assets/ERC721/ERC721OwlExpiring.sol';
 
 import 'hardhat/console.sol';
 
@@ -145,7 +144,7 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
         RentalTerms memory r = rentTermsId[rentId];
 
         payRent(rentId, 1);
-        RentableERC721Owl(shadowAddr).mint(r.renter, r.nftId, r.expireTimePerPeriod); //mints shadow nft
+        ERC721OwlExpiring(shadowAddr).mint(r.renter, r.nftId, r.expireTimePerPeriod); //mints shadow nft
 
         emit Pay(rentId, r.pricePerPeriod);
     }
@@ -169,7 +168,7 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
             timePeriodsToPay * r.pricePerPeriod
         );
 
-        RentableERC721Owl(shadowAddr).extendRental(rentId, timePeriodsToPay * r.expireTimePerPeriod);
+        ERC721OwlExpiring(shadowAddr).extendExpiry(rentId, timePeriodsToPay * r.expireTimePerPeriod);
 
         emit Pay(rentId, timePeriodsToPay * r.pricePerPeriod);
     }
