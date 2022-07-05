@@ -15,7 +15,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import './BundleLib.sol';
 import '../plugins/Minter/builds/MinterAutoId.sol';
-import 'hardhat/console.sol';
 
 contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
@@ -123,8 +122,6 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
             }
         }
         nextLootBoxId++;
-        //mint lootbox to msg sender
-        //console.log(MinterAutoId(lootBoxMinterAddress).nextTokenId());
         MinterAutoId(lootBoxMinterAddress).mint(_msgSender());
 
         emit Lock(assetsToLock);
@@ -133,16 +130,15 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
     function unlock(uint256 lootBoxId) external {
         require(_msgSender() == client, 'Bundle.sol: you are not authorized to call the unlock function!');
         // following check doesnt work since nftContractAddr variable is private in MinterCore
-        //require(IERC721Upgradeable(MinterCore(lootBoxMinterAddress).nftContractAddr()).ownerOf(lootBoxId) == _msgSender(), 'Bundle.sol: you do not hold that lootbox!');
 
         uint256 arrayLength = lootBoxStorage[lootBoxId].length;
         for (uint256 i = arrayLength; i >= 1; i--) { //loop variables set to avoid uint underflow on decrementing loop
             if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc20) {
-                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1]; 
+                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1];
                 lootBoxStorage[lootBoxId].pop();
                 IERC20Upgradeable(temp.contractAddr).transfer(_msgSender(), temp.amount);
             } else if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc721) {
-                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1];               
+                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1];
                 lootBoxStorage[lootBoxId].pop();
                 IERC721Upgradeable(temp.contractAddr).transferFrom(
                     address(this),
@@ -150,7 +146,7 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
                     temp.tokenId
                 );
             } else if (lootBoxStorage[lootBoxId][i - 1].token == BundleLib.TokenType.erc1155) {
-                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1]; 
+                BundleLib.Asset memory temp = lootBoxStorage[lootBoxId][i - 1];
                 lootBoxStorage[lootBoxId].pop();
                 IERC1155Upgradeable(temp.contractAddr).safeTransferFrom(
                     address(this),

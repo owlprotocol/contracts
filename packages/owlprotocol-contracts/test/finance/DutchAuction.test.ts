@@ -66,15 +66,6 @@ describe('DutchAuction.sol No Fees', function () {
             //DutchAuction Data
             //@ts-ignore
             const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //Asset
-                //ERC20 Contract address (acceptable token)
-                //start price
-                //end price
-                //auction duration
-                //isNonLinear
-                //saleFee
-                //saleFeeAddress
                 seller.address,
                 {
                     token: TokenType.erc721,
@@ -180,23 +171,6 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
-
-        // it('visual price change', async () => {
-
-        //     expect(await testNFT.balanceOf(auction.address)).to.equal(1);
-        //     expect(await testNFT.balanceOf(seller.address)).to.equal(0);
-
-        //     expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
-
-        //     //console.log('hi');
-        //     for (let i = 0; i < 300; i++) {
-        //         await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
-        //         await network.provider.send('evm_mine');
-        //         console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
-
-        //         //expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
-        //     }
-        // });
     });
 
     describe('Nonlinear Auction Tests', () => {
@@ -216,16 +190,6 @@ describe('DutchAuction.sol No Fees', function () {
             //DutchAuction Data
             //@ts-ignore
             const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //Asset
-                //ERC20 Contract address (acceptable token)
-                //start price
-                //end price
-                //auction duration
-                //isNonLinear
-                //priceChangeTimeInterval
-                //saleFee
-                //saleFeeAddress
                 seller.address,
                 {
                     token: TokenType.erc721,
@@ -335,24 +299,6 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
-
-        // it('visual price change', async () => {
-
-        //     expect(await testNFT.balanceOf(auction.address)).to.equal(1);
-        //     expect(await testNFT.balanceOf(seller.address)).to.equal(0);
-
-        //     expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
-
-        //     const t = (await auction.endAt()).toNumber();
-
-        //     await ethers.provider.send('evm_setAutomine', [false]);
-        //     for (let i = 0; i < 300; i++) {
-        //         await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
-        //         await network.provider.send('evm_mine');
-
-        //         console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
-        //     }
-        // });
     });
 
     describe('DutchAuction.sol ERC 1155', function () {
@@ -399,15 +345,6 @@ describe('DutchAuction.sol No Fees', function () {
                 //DutchAuction Data
                 //@ts-ignore
                 const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
-                    //seller address
-                    //Asset
-                    //ERC20 Contract address (acceptable token)
-                    //start price
-                    //end price
-                    //auction duration
-                    //isNonLinear
-                    //saleFee
-                    //saleFeeAddress
                     seller.address,
                     {
                         token: TokenType.erc1155,
@@ -562,15 +499,6 @@ describe('DutchAuction.sol 10% Fees', function () {
             //DutchAuction Data
             //@ts-ignore
             const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //Asset
-                //ERC20 Contract address (acceptable token)
-                //start price
-                //end price
-                //auction duration
-                //isNonLinear
-                //saleFee
-                //saleFeeAddress
                 seller.address,
                 {
                     token: TokenType.erc721,
@@ -594,9 +522,6 @@ describe('DutchAuction.sol 10% Fees', function () {
                 DutchAuctionData,
             );
 
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
-
             //Set Approval ERC721 for sale
             await testNFT.connect(seller).approve(DutchAuctionAddress, 1);
             await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('100.0', 18));
@@ -604,12 +529,8 @@ describe('DutchAuction.sol 10% Fees', function () {
             await acceptableERC20Token.connect(bidder1).approve(owner.address, parseUnits('100.0', 18));
 
             // Transfer ERC20s to bidders
-            //await acceptableERC20Token.connect(seller).transfer(bidder1.address, parseUnits('100.0', 18));
 
             const totalERC20Minted: BigNumber = parseUnits('1.0', 27);
-            // expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(
-            //     totalERC20Minted.sub(parseUnits('100.0', 18)),
-            // );
 
             //deploy auction
             //check balances
@@ -635,15 +556,6 @@ describe('DutchAuction.sol 10% Fees', function () {
             //DutchAuction Data
             //@ts-ignore
             const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //Asset
-                //ERC20 Contract address (acceptable token)
-                //start price
-                //end price
-                //auction duration
-                //isNonLinear
-                //saleFee
-                //saleFeeAddress
                 seller.address,
                 {
                     token: TokenType.erc721,
