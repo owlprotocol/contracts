@@ -2,7 +2,7 @@ import { BaseContract, Contract } from 'ethers';
 import { ethers, web3 } from 'hardhat';
 import { ERC1167Factory, ERC1167Factory__factory } from '../../typechain';
 
-export async function deployClone(
+export async function predictDeployClone(
     implementation: BaseContract,
     initializerArgs: any[],
     cloneFactory?: ERC1167Factory,
@@ -25,13 +25,8 @@ export async function deployClone(
         saltString,
         deploymentData,
     );
-    let receipt;
-    if ((await web3.eth.getCode(deploymentAddress)) == '0x') {
-        const tx = await ERC1167Factory.cloneDeterministic(implementation.address, saltString, deploymentData);
-        receipt = await tx.wait();
-    }
 
-    return { address: deploymentAddress, receipt };
+    return deploymentAddress;
 }
 
-export default deployClone;
+export default predictDeployClone;

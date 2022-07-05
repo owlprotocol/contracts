@@ -50,6 +50,7 @@ describe.skip('Bundle.sol', function () {
     let ERC721: ERC721Owl;
 
     let minterAutoIdAddress: string;
+
     let lootbox: ERC721Owl;
 
     before(async () => {
@@ -74,7 +75,7 @@ describe.skip('Bundle.sol', function () {
 
         //deploying lootbox and minterAutoId instances before all tests (want it to remain constant across tests)
         const lootboxAddress = await deployClone(ERC721, [admin.address, 'name', 'symb', 'uri'], ERC1167Factory);
-        lootbox = (await ethers.getContractAt('ERC721Owl', lootboxAddress)) as ERC721Owl;
+        lootbox = (await ethers.getContractAt('ERC721Owl', lootboxAddress.address)) as ERC721Owl;
 
         minterAutoIdAddress = await deployClone(
             minterAutoId,

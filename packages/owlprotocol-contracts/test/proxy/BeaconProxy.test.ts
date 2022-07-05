@@ -10,6 +10,8 @@ import {
     ERC721Owl__factory,
     ERC721Owl,
 } from '../../typechain';
+import { deployClone, predictDeployClone } from '../utils';
+import { ContractReceipt } from 'ethers';
 
 const salt = ethers.utils.formatBytes32String('1');
 
@@ -60,35 +62,22 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
 
     it('deployment', async () => {
         //Deploy Beacon Instance with ProxyFactory
-        const BeaconData = Beacon.interface.encodeFunctionData('initialize', [owlAdmin.address, ERC721Owl.address]);
+        const deployBeacon = await deployClone(Beacon, [owlAdmin.address, ERC721Owl.address], ERC1167Factory);
 
-        const BeaconInstanceAddress = await ERC1167Factory.predictDeterministicAddress(
-            Beacon.address,
-            salt,
-            BeaconData,
-        );
-
-        const deployBeacon = await ERC1167Factory.cloneDeterministic(Beacon.address, salt, BeaconData);
-        await deployBeacon.wait();
-
+        //Deploy BeaconProxy Instance with ProxyFactory
         const ERC721Data = ERC721Owl.interface.encodeFunctionData('proxyInitialize', [
             owlAdmin.address,
             'CryptoOwls',
             'OWL',
             'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
         ]);
+        const deployBeaconProxy = await deployClone(
+            BeaconProxy,
+            [gameDev.address, deployBeacon.address, ERC721Data],
+            ERC1167Factory,
+        );
+        const receipt: ContractReceipt = deployBeaconProxy.receipt!;
 
-        //Deploy BeaconProxy Instance with ProxyFactory
-        const BeaconProxyData = BeaconProxy.interface.encodeFunctionData('initialize', [
-            gameDev.address,
-            BeaconInstanceAddress,
-            ERC721Data,
-        ]);
-
-        await ERC1167Factory.predictDeterministicAddress(BeaconProxy.address, salt, BeaconProxyData);
-
-        const deployBeaconProxy = await ERC1167Factory.cloneDeterministic(BeaconProxy.address, salt, BeaconProxyData);
-        const receipt = await deployBeaconProxy.wait();
         console.log('gas used: ', receipt.gasUsed.toNumber());
     });
 });
