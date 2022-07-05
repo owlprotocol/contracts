@@ -1,13 +1,11 @@
-import { ethers } from "hardhat";
-import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
-import { expect } from "chai";
-
+import { ethers } from 'hardhat';
+import { expect } from 'chai';
 
 describe('Contract Version Testing', async () => {
     const assertCorrectVersion = async (name: string, contractVersion = 'v0.1') => {
         // Get contract factory
         const factory = await ethers.getContractFactory(name);
-        const contract = await factory.deploy({ gasLimit: 30_000_000 });
+        const contract = await factory.deploy();
         const version = await contract.version();
         expect(version, `${name}/${contractVersion} incorrect!`).to.equal(contractVersion);
         // console.log(`Version: ${name}/${version}`);
@@ -18,12 +16,13 @@ describe('Contract Version Testing', async () => {
             'ERC1155Owl',
             'ERC20Owl',
             'ERC721Owl',
-            'RentableERC721Owl',
-            'Bundle',
-            'DutchAuction',
-            'EnglishAuction',
-            'FixedPriceAuction',
-            'Rent',
+            'ERC721OwlAttributes',
+            // 'RentableERC721Owl',
+            // 'Bundle',
+            // 'DutchAuction',
+            // 'EnglishAuction',
+            // 'FixedPriceAuction',
+            // 'Rent',
             'CrafterMint',
             'CrafterTransfer',
             'MinterAutoId',

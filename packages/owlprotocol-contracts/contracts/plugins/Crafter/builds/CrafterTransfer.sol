@@ -19,6 +19,8 @@ import './../CraftLib.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
+ * Players can interact with the contract to have
+ * recipie outputs transferred from a deposit.
  */
 contract CrafterTransfer is
     ICrafter,
@@ -46,7 +48,7 @@ contract CrafterTransfer is
     CraftLib.Ingredient[] private outputs;
 
     mapping(uint256 => uint256) nUse; //maps ingredient to nUSE (max count grabbed from amount[0])
-    mapping(address => mapping(uint256 => uint256)) usedERC721Inputs; //maps a contract address to a tokenId to nUsed which we increment
+    mapping(address => mapping(uint256 => uint256)) usedERC721Inputs; //maps a contract address to a tokenId to nUsed 
 
     /**********************
         Initialization

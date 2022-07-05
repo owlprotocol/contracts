@@ -9,7 +9,10 @@
   "homepage": "https://github.com/owlprotocol/nft-crafter.git",
   "copyright": "Copyright 2022 Owl Protocol",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "build": "cd ./packages/owlprotocol-contracts && pnpm run compile",
+    "test": "cd ./packages/owlprotocol-contracts && pnpm run test"
+  },
   "files": [],
   "main": "index.js",
   "types": "index.d.ts",

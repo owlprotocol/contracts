@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
+import 'hardhat/console.sol';
+
 /**
  * @dev **INTERNAL TOOL**
  * Used to factory ERC20 coins for unit testing
  */
-import 'hardhat/console.sol';
-
 contract FactoryERC20 is ERC20 {
     /**
      * @dev Creates ERC20 token

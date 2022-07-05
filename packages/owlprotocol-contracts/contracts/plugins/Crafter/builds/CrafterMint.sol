@@ -23,6 +23,8 @@ import './../CraftLib.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
+ * Players can interact with the contract to have
+ * recipie outputs minted.
  */
 contract CrafterMint is
     ICrafter,
@@ -426,11 +428,12 @@ contract CrafterMint is
                 ERC20Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.amounts[0] * craftAmount);
             } else if (ingredient.token == CraftLib.TokenType.erc721) {
                 //Pop token ids from storage
-                for (uint256 j = ingredient.tokenIds.length; j > ingredient.tokenIds.length - craftAmount; j--) {
-                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[j - 1]);
+                for (uint256 j = 0; j < craftAmount; j++) {
+                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
+                    
+                    //Update ingredient, remove withdrawn tokenId
+                    ingredient.tokenIds.pop();
                 }
-                //Update ingredient, remove withdrawn tokenId
-                ingredient.tokenIds.pop();
             } else if (ingredient.token == CraftLib.TokenType.erc1155) {
                 //Transfer ERC1155
                 uint256[] memory amounts = new uint256[](ingredient.amounts.length);
