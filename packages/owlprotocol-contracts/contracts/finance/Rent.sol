@@ -13,8 +13,7 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-import '../assets/ERC721/RentableERC721Owl.sol';
-import '../assets/ERC721/RentableERC721Upgradeable.sol';
+import '../assets/ERC721/ERC721OwlExpiring.sol';
 
 import 'hardhat/console.sol';
 
@@ -165,6 +164,7 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
         //startRent should be called by the renter
         require(timePeriodsPaid[rentId] == 0, 'rent has already been started'); //makes sure no rent has been payed yet
         RentalTerms memory r = rentTermsId[rentId]; //uses mapping to get the corresponding rental term struct based on rentId
+
 
         payRent(rentId, 1); //calls the payRent method to pay rent for 1 time period only
         RentableERC721Owl(shadowAddr).mint(r.renter, r.nftId, r.expireTimePerPeriod); //mints "shadow" NFT on the separate address
