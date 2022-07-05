@@ -330,6 +330,7 @@ describe('DutchAuction.sol No Fees', function () {
         });
 
         it('error: bid after auction ends', async () => {
+            await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
             await network.provider.send('evm_mine');
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
@@ -688,7 +689,7 @@ describe('DutchAuction.sol 10% Fees', function () {
             console.log(timestampBefore2);
 
             console.log(ethers.utils.formatEther(await auction2.getCurrentPrice()));
-            throw new Error();
+            //throw new Error();
         });
 
         it('simple auction - 1 bidder', async () => {
