@@ -401,10 +401,14 @@ contract CrafterMint is
                 //Pop token ids from storage
                 for (uint256 j = 0; j < craftAmount; j++) {
 <<<<<<< HEAD
+<<<<<<< HEAD
                     ERC721Owl(ingredient.contractAddr).mint(_crafter, ingredient.tokenIds[ingredient.tokenIds.length - 1]);
 =======
                     ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
 >>>>>>> d76ad40 (Update CrafterMint.sol)
+=======
+                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
+>>>>>>> 0738462 (Update CrafterMint.sol)
                     
                     //Update ingredient, remove withdrawn tokenId
                     ingredient.tokenIds.pop();
