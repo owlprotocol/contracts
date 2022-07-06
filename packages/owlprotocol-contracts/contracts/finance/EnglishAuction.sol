@@ -14,7 +14,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import './AuctionLib.sol';
-import 'hardhat/console.sol';
 
 /**
  * @dev This contract is a standard English Auction smart contract that allows bidders

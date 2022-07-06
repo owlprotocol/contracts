@@ -16,8 +16,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '../utils/FractionalExponents.sol';
 import './AuctionLib.sol';
 
-import 'hardhat/console.sol';
-
 /**
  * @dev This contract is a simple on-chain Dutch Auction with a pricing view function that
  * decreases over a set period of time. In a Dutch Auction, the seller defines a starting ceiling price
@@ -193,11 +191,6 @@ contract DutchAuction is
             );
         startTime = block.timestamp;
     }
-
-    //this is the interval : (block.timestamp at view - block.timestamp at start) / auctionDuration
-    //this is the increment: (startPrice - endPrice) * interval
-
-    //current price: start price - [(total time elapsed / auction duration) * (start price - end price)]
 
     /**********************
          Interaction

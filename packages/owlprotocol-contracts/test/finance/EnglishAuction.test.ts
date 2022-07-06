@@ -68,14 +68,6 @@ describe('EnglishAuction.sol No Fee', function () {
 
             //EnglishAuction Data
             const EnglishAuctionData = EnglishAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //NFT
-                //ERC20 Contract address (acceptable token)
-                //starting bid
-                //auction duration
-                //reset time
-                //sale fee
-                //sale fee address
                 seller.address,
                 {
                     token: TokenType.erc721,
@@ -97,9 +89,6 @@ describe('EnglishAuction.sol No Fee', function () {
                 salt,
                 EnglishAuctionData,
             );
-
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
 
             //Set Approval ERC721 for sale
 
@@ -297,12 +286,6 @@ describe('EnglishAuction.sol No Fee', function () {
 
             //EnglishAuction Data
             const EnglishAuctionData = EnglishAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //NFT
-                //ERC20 Contract address (acceptable token)
-                //starting bid
-                //auction duration
-                //reset time
                 seller.address,
                 {
                     token: TokenType.erc1155,
@@ -324,9 +307,6 @@ describe('EnglishAuction.sol No Fee', function () {
                 salt,
                 EnglishAuctionData,
             );
-
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
 
             //Set Approval ERC1155 for sale
 
@@ -556,14 +536,6 @@ describe('EnglishAuction.sol 20% Fee', function () {
 
             //EnglishAuction Data
             const EnglishAuctionData = EnglishAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //NFT
-                //ERC20 Contract address (acceptable token)
-                //starting bid
-                //auction duration
-                //reset time
-                //sale fee
-                //sale fee address
                 seller.address,
                 {
                     token: TokenType.erc721,
@@ -585,9 +557,6 @@ describe('EnglishAuction.sol 20% Fee', function () {
                 salt,
                 EnglishAuctionData,
             );
-
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
 
             //Set Approval ERC721 for sale
 

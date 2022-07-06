@@ -65,13 +65,6 @@ describe('FixedPriceAuction.sol', function () {
 
             //FixedPriceAuction Data
             const FixedPriceAuctionData = FixedPriceAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //Asset
-                //ERC20 Contract address (acceptable token)
-                //price
-                //auction duration
-                //sale fee
-                //sale fee address
                 seller.address,
                 {
                     token: TokenType.erc721,
@@ -92,9 +85,6 @@ describe('FixedPriceAuction.sol', function () {
                 salt,
                 FixedPriceAuctionData,
             );
-
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
 
             //Set Approval ERC721 for sale
             await testNFT.connect(seller).approve(FixedPriceAuctionAddress, 1);
@@ -182,13 +172,6 @@ describe('FixedPriceAuction.sol', function () {
 
             //FixedPriceAuction Data
             const FixedPriceAuctionData = FixedPriceAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //Asset
-                //ERC20 Contract address (acceptable token)
-                //price
-                //auction duration
-                //sale fee
-                //sale fee address
                 seller.address,
                 {
                     token: TokenType.erc721,
@@ -209,9 +192,6 @@ describe('FixedPriceAuction.sol', function () {
                 salt,
                 FixedPriceAuctionData,
             );
-
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
 
             //Set Approval ERC721 for sale
             await testNFT.connect(seller).approve(FixedPriceAuctionAddress, 1);

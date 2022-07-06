@@ -97,10 +97,6 @@ describe('Rent.sol', function () {
 
             //Rent Data
             const RentData = RentImplementation.interface.encodeFunctionData('initialize', [
-                //admin
-                //acceptableToken
-                //contract address
-                //shadow address
                 admin.address,
                 acceptableERC20Token.address,
                 testNFT.address,
