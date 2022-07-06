@@ -92,9 +92,19 @@ contract ERC721OwlAttributes is ERC721Owl {
      * @param tokenId whose dna to change
      * @param dna new dna for the provided tokenId
      */
-    function udpateDna(uint256 tokenId, uint256 dna) external onlyRole(DNA_ROLE) {
+    function updateDna(uint256 tokenId, uint256 dna) external onlyRole(DNA_ROLE) {
         require(_exists(tokenId), 'ERC721Metadata: URI query for nonexistent token');
         dnas[tokenId] = dna;
+    }
+
+    /**
+     * @dev Getter for dna of tokenId
+     * @param tokenId whose dna to change
+     * @return dna of tokenId
+     */
+    function getDna(uint256 tokenId) external view returns (uint256){
+        require(_exists(tokenId), 'ERC721Metadata: URI query for nonexistent token');
+        return dnas[tokenId];
     }
 
     function version() public pure override returns (string memory) {
