@@ -1,15 +1,17 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../../assets/ERC721/ERC721OwlAttributes.sol';
+import '../assets/ERC721/ERC721OwlAttributes.sol';
 import 'hardhat/console.sol';
 
 /**
  * @dev Basic crafting structures used through NFTCrafting contracts.
  *
  */
-library TransformerLib {
+library PluginsLib {
     // Recipe Components
+
+    uint256 private constant ZERO = uint256(keccak256(abi.encode(0)));  // null pointer that is not zero
 
     /**
      * @dev Allows for specification of what happens to input ingredients after craft is complete
@@ -58,11 +60,10 @@ library TransformerLib {
     }
 
     function transform(
-        uint256 tokenId,
         uint256 currDna,
         uint8[] memory genes,
-        TransformerLib.GeneMod[] memory modifications
-    ) internal returns (uint256 newDna) {
+        PluginsLib.GeneMod[] memory modifications
+    ) internal pure returns (uint256 newDna) {
         for (uint16 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
             // Gene details
             uint16 geneStartIdx = genes[geneIdx];
@@ -106,4 +107,43 @@ library TransformerLib {
         uint256 bitMaskEnd = type(uint256).max >> (256 - endBit);
         bitMask = bitMaskStart & bitMaskEnd;
     }
+
+    /**
+     * @dev validates inputs array of ingredients
+     * @param _inputs the inputted array to the Crafter initializer
+     * @param inputs storage array of inputs, copied from _inputs
+     * @param nUse mapping used to compute N-time validations
+     */
+    function validateInputs(Ingredient[] memory _inputs, Ingredient[] storage inputs, mapping(uint256 => uint256) storage nUse) internal {
+        for (uint256 i = 0; i < _inputs.length; i++) {
+            if (_inputs[i].token == PluginsLib.TokenType.erc20) {
+                require(_inputs[i].tokenIds.length == 0, 'Transformer: tokenids.length != 0');
+                require(_inputs[i].amounts.length == 1, 'Transformer: amounts.length != 1');
+            } else if (_inputs[i].token == PluginsLib.TokenType.erc721) {
+                //accept all token ids as inputs
+                require(_inputs[i].tokenIds.length == 0, 'Transformer: tokenIds.length != 0');
+
+                if (_inputs[i].consumableType == PluginsLib.ConsumableType.NTime) {
+                    require(
+                        _inputs[i].amounts.length == 1,
+                        'Transformer: amounts.length != 1; required for NTime ConsumableType'
+                    );
+                    nUse[i] = _inputs[i].amounts[0];
+                } else require(_inputs[i].amounts.length == 0, 'Transformer: amounts.length != 1 or 0');
+            } else if (_inputs[i].token == PluginsLib.TokenType.erc1155) {
+                require(
+                    _inputs[i].tokenIds.length == _inputs[i].amounts.length,
+                    'Transformer: tokenids.length != amounts.length'
+                );
+            }
+            inputs.push(_inputs[i]);
+        }
+    }
+
+    function arrayContains(uint256[] memory _input, uint256 num) internal returns (bool) {
+        for (uint256 j = 0; j < _input.length; j++) 
+            if (_input[j] == num) return true;
+        return false; 
+    }
 }
+

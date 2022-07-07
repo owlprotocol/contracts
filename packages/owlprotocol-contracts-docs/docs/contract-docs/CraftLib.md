@@ -1,6 +1,4 @@
-
-
-## CraftLib
+## PluginsLib
 
 _Basic crafting structures used through NFTCrafting contracts._
 
@@ -29,11 +27,10 @@ enum TokenType {
 
 ```solidity
 struct Ingredient {
-  enum CraftLib.TokenType token;
-  enum CraftLib.ConsumableType consumableType;
+  enum PluginsLib.TokenType token;
+  enum PluginsLib.ConsumableType consumableType;
   address contractAddr;
   uint256[] amounts;
   uint256[] tokenIds;
 }
 ```
-
