@@ -13,7 +13,7 @@ import {
     ERC1155,
 } from '../../typechain';
 
-import { createERC20, createERC721, createERC1155 } from '../utils';
+import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../utils';
 import { BigNumber } from 'ethers';
 
 enum TokenType {
@@ -63,27 +63,30 @@ describe('FixedPriceAuction.sol', function () {
             [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
             [testNFT] = await createERC721(1, 1); //minting one token
 
-            //FixedPriceAuction Data
-            const FixedPriceAuctionData = FixedPriceAuctionImplementation.interface.encodeFunctionData('initialize', [
-                seller.address,
-                {
-                    token: TokenType.erc721,
-                    contractAddr: testNFT.address,
-                    tokenId: 1,
-                },
-                acceptableERC20Token.address,
-                parseUnits('100.0', 18), //in "wei"
-                300,
-                0,
-                owner.address,
-            ]);
-
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            FixedPriceAuctionAddress = await ERC1167Factory.predictDeterministicAddress(
-                FixedPriceAuctionImplementation.address,
-                salt,
-                FixedPriceAuctionData,
+            //predict address
+            FixedPriceAuctionAddress = await predictDeployClone(
+                FixedPriceAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    parseUnits('100.0', 18), //in "wei"
+                    300,
+                    0,
+                    owner.address,
+                ],
+                ERC1167Factory,
             );
 
             //Set Approval ERC721 for sale
@@ -99,12 +102,30 @@ describe('FixedPriceAuction.sol', function () {
             );
 
             //deploy auction
-            //check balances
-            ///clone deterministic
-            await ERC1167Factory.cloneDeterministic(
-                FixedPriceAuctionImplementation.address,
-                salt,
-                FixedPriceAuctionData,
+
+            await deployClone(
+                FixedPriceAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    parseUnits('100.0', 18), //in "wei"
+                    300,
+                    0,
+                    owner.address,
+                ],
+                ERC1167Factory,
             );
             auction = (await ethers.getContractAt('FixedPriceAuction', FixedPriceAuctionAddress)) as FixedPriceAuction;
 
@@ -115,8 +136,6 @@ describe('FixedPriceAuction.sol', function () {
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
             expect(await testNFT.balanceOf(FixedPriceAuctionAddress)).to.equal(1);
             expect(await acceptableERC20Token.balanceOf(buyer.address)).to.equal(originalERC20Balance);
-
-            //storage tests
         });
 
         it('simple auction - 1 bidder', async () => {
@@ -170,27 +189,29 @@ describe('FixedPriceAuction.sol', function () {
             [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
             [testNFT] = await createERC721(1, 1); //minting one token
 
-            //FixedPriceAuction Data
-            const FixedPriceAuctionData = FixedPriceAuctionImplementation.interface.encodeFunctionData('initialize', [
-                seller.address,
-                {
-                    token: TokenType.erc721,
-                    contractAddr: testNFT.address,
-                    tokenId: 1,
-                },
-                acceptableERC20Token.address,
-                parseUnits('100.0', 18), //in "wei"
-                300,
-                10,
-                owner.address,
-            ]);
-
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            FixedPriceAuctionAddress = await ERC1167Factory.predictDeterministicAddress(
-                FixedPriceAuctionImplementation.address,
-                salt,
-                FixedPriceAuctionData,
+            FixedPriceAuctionAddress = await predictDeployClone(
+                FixedPriceAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    parseUnits('100.0', 18), //in "wei"
+                    300,
+                    10,
+                    owner.address,
+                ],
+                ERC1167Factory,
             );
 
             //Set Approval ERC721 for sale
@@ -206,24 +227,37 @@ describe('FixedPriceAuction.sol', function () {
             );
 
             //deploy auction
-            //check balances
-            ///clone deterministic
-            await ERC1167Factory.cloneDeterministic(
-                FixedPriceAuctionImplementation.address,
-                salt,
-                FixedPriceAuctionData,
+            await deployClone(
+                FixedPriceAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    parseUnits('100.0', 18), //in "wei"
+                    300,
+                    10,
+                    owner.address,
+                ],
+                ERC1167Factory,
             );
             auction = (await ethers.getContractAt('FixedPriceAuction', FixedPriceAuctionAddress)) as FixedPriceAuction;
 
             //assert initial token amounts
-
             originalERC20Balance = parseUnits('100.0', 18);
-
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
             expect(await testNFT.balanceOf(FixedPriceAuctionAddress)).to.equal(1);
             expect(await acceptableERC20Token.balanceOf(buyer.address)).to.equal(originalERC20Balance);
-
-            //storage tests
         });
 
         it('simple auction - 1 bidder', async () => {
