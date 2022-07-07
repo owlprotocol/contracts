@@ -1,5 +1,3 @@
-
-
 ## CrafterMint
 
 _Pluggable Crafting Contract.
@@ -21,7 +19,7 @@ bytes4 ERC165TAG
 ### CreateRecipe
 
 ```solidity
-event CreateRecipe(address creator, struct CraftLib.Ingredient[] inputs, struct CraftLib.Ingredient[] outputs)
+event CreateRecipe(address creator, struct PluginsLib.Ingredient[] inputs, struct PluginsLib.Ingredient[] outputs)
 ```
 
 ### RecipeUpdate
@@ -51,13 +49,13 @@ uint96 craftableAmount
 ### inputs
 
 ```solidity
-struct CraftLib.Ingredient[] inputs
+struct PluginsLib.Ingredient[] inputs
 ```
 
 ### outputs
 
 ```solidity
-struct CraftLib.Ingredient[] outputs
+struct PluginsLib.Ingredient[] outputs
 ```
 
 ### nUse
@@ -81,25 +79,25 @@ constructor() public
 ### initialize
 
 ```solidity
-function initialize(address _admin, address _burnAddress, uint96 _craftableAmount, struct CraftLib.Ingredient[] _inputs, struct CraftLib.Ingredient[] _outputs) public
+function initialize(address _admin, address _burnAddress, uint96 _craftableAmount, struct PluginsLib.Ingredient[] _inputs, struct PluginsLib.Ingredient[] _outputs) public
 ```
 
 Create recipe
 
 _Configures crafting recipe with inputs/outputs_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| _admin | address |  |
-| _burnAddress | address | Burn address for burn inputs |
-| _craftableAmount | uint96 |  |
-| _inputs | struct CraftLib.Ingredient[] | inputs for recipe |
-| _outputs | struct CraftLib.Ingredient[] | outputs for recipe |
+| Name              | Type                           | Description                  |
+| ----------------- | ------------------------------ | ---------------------------- |
+| \_admin           | address                        |                              |
+| \_burnAddress     | address                        | Burn address for burn inputs |
+| \_craftableAmount | uint96                         |                              |
+| \_inputs          | struct PluginsLib.Ingredient[] | inputs for recipe            |
+| \_outputs         | struct PluginsLib.Ingredient[] | outputs for recipe           |
 
 ### getInputs
 
 ```solidity
-function getInputs() public view returns (struct CraftLib.Ingredient[] _inputs)
+function getInputs() public view returns (struct PluginsLib.Ingredient[] _inputs)
 ```
 
 _Returns all inputs (without &#x60;amounts&#x60; or &#x60;tokenIds&#x60;)_
@@ -107,7 +105,7 @@ _Returns all inputs (without &#x60;amounts&#x60; or &#x60;tokenIds&#x60;)_
 ### getOutputs
 
 ```solidity
-function getOutputs() public view returns (struct CraftLib.Ingredient[] _outputs)
+function getOutputs() public view returns (struct PluginsLib.Ingredient[] _outputs)
 ```
 
 _Returns all outputs (without &#x60;amounts&#x60; or &#x60;tokenIds&#x60;)_
@@ -115,42 +113,42 @@ _Returns all outputs (without &#x60;amounts&#x60; or &#x60;tokenIds&#x60;)_
 ### getInputIngredient
 
 ```solidity
-function getInputIngredient(uint256 index) public view returns (enum CraftLib.TokenType token, enum CraftLib.ConsumableType consumableType, address contractAddr, uint256[] amounts, uint256[] tokenIds)
+function getInputIngredient(uint256 index) public view returns (enum PluginsLib.TokenType token, enum PluginsLib.ConsumableType consumableType, address contractAddr, uint256[] amounts, uint256[] tokenIds)
 ```
 
 _Returns all details for a specific ingredient (including amounts/tokenIds)_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
+| Name  | Type    | Description                            |
+| ----- | ------- | -------------------------------------- |
 | index | uint256 | ingredient index to return details for |
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| token | enum CraftLib.TokenType | token type |
-| consumableType | enum CraftLib.ConsumableType | consumable type |
-| contractAddr | address | token contract address |
-| amounts | uint256[] | amount of each token |
-| tokenIds | uint256[] | token ids |
+| Name           | Type                           | Description            |
+| -------------- | ------------------------------ | ---------------------- |
+| token          | enum PluginsLib.TokenType      | token type             |
+| consumableType | enum PluginsLib.ConsumableType | consumable type        |
+| contractAddr   | address                        | token contract address |
+| amounts        | uint256[]                      | amount of each token   |
+| tokenIds       | uint256[]                      | token ids              |
 
 ### getOutputIngredient
 
 ```solidity
-function getOutputIngredient(uint256 index) public view returns (enum CraftLib.TokenType token, enum CraftLib.ConsumableType consumableType, address contractAddr, uint256[] amounts, uint256[] tokenIds)
+function getOutputIngredient(uint256 index) public view returns (enum PluginsLib.TokenType token, enum PluginsLib.ConsumableType consumableType, address contractAddr, uint256[] amounts, uint256[] tokenIds)
 ```
 
 _Returns all details for a specific ingredient (including amounts/tokenIds)_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
+| Name  | Type    | Description                            |
+| ----- | ------- | -------------------------------------- |
 | index | uint256 | ingredient index to return details for |
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| token | enum CraftLib.TokenType | token type |
-| consumableType | enum CraftLib.ConsumableType | consumable type |
-| contractAddr | address | token contract address |
-| amounts | uint256[] | amount of each token |
-| tokenIds | uint256[] | token ids |
+| Name           | Type                           | Description            |
+| -------------- | ------------------------------ | ---------------------- |
+| token          | enum PluginsLib.TokenType      | token type             |
+| consumableType | enum PluginsLib.ConsumableType | consumable type        |
+| contractAddr   | address                        | token contract address |
+| amounts        | uint256[]                      | amount of each token   |
+| tokenIds       | uint256[]                      | token ids              |
 
 ### deposit
 
@@ -162,12 +160,12 @@ Must be recipe creator. Automatically sends from &#x60;msg.sender&#x60;
 
 _Used to deposit recipe outputs._
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| depositAmount | uint96 | How many times the recipe should be craftable |
-| _outputsERC721Ids | uint256[][] | 2D-array of ERC721 tokens used in crafting |
+| Name               | Type        | Description                                   |
+| ------------------ | ----------- | --------------------------------------------- |
+| depositAmount      | uint96      | How many times the recipe should be craftable |
+| \_outputsERC721Ids | uint256[][] | 2D-array of ERC721 tokens used in crafting    |
 
-### _deposit
+### \_deposit
 
 ```solidity
 function _deposit(uint96 depositAmount, uint256[][] _outputsERC721Ids) internal
@@ -177,10 +175,10 @@ Must be recipe creator
 
 _Used to deposit recipe outputs_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| depositAmount | uint96 | How many times the recipe should be craftable |
-| _outputsERC721Ids | uint256[][] | 2D-array of ERC721 tokens used in crafting |
+| Name               | Type        | Description                                   |
+| ------------------ | ----------- | --------------------------------------------- |
+| depositAmount      | uint96      | How many times the recipe should be craftable |
+| \_outputsERC721Ids | uint256[][] | 2D-array of ERC721 tokens used in crafting    |
 
 ### withdraw
 
@@ -192,8 +190,8 @@ Must be recipe creator
 
 _Used to withdraw recipe outputs. Reverse logic as deposit()._
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
+| Name           | Type   | Description                                          |
+| -------------- | ------ | ---------------------------------------------------- |
 | withdrawAmount | uint96 | How many times the craft outputs should be withdrawn |
 
 ### craft
@@ -206,12 +204,12 @@ Craft {craftAmount}
 
 _Used to craft. Consumes inputs and transfers outputs._
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| craftAmount | uint96 | How many times to craft |
-| _inputERC721Ids | uint256[][] | Array of pre-approved NFTs for crafting usage. |
+| Name             | Type        | Description                                    |
+| ---------------- | ----------- | ---------------------------------------------- |
+| craftAmount      | uint96      | How many times to craft                        |
+| \_inputERC721Ids | uint256[][] | Array of pre-approved NFTs for crafting usage. |
 
-### _authorizeUpgrade
+### \_authorizeUpgrade
 
 ```solidity
 function _authorizeUpgrade(address) internal
@@ -231,11 +229,10 @@ function supportsInterface(bytes4 interfaceId) public view virtual returns (bool
 
 _ERC165 Support_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
+| Name        | Type   | Description                       |
+| ----------- | ------ | --------------------------------- |
 | interfaceId | bytes4 | hash of the interface testing for |
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | bool | bool whether interface is supported |
-
+| Name | Type | Description                         |
+| ---- | ---- | ----------------------------------- |
+| [0]  | bool | bool whether interface is supported |
