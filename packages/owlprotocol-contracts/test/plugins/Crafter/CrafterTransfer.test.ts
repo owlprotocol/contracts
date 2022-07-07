@@ -20,7 +20,6 @@ import { BigNumber } from 'ethers';
 enum ConsumableType {
     unaffected,
     burned,
-    locked,
     NTime,
 }
 
@@ -280,7 +279,7 @@ describe('Crafter.sol', function () {
                     [
                         {
                             token: TokenType.erc721,
-                            consumableType: ConsumableType.unaffected,
+                            consumableType: ConsumableType.unaffected, //consumable type of output is unused
                             contractAddr: outputERC721.address,
                             amounts: [],
                             tokenIds: [1],
@@ -452,7 +451,7 @@ describe('Crafter.sol', function () {
         });
     });
 
-    describe('2 same ERC721 -> 1 ERC721', async () => {
+    describe('ERC721 -> 1 ERC721', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
         let inputERC721: ERC721;
@@ -463,28 +462,20 @@ describe('Crafter.sol', function () {
 
         beforeEach(async () => {
             //Deploy ERC721
-            [inputERC721] = await createERC721(1, 1);
-            [outputERC721] = await createERC721(1);
+            [inputERC721, outputERC721] = await createERC721(2);
 
             //Crafter Data
             const CrafterTransferData = CrafterTransferImplementation.interface.encodeFunctionData('initialize', [
                 owner.address,
                 burnAddress,
                 1,
-                //Input any token id, input burned
+                //Input any token id
                 [
                     {
                         token: TokenType.erc721,
-                        consumableType: ConsumableType.unaffected,
+                        consumableType: ConsumableType.NTime,
                         contractAddr: inputERC721.address,
-                        amounts: [],
-                        tokenIds: [],
-                    },
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: inputERC721.address,
-                        amounts: [],
+                        amounts: [5],
                         tokenIds: [],
                     },
                 ],
@@ -528,15 +519,15 @@ describe('Crafter.sol', function () {
 
             const inputs = await crafter.getInputs();
             const outputs = await crafter.getOutputs();
-            expect(inputs.length).to.equal(2);
+            expect(inputs.length).to.equal(1);
             expect(outputs.length).to.equal(1);
             const input0 = await crafter.getInputIngredient(0);
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: 1,
-                consumableType: 0,
+                consumableType: 3,
                 contractAddr: inputERC721.address,
-                amounts: [],
+                amounts: [BigNumber.from(5)],
                 tokenIds: [],
             });
             expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
@@ -563,9 +554,9 @@ describe('Crafter.sol', function () {
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: TokenType.erc721,
-                consumableType: ConsumableType.unaffected,
+                consumableType: ConsumableType.NTime,
                 contractAddr: inputERC721.address,
-                amounts: [],
+                amounts: [BigNumber.from(5)],
                 tokenIds: [],
             });
             //Empty because crafting pops token id
@@ -591,9 +582,9 @@ describe('Crafter.sol', function () {
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: TokenType.erc721,
-                consumableType: ConsumableType.unaffected,
+                consumableType: ConsumableType.NTime,
                 contractAddr: inputERC721.address,
-                amounts: [],
+                amounts: [BigNumber.from(5)],
                 tokenIds: [],
             });
             //Empty because withdraw pops token id
@@ -619,9 +610,9 @@ describe('Crafter.sol', function () {
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: TokenType.erc721,
-                consumableType: ConsumableType.unaffected,
+                consumableType: ConsumableType.NTime,
                 contractAddr: inputERC721.address,
-                amounts: [],
+                amounts: [BigNumber.from(5)],
                 tokenIds: [],
             });
             //Additional token id pushed by deposit
