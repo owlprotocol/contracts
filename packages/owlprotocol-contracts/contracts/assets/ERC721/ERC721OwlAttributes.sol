@@ -45,9 +45,21 @@ contract ERC721OwlAttributes is ERC721Owl {
         string memory baseURI_
     ) internal onlyInitializing {
         __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlAttributes_init_unchained(_admin);
     }
 
-    function __ERC721OwlAttributes_init_unchained() internal onlyInitializing {}
+    function __ERC721OwlAttributes_init_unchained(address _admin) internal onlyInitializing {
+        _grantRole(DNA_ROLE, _admin);
+    }
+
+    /**
+     * @notice Must have DEFAULT_ADMIN_ROLE
+     * @dev Grants EXPIRY_ROLE to {a}
+     * @param to address to
+     */
+    function grantDna(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _grantRole(DNA_ROLE, to);
+    }
 
     /**
      * @dev returns uri for token metadata
@@ -92,9 +104,19 @@ contract ERC721OwlAttributes is ERC721Owl {
      * @param tokenId whose dna to change
      * @param dna new dna for the provided tokenId
      */
-    function udpateDna(uint256 tokenId, uint256 dna) external onlyRole(DNA_ROLE) {
+    function updateDna(uint256 tokenId, uint256 dna) external onlyRole(DNA_ROLE) {
         require(_exists(tokenId), 'ERC721Metadata: URI query for nonexistent token');
         dnas[tokenId] = dna;
+    }
+
+    /**
+     * @dev Getter for dna of tokenId
+     * @param tokenId whose dna to change
+     * @return dna of tokenId
+     */
+    function getDna(uint256 tokenId) external view returns (uint256) {
+        require(_exists(tokenId), 'ERC721Metadata: URI query for nonexistent token');
+        return dnas[tokenId];
     }
 
     function version() public pure override returns (string memory) {

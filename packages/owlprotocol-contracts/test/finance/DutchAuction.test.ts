@@ -198,23 +198,6 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
-
-        // it('visual price change', async () => {
-
-        //     expect(await testNFT.balanceOf(auction.address)).to.equal(1);
-        //     expect(await testNFT.balanceOf(seller.address)).to.equal(0);
-
-        //     expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
-
-        //     //console.log('hi');
-        //     for (let i = 0; i < 300; i++) {
-        //         await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
-        //         await network.provider.send('evm_mine');
-        //         console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
-
-        //         //expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
-        //     }
-        // });
     });
 
     describe('Nonlinear Auction Tests', () => {
@@ -365,24 +348,6 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
-
-        // it('visual price change', async () => {
-
-        //     expect(await testNFT.balanceOf(auction.address)).to.equal(1);
-        //     expect(await testNFT.balanceOf(seller.address)).to.equal(0);
-
-        //     expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
-
-        //     const t = (await auction.endAt()).toNumber();
-
-        //     await ethers.provider.send('evm_setAutomine', [false]);
-        //     for (let i = 0; i < 300; i++) {
-        //         await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
-        //         await network.provider.send('evm_mine');
-
-        //         console.log(ethers.utils.formatEther(await auction.getCurrentPrice()));
-        //     }
-        // });
     });
 
     describe('DutchAuction.sol ERC 1155', function () {
@@ -681,15 +646,6 @@ describe('DutchAuction.sol 10% Fees', function () {
             //DutchAuction Data
             //@ts-ignore
             const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //Asset
-                //ERC20 Contract address (acceptable token)
-                //start price
-                //end price
-                //auction duration
-                //isNonLinear
-                //saleFee
-                //saleFeeAddress
                 seller.address,
                 {
                     token: TokenType.erc721,
@@ -735,7 +691,6 @@ describe('DutchAuction.sol 10% Fees', function () {
             // const timestampBefore2 = blockBefore2.timestamp;
             // console.log(timestampBefore2);
 
-            // console.log(ethers.utils.formatEther(await auction2.getCurrentPrice()));
         });
 
         it('simple auction - 1 bidder', async () => {

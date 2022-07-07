@@ -16,8 +16,14 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '../utils/FractionalExponents.sol';
 import './AuctionLib.sol';
 
-import 'hardhat/console.sol';
-
+/**
+ * @dev This contract is a simple on-chain Dutch Auction with a pricing view function that
+ * decreases over a set period of time. In a Dutch Auction, the seller defines a starting ceiling price
+ * and an ending floor price that then decreases over time based on either a linear or nonlinear function.
+ * If a bid is made at any point, the bid must match the current price. Once a bid is made, the auction ends
+ * and the owner will receive the current price in which the bid was made in ERC20 tokens. The asset is then
+ * transferred to the bidder.
+ */
 contract DutchAuction is
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
@@ -186,11 +192,6 @@ contract DutchAuction is
         startTime = block.timestamp;
     }
 
-    //this is the interval : (block.timestamp at view - block.timestamp at start) / auctionDuration
-    //this is the increment: (startPrice - endPrice) * interval
-
-    //current price: start price - [(total time elapsed / auction duration) * (start price - end price)]
-
     /**********************
          Interaction
     **********************/
@@ -200,7 +201,7 @@ contract DutchAuction is
     */
 
     /**
-     * @dev Returns the current price of the asset
+     * @dev Returns the current price of the asset based on the timestamp and type of function
      * @return uint256 price of the asset
      */
     function getCurrentPrice() public view returns (uint256) {

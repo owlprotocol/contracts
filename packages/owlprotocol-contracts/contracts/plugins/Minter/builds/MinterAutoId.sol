@@ -6,7 +6,6 @@ import '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeab
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '../MinterCore.sol';
-import 'hardhat/console.sol';
 
 /**
  * @dev Decentralized NFT Minter contract

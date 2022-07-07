@@ -1344,26 +1344,6 @@ describe('Crafter.sol', function () {
             });
         });
 
-        // after(async () => {
-        //     //Storage tests - unchanged
-        //     const input0 = await crafter.getInputIngredient(0);
-        //     const output0 = await crafter.getOutputIngredient(0);
-        //     expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
-        //         token: TokenType.erc721,
-        //         consumableType: ConsumableType.burned,
-        //         contractAddr: inputERC721.address,
-        //         amounts: [],
-        //         tokenIds: [],
-        //     });
-        //     expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts'])).to.deep.equal({
-        //         token: TokenType.erc721,
-        //         consumableType: ConsumableType.unaffected,
-        //         contractAddr: outputERC721.address,
-        //         amounts: [],
-        //         tokenIds: [],
-        //     });
-        // });
-
         it('withdraw', async () => {
             //Withdraw 1
             await crafter.withdraw(1);

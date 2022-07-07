@@ -11,8 +11,8 @@ import {
     ERC1167Factory,
     ERC1167Factory__factory,
     ERC721,
-    RentableERC721Owl,
-    RentableERC721Owl__factory,
+    ERC721OwlExpiring,
+    ERC721OwlExpiring__factory,
 } from '../../typechain';
 
 import { createERC20, createERC721 } from '../utils';
@@ -29,13 +29,13 @@ describe('Rent.sol', function () {
     let RentFactory: Rent__factory;
     let RentImplementation: Rent;
 
-    let RentableERC721OwlFactory: RentableERC721Owl__factory;
-    let RentableERC721OwlImplementation: RentableERC721Owl;
+    let ERC721OwlExpiringFactory: ERC721OwlExpiring__factory;
+    let ERC721OwlExpiringImplementation: ERC721OwlExpiring;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
 
-    let rentable: RentableERC721Owl;
+    let rentable: ERC721OwlExpiring;
 
     before(async () => {
         let name = '';
@@ -55,10 +55,10 @@ describe('Rent.sol', function () {
         //get users
         [admin, _owner, _renter] = await ethers.getSigners();
 
-        RentableERC721OwlFactory = (await ethers.getContractFactory('RentableERC721Owl')) as RentableERC721Owl__factory;
-        RentableERC721OwlImplementation = await RentableERC721OwlFactory.deploy();
+        ERC721OwlExpiringFactory = (await ethers.getContractFactory('ERC721OwlExpiring')) as ERC721OwlExpiring__factory;
+        ERC721OwlExpiringImplementation = await ERC721OwlExpiringFactory.deploy();
 
-        const RentableERC721OwlData = RentableERC721OwlImplementation.interface.encodeFunctionData('initialize', [
+        const ERC721OwlExpiringData = ERC721OwlExpiringImplementation.interface.encodeFunctionData('initialize', [
             //admin
             //name
             //symbol
@@ -72,13 +72,13 @@ describe('Rent.sol', function () {
         //Predict address
         const salt = ethers.utils.formatBytes32String('1');
         shadowAddress = await ERC1167Factory.predictDeterministicAddress(
-            RentableERC721OwlImplementation.address,
+            ERC721OwlExpiringImplementation.address,
             salt,
-            RentableERC721OwlData,
+            ERC721OwlExpiringData,
         );
 
-        await ERC1167Factory.cloneDeterministic(RentableERC721OwlImplementation.address, salt, RentableERC721OwlData);
-        rentable = (await ethers.getContractAt('RentableERC721Owl', shadowAddress)) as RentableERC721Owl;
+        await ERC1167Factory.cloneDeterministic(ERC721OwlExpiringImplementation.address, salt, ERC721OwlExpiringData);
+        rentable = (await ethers.getContractAt('ERC721OwlExpiring', shadowAddress)) as ERC721OwlExpiring;
     });
 
     describe('Rent Tests - ERC721', () => {
@@ -97,10 +97,6 @@ describe('Rent.sol', function () {
 
             //Rent Data
             const RentData = RentImplementation.interface.encodeFunctionData('initialize', [
-                //admin
-                //acceptableToken
-                //contract address
-                //shadow address
                 admin.address,
                 acceptableERC20Token.address,
                 testNFT.address,

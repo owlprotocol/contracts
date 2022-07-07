@@ -189,7 +189,6 @@ describe('FixedPriceAuction.sol', function () {
             [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
             [testNFT] = await createERC721(1, 1); //minting one token
 
-            //FixedPriceAuction Data
             FixedPriceAuctionAddress = await predictDeployClone(
                 FixedPriceAuctionImplementation,
                 [
