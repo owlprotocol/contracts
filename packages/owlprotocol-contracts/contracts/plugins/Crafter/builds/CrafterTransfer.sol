@@ -101,7 +101,6 @@ contract CrafterTransfer is
         require(_inputs.length > 0, 'CrafterTransfer: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterTransfer: A crafting output must be given!');
 
-        __Ownable_init();
         _transferOwnership(_admin);
         __CrafterTransfer_init_unchained(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
     }

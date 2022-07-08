@@ -105,7 +105,7 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
         address _contractAddr,
         address _shadowAddr
     ) internal onlyInitializing {
-        __Ownable_init();
+        _transferOwnership(_admin);
         __Rent_init_unchained(_admin, _acceptableToken, _contractAddr, _shadowAddr);
     }
 
@@ -115,7 +115,6 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
         address _contractAddr,
         address _shadowAddr
     ) internal onlyInitializing {
-        _transferOwnership(_admin);
         acceptableToken = _acceptableToken;
         contractAddr = _contractAddr;
         shadowAddr = _shadowAddr;

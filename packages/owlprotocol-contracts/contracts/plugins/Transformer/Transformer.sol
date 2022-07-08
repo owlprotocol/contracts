@@ -86,9 +86,7 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
         require(_burnAddress != address(0), 'Transformer: burn address must not be 0');
         require(_inputs.length > 0, 'Transformer: A crafting input must be given!');
 
-        __Ownable_init();
         _transferOwnership(_admin);
-
         __Transformer_init_unchained(_burnAddress, _inputs, _genes, _modifications, _nftAddr);
     }
 
@@ -99,11 +97,8 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
         PluginsLib.GeneMod[] memory _modifications,
         address _nftAddr
     ) internal onlyInitializing {
-        // NOTE - deep copies arrays
-        // Inputs validations
         PluginsLib.validateInputs(_inputs, inputs, nUse);
 
-        // Output validations
         require(
             _genes.length == _modifications.length,
             'Transformer: length of genes must be the same as length of modifications'

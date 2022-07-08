@@ -52,10 +52,8 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         uint256 _mintFeeAmount,
         address _nftContractAddr
     ) internal onlyInitializing {
-        __MinterAutoId_init_unchained(_admin);
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-
-        __Ownable_init();
+        __MinterAutoId_init_unchained(_admin);
     }
 
     function __MinterAutoId_init_unchained(address _admin) internal onlyInitializing {

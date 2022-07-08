@@ -105,7 +105,6 @@ contract CrafterMint is
         require(_inputs.length > 0, 'CrafterMint: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterMint: A crafting output must be given!');
 
-        __Ownable_init();
         _transferOwnership(_admin);
         __CrafterMint_init_unchained(_burnAddress, _craftableAmount, _inputs, _outputs);
     }
