@@ -124,13 +124,11 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
 
             // approvals
-            await inputERC20.connect(signer1).approve(burnAddress, 999);
             await inputERC20.connect(signer1).approve(transformerInst.address, 999);
-            await inputERC20.connect(signer1).approve(burnAddress, 999);
         });
 
         it('transform()', async () => {
-            const tx = await transformerInst.transform(0, [[]]);
+            const tx = await transformerInst.connect(signer1).transform(0, [[]]);
             const receipt = await tx.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
@@ -139,6 +137,8 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             );
 
             expect(oldDna).to.equal(newDna);
+            const attributeNft = (await ethers.getContractAt('ERC721OwlAttributes', nftAddr)) as ERC721OwlAttributes;
+            expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
 
             expect(await inputERC20.balanceOf(burnAddress)).to.equal(10);
             expect(await inputERC20.balanceOf(signer1.address)).to.equal(BigNumber.from(parseUnits('1', 27).sub(10)));
@@ -188,12 +188,11 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
 
             // approvals
-            await inputERC20.connect(signer1).approve(burnAddress, 999);
             await inputERC20.connect(signer1).approve(transformerInst.address, 999);
         });
 
         it('transform()', async () => {
-            const tx = await transformerInst.transform(0, [[]]);
+            const tx = await transformerInst.connect(signer1).transform(0, [[]]);
             const receipt = await tx.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
@@ -211,8 +210,8 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
         });
 
         it('transform() twice, leading to overflow', async () => {
-            await transformerInst.transform(0, [[]]);
-            const tx2 = await transformerInst.transform(0, [[]]);
+            await transformerInst.connect(signer1).transform(0, [[]]);
+            const tx2 = await transformerInst.connect(signer1).transform(0, [[]]);
             const receipt = await tx2.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
@@ -271,14 +270,10 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             await ERC721Inst.grantDna(address);
 
             transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
-
-            // approvals
-            await inputERC20.connect(signer1).approve(burnAddress, 999);
-            await inputERC20.connect(signer1).approve(transformerInst.address, 999);
         });
 
         it('transform()', async () => {
-            const tx = await transformerInst.transform(0, [[]]);
+            const tx = await transformerInst.connect(signer1).transform(0, [[]]);
             const receipt = await tx.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
@@ -295,8 +290,8 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
         });
 
         it('transform() twice, leading to underflow', async () => {
-            await transformerInst.transform(0, [[]]);
-            const tx2 = await transformerInst.transform(0, [[]]);
+            await transformerInst.connect(signer1).transform(0, [[]]);
+            const tx2 = await transformerInst.connect(signer1).transform(0, [[]]);
             const receipt = await tx2.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
@@ -313,7 +308,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
         });
     });
 
-    describe('consumableType: unaffected; input: NFT; modification: mult', () => {
+    describe('consumableType: NTime; input: NFT; modification: mult', () => {
         let transformerInst: Transformer;
 
         beforeEach(async () => {
@@ -325,9 +320,9 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     [
                         {
                             token: 1,
-                            consumableType: ConsumableType.unaffected,
+                            consumableType: ConsumableType.NTime,
                             contractAddr: inputERC721.address,
-                            amounts: [],
+                            amounts: [2],
                             tokenIds: [],
                         },
                     ],
@@ -351,10 +346,13 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                 ERC1167Factory,
                 salt,
             );
+            await ERC721Inst.grantDna(address);
+
+            transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
         });
 
         it('transform()', async () => {
-            const tx = await transformerInst.transform(0, [[1, 2]]);
+            const tx = await transformerInst.connect(signer1).transform(0, [[1]]);
             const receipt = await tx.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
@@ -367,13 +365,13 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
 
             const attributeNft = (await ethers.getContractAt('ERC721OwlAttributes', nftAddr)) as ERC721OwlAttributes;
             expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
-            expect(await inputERC20.balanceOf(signer1.address)).to.equal(BigNumber.from(parseUnits('1', 27)));
+            expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
         });
 
-        it('transform() twice, leading to underflow', async () => {
-            await transformerInst.transform(0, [[]]);
-            const tx2 = await transformerInst.transform(0, [[]]);
-            const receipt = await tx2.wait();
+        it('transform() twice, leading to overflow', async () => {
+            await transformerInst.connect(signer1).transform(0, [[1]]);
+            const tx = await transformerInst.connect(signer1).transform(0, [[1]]);
+            const receipt = await tx.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
                 receipt.events?.find((e) => e.event === 'Transform')?.args,
@@ -381,11 +379,21 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             );
 
             expect(oldDna).to.equal(encodeGenesUint256([3, 2, 1], genes));
-            expect(newDna).to.equal(encodeGenesUint256([3, 3, 3], genes));
+            expect(newDna).to.equal(encodeGenesUint256([3, 3, 1], genes));
 
             const attributeNft = (await ethers.getContractAt('ERC721OwlAttributes', nftAddr)) as ERC721OwlAttributes;
             expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
-            expect(await inputERC20.balanceOf(signer1.address)).to.equal(BigNumber.from(parseUnits('1', 27)));
+            expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
+        });
+
+        it('transform() three times, leading to overflow + NTime exceeded', async () => {
+            await transformerInst.connect(signer1).transform(0, [[1]]);
+            await transformerInst.connect(signer1).transform(0, [[1]]);
+            await expect(transformerInst.connect(signer1).transform(0, [[1]])).to.be.revertedWith(
+                'Transformer: Used over the limit of n',
+            );
+
+            expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
         });
     });
 
@@ -400,25 +408,25 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     burnAddress,
                     [
                         {
-                            token: 0,
-                            consumableType: ConsumableType.unaffected,
+                            token: 2,
+                            consumableType: ConsumableType.burned,
                             contractAddr: inputERC1155.address,
-                            amounts: [],
-                            tokenIds: [1, 2, 3],
+                            amounts: [1, 5],
+                            tokenIds: [1, 2],
                         },
                     ],
                     [250, 252, 254],
                     [
                         {
-                            geneTransformType: GeneTransformType.mult, //add
+                            geneTransformType: GeneTransformType.set, //add
                             value: 3,
                         },
                         {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 2,
+                            geneTransformType: GeneTransformType.set,
+                            value: 3,
                         },
                         {
-                            geneTransformType: GeneTransformType.mult,
+                            geneTransformType: GeneTransformType.set,
                             value: 1,
                         },
                     ],
@@ -427,10 +435,15 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                 ERC1167Factory,
                 salt,
             );
-        });
 
+            await ERC721Inst.grantDna(address);
+            transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
+
+            // approvals
+            await inputERC1155.connect(signer1).setApprovalForAll(transformerInst.address, true);
+        });
         it('transform()', async () => {
-            const tx = await transformerInst.transform(0, [[]]);
+            const tx = await transformerInst.connect(signer1).transform(0, [[]]);
             const receipt = await tx.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
@@ -439,37 +452,100 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             );
 
             expect(oldDna).to.equal(encodeGenesUint256([1, 1, 1], genes));
-            expect(newDna).to.equal(encodeGenesUint256([3, 2, 1], genes));
+            expect(newDna).to.equal(encodeGenesUint256([3, 3, 1], genes));
 
             const attributeNft = (await ethers.getContractAt('ERC721OwlAttributes', nftAddr)) as ERC721OwlAttributes;
             expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
-            expect(await inputERC20.balanceOf(burnAddress)).to.equal(10);
-            expect(await inputERC20.balanceOf(signer1.address)).to.equal(BigNumber.from(parseUnits('1', 27).sub(10)));
+            expect(await inputERC1155.balanceOf(burnAddress, 1)).to.equal(1);
+            expect(await inputERC1155.balanceOf(burnAddress, 2)).to.equal(5);
+        });
+    });
+
+    describe('consumableType: NTime; modification: add, mult, set', () => {
+        let transformerInst: Transformer;
+        beforeEach(async () => {
+            const { address } = await deployClone(
+                transformerImpl,
+                [
+                    adminAddress,
+                    burnAddress,
+                    [
+                        {
+                            token: 1,
+                            consumableType: ConsumableType.NTime,
+                            contractAddr: inputERC721.address,
+                            amounts: [2],
+                            tokenIds: [],
+                        },
+                    ],
+                    [250, 252, 254],
+                    [
+                        {
+                            geneTransformType: GeneTransformType.add, //add
+                            value: 1,
+                        },
+                        {
+                            geneTransformType: GeneTransformType.mult,
+                            value: 0,
+                        },
+                        {
+                            geneTransformType: GeneTransformType.set,
+                            value: 1,
+                        },
+                    ],
+                    ERC721Inst.address,
+                ],
+                ERC1167Factory,
+                salt,
+            );
+
+            await ERC721Inst.grantDna(address);
+            transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
+
+            // approvals
+            await inputERC20.connect(signer1).approve(transformerInst.address, 100);
+            await inputERC721.connect(signer1).approve(transformerInst.address, 1);
+            await inputERC1155.connect(signer1).setApprovalForAll(transformerInst.address, true);
         });
 
-        it('transform() twice, leading to underflow', async () => {
-            await transformerInst.transform(0, [[]]);
-            const tx2 = await transformerInst.transform(0, [[]]);
-            const receipt = await tx2.wait();
+        it('transform()', async () => {
+            const tx = await transformerInst.connect(signer1).transform(0, [[1]]);
+            const receipt = await tx.wait();
 
             const { nftAddr, tokenId, oldDna, newDna } = pick(
                 receipt.events?.find((e) => e.event === 'Transform')?.args,
                 ['nftAddr', 'tokenId', 'oldDna', 'newDna'],
             );
 
-            expect(oldDna).to.equal(encodeGenesUint256([3, 2, 1], genes));
-            expect(newDna).to.equal(encodeGenesUint256([3, 3, 3], genes));
+            expect(oldDna).to.equal(encodeGenesUint256([1, 1, 1], genes));
+            expect(newDna).to.equal(encodeGenesUint256([2, 0, 1], genes));
 
             const attributeNft = (await ethers.getContractAt('ERC721OwlAttributes', nftAddr)) as ERC721OwlAttributes;
             expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
-            expect(await inputERC20.balanceOf(burnAddress)).to.equal(20);
-            expect(await inputERC20.balanceOf(signer1.address)).to.equal(BigNumber.from(parseUnits('1', 27).sub(20)));
+            expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
         });
-    });
 
-    describe('consumableType: NTime; modification: [add, mult, set]', () => {
-        beforeEach(async () => {});
+        it('transform() two times, leading to overflow + NTime exceeded', async () => {
+            await transformerInst.connect(signer1).transform(0, [[1]]);
+            const tx = await transformerInst.connect(signer1).transform(0, [[1]]);
+            const receipt = await tx.wait();
 
-        it('', async () => {});
+            const { nftAddr, tokenId, oldDna, newDna } = pick(
+                receipt.events?.find((e) => e.event === 'Transform')?.args,
+                ['nftAddr', 'tokenId', 'oldDna', 'newDna'],
+            );
+
+            expect(oldDna).to.equal(encodeGenesUint256([2, 0, 1], genes));
+            expect(newDna).to.equal(encodeGenesUint256([3, 0, 1], genes));
+
+            const attributeNft = (await ethers.getContractAt('ERC721OwlAttributes', nftAddr)) as ERC721OwlAttributes;
+            expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
+
+            await expect(transformerInst.connect(signer1).transform(0, [[1]])).to.be.revertedWith(
+                'Transformer: Used over the limit of n',
+            );
+
+            expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
+        });
     });
 });
