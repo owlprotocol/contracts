@@ -20,7 +20,7 @@ import { BigNumber } from 'ethers';
 enum ConsumableType {
     unaffected,
     burned,
-    locked,
+    NTime,
 }
 
 enum TokenType {
@@ -29,7 +29,7 @@ enum TokenType {
     erc1155,
 }
 
-describe('Crafter.sol', function () {
+describe('CrafterTransfer.sol burn', function () {
     // Extra time
     this.timeout(10000);
 

@@ -2,30 +2,24 @@
 pragma solidity ^0.8.0;
 
 import '../assets/ERC721/ERC721OwlAttributes.sol';
-import 'hardhat/console.sol';
 
 /**
  * @dev Basic crafting structures used through NFTCrafting contracts.
  *
  */
 library PluginsLib {
-    // Recipe Components
-
-    uint256 private constant ZERO = uint256(keccak256(abi.encode(0)));  // null pointer that is not zero
-
     /**
      * @dev Allows for specification of what happens to input ingredients after craft is complete
-     * @param unaffected inputs of this type are unaffected by the crafting process
+     * @param unaffected inputs of this type are unaffected by the crafting process. DOES NOT APPLY TO ERC 721 INPUTS, USE NTime INSTEAD.
      * @param burned inputs of this type are burned during the crafting process
-     * @param locked inputs of this type are locked into the contract during the crafting process
      * @param NTime inputs of this type are not burned, but can only be used N times in the same recipe
      */
     enum ConsumableType {
         unaffected,
         burned,
-        locked,
         NTime
     }
+
     /**
      * @custom:enum Allows for specification of what happens to input ingredients after craft is complete
      */
@@ -114,26 +108,46 @@ library PluginsLib {
      * @param inputs storage array of inputs, copied from _inputs
      * @param nUse mapping used to compute N-time validations
      */
-    function validateInputs(Ingredient[] memory _inputs, Ingredient[] storage inputs, mapping(uint256 => uint256) storage nUse) internal {
+    function validateInputs(
+        Ingredient[] memory _inputs,
+        Ingredient[] storage inputs,
+        mapping(uint256 => uint256) storage nUse
+    ) internal {
         for (uint256 i = 0; i < _inputs.length; i++) {
             if (_inputs[i].token == PluginsLib.TokenType.erc20) {
-                require(_inputs[i].tokenIds.length == 0, 'Transformer: tokenids.length != 0');
-                require(_inputs[i].amounts.length == 1, 'Transformer: amounts.length != 1');
+                require(_inputs[i].tokenIds.length == 0, 'PluginsLib: tokenids.length != 0');
+                require(_inputs[i].amounts.length == 1, 'PluginsLib: amounts.length != 1');
+                require(
+                    _inputs[i].consumableType == ConsumableType.unaffected ||
+                        _inputs[i].consumableType == ConsumableType.burned,
+                    'PluginsLib: ERC20 consumableType not unaffected or burned'
+                );
             } else if (_inputs[i].token == PluginsLib.TokenType.erc721) {
                 //accept all token ids as inputs
-                require(_inputs[i].tokenIds.length == 0, 'Transformer: tokenIds.length != 0');
+                require(_inputs[i].tokenIds.length == 0, 'PluginsLib: tokenIds.length != 0');
+                require(
+                    _inputs[i].consumableType == ConsumableType.burned ||
+                        _inputs[i].consumableType == ConsumableType.NTime,
+                    'PluginsLib: ERC721 consumableType not burned or NTime'
+                );
 
                 if (_inputs[i].consumableType == PluginsLib.ConsumableType.NTime) {
                     require(
                         _inputs[i].amounts.length == 1,
-                        'Transformer: amounts.length != 1; required for NTime ConsumableType'
+                        'PluginsLib: amounts.length != 1; required for NTime ConsumableType'
                     );
+
                     nUse[i] = _inputs[i].amounts[0];
-                } else require(_inputs[i].amounts.length == 0, 'Transformer: amounts.length != 1 or 0');
+                } else require(_inputs[i].amounts.length == 0, 'PluginsLib: amounts.length != 1 or 0');
             } else if (_inputs[i].token == PluginsLib.TokenType.erc1155) {
                 require(
                     _inputs[i].tokenIds.length == _inputs[i].amounts.length,
-                    'Transformer: tokenids.length != amounts.length'
+                    'PluginsLib: tokenids.length != amounts.length'
+                );
+                require(
+                    _inputs[i].consumableType == ConsumableType.unaffected ||
+                        _inputs[i].consumableType == ConsumableType.burned,
+                    'PluginsLib: ERC1155 consumableType not unaffected or burned'
                 );
             }
             inputs.push(_inputs[i]);
@@ -141,9 +155,7 @@ library PluginsLib {
     }
 
     function arrayContains(uint256[] memory _input, uint256 num) internal returns (bool) {
-        for (uint256 j = 0; j < _input.length; j++) 
-            if (_input[j] == num) return true;
-        return false; 
+        for (uint256 j = 0; j < _input.length; j++) if (_input[j] == num) return true;
+        return false;
     }
 }
-

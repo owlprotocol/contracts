@@ -29,7 +29,7 @@ enum TokenType {
     erc1155,
 }
 
-describe('Crafter.sol', function () {
+describe('CrafterTransfer.sol', function () {
     // Extra time
     this.timeout(10000);
 
@@ -506,10 +506,7 @@ describe('Crafter.sol', function () {
             //Check balances
             //Clone deterministic
             await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
-            crafter = await (ethers.getContractAt(
-                'CrafterTransfer',
-                CrafterTransferAddress,
-            ) as Promise<CrafterTransfer>);
+            crafter = (await ethers.getContractAt('CrafterTransfer', CrafterTransferAddress)) as CrafterTransfer;
             //Assert transferred
             expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
             expect(await outputERC721.ownerOf(1)).to.equal(crafter.address);
@@ -525,7 +522,7 @@ describe('Crafter.sol', function () {
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: 1,
-                consumableType: 3,
+                consumableType: 2,
                 contractAddr: inputERC721.address,
                 amounts: [BigNumber.from(5)],
                 tokenIds: [],
