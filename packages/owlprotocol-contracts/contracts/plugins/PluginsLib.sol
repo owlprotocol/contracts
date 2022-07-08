@@ -23,7 +23,6 @@ library PluginsLib {
     enum ConsumableType {
         unaffected,
         burned,
-        locked,
         NTime
     }
     /**
