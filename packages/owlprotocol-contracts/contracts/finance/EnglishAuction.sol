@@ -127,9 +127,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _saleFee,
         address payable _saleFeeAddress
     ) internal onlyInitializing {
-        __Ownable_init();
         _transferOwnership(_seller);
-
         __EnglishAuction_init_unchained(
             _seller,
             _asset,

@@ -41,9 +41,8 @@ contract ERC721OwlExpiring is ERC721Owl {
         string memory _symbol,
         string memory baseURI_
     ) internal onlyInitializing {
-        __ERC721OwlExpiring_init_unchained(_admin);
-
         __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlExpiring_init_unchained(_admin);
     }
 
     function __ERC721OwlExpiring_init_unchained(address _admin) internal onlyInitializing {

@@ -39,10 +39,10 @@ contract ERC1155Owl is ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessCon
         string memory uri_,
         string calldata newContractURI
     ) internal onlyInitializing {
-        __ERC1155Owl_init_unchained(_admin, newContractURI);
         __ERC1155_init(uri_);
         __ERC1155Burnable_init();
         __AccessControl_init();
+        __ERC1155Owl_init_unchained(_admin, newContractURI);
     }
 
     function __ERC1155Owl_init_unchained(address _admin, string calldata newContractURI) internal onlyInitializing {

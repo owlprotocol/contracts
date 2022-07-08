@@ -16,14 +16,14 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './AuctionLib.sol';
 
 /*
-* @dev This contract executes a simple fixed price, sell-buy auction.
-* The owner can set the price of the asset which will remain fixed throughout
-* the auction. If a buyer buys within the auction duration timeframe, then the asset
-* is transferred to the buyer and the price in ERC20 tokens is transferred from
-* the buyer to the seller. If no buyer buys within the auction duration, then the
-* owner must claim the asset back from the contract and no one is eligible to buy the asset
-* after the auction duration has passed.
-*/
+ * @dev This contract executes a simple fixed price, sell-buy auction.
+ * The owner can set the price of the asset which will remain fixed throughout
+ * the auction. If a buyer buys within the auction duration timeframe, then the asset
+ * is transferred to the buyer and the price in ERC20 tokens is transferred from
+ * the buyer to the seller. If no buyer buys within the auction duration, then the
+ * owner must claim the asset back from the contract and no one is eligible to buy the asset
+ * after the auction duration has passed.
+ */
 contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
@@ -118,7 +118,6 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
         uint256 _saleFee,
         address payable _saleFeeAddress
     ) internal onlyInitializing {
-        __Ownable_init();
         _transferOwnership(_seller);
         __FixedPriceAuction_init_unchained(
             _seller,
@@ -174,8 +173,8 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
     **********************/
 
     /**
-    * @dev function that allows a buyer to buy the asset at the fixed price
-    */
+     * @dev function that allows a buyer to buy the asset at the fixed price
+     */
     function buy() external {
         //operations done in "wei"
         require(block.timestamp < startTime + auctionDuration, 'FixedPriceAuction: ended');
@@ -213,9 +212,9 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
     }
 
     /**
-    * @notice must be the owner to call this function
-    * @dev allows the owner to reclaim their asset if no one buys
-    */
+     * @notice must be the owner to call this function
+     * @dev allows the owner to reclaim their asset if no one buys
+     */
     function claim() external onlyOwner {
         //owner withdraws asset if nobody buys
         require(
