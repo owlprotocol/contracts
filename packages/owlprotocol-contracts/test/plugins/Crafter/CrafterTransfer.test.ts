@@ -21,7 +21,6 @@ import { deploy } from '@openzeppelin/hardhat-upgrades/dist/utils';
 enum ConsumableType {
     unaffected,
     burned,
-    locked,
     NTime,
 }
 
@@ -31,7 +30,7 @@ enum TokenType {
     erc1155,
 }
 
-describe('Crafter.sol', function () {
+describe('CrafterTransfer.sol', function () {
     // Extra time
     this.timeout(10000);
 
@@ -281,7 +280,7 @@ describe('Crafter.sol', function () {
                     [
                         {
                             token: TokenType.erc721,
-                            consumableType: ConsumableType.unaffected,
+                            consumableType: ConsumableType.unaffected, //consumable type of output is unused
                             contractAddr: outputERC721.address,
                             amounts: [],
                             tokenIds: [1],
@@ -453,7 +452,7 @@ describe('Crafter.sol', function () {
         });
     });
 
-    describe('2 same ERC721 -> 1 ERC721', async () => {
+    describe('ERC721 -> 1 ERC721', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
         let inputERC721: ERC721;
@@ -507,7 +506,7 @@ describe('Crafter.sol', function () {
 
             // Set Approval ERC721 Output
             await outputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-
+            
             // Deploy Crafter craftableAmount=1
             await deployClone(
                 CrafterTransferImplementation,
@@ -558,15 +557,15 @@ describe('Crafter.sol', function () {
 
             const inputs = await crafter.getInputs();
             const outputs = await crafter.getOutputs();
-            expect(inputs.length).to.equal(2);
+            expect(inputs.length).to.equal(1);
             expect(outputs.length).to.equal(1);
             const input0 = await crafter.getInputIngredient(0);
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: 1,
-                consumableType: 0,
+                consumableType: 2,
                 contractAddr: inputERC721.address,
-                amounts: [],
+                amounts: [BigNumber.from(5)],
                 tokenIds: [],
             });
             expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
@@ -593,9 +592,9 @@ describe('Crafter.sol', function () {
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: TokenType.erc721,
-                consumableType: ConsumableType.unaffected,
+                consumableType: ConsumableType.NTime,
                 contractAddr: inputERC721.address,
-                amounts: [],
+                amounts: [BigNumber.from(5)],
                 tokenIds: [],
             });
             //Empty because crafting pops token id
@@ -621,9 +620,9 @@ describe('Crafter.sol', function () {
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: TokenType.erc721,
-                consumableType: ConsumableType.unaffected,
+                consumableType: ConsumableType.NTime,
                 contractAddr: inputERC721.address,
-                amounts: [],
+                amounts: [BigNumber.from(5)],
                 tokenIds: [],
             });
             //Empty because withdraw pops token id
@@ -649,9 +648,9 @@ describe('Crafter.sol', function () {
             const output0 = await crafter.getOutputIngredient(0);
             expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
                 token: TokenType.erc721,
-                consumableType: ConsumableType.unaffected,
+                consumableType: ConsumableType.NTime,
                 contractAddr: inputERC721.address,
-                amounts: [],
+                amounts: [BigNumber.from(5)],
                 tokenIds: [],
             });
             //Additional token id pushed by deposit

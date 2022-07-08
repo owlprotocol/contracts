@@ -55,7 +55,6 @@ describe('ERC721Expiring.sol', () => {
 
             await network.provider.send('evm_increaseTime', [0]);
             await network.provider.send('evm_mine');
-            // console.log((await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp);
         });
 
         it('before expire', async () => {

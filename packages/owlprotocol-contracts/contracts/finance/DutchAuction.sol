@@ -137,7 +137,6 @@ contract DutchAuction is
         uint256 _saleFee,
         address payable _saleFeeAddress
     ) internal onlyInitializing {
-        __Ownable_init();
         _transferOwnership(_seller);
         __DutchAuction_init_unchained(
             _seller,

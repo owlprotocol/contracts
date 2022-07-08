@@ -43,10 +43,10 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         string memory _symbol,
         string memory baseURI_
     ) internal onlyInitializing {
-        __ERC721Owl_init_unchained(_admin, baseURI_);
         __ERC721_init(_name, _symbol);
         __ERC721Burnable_init();
         __AccessControl_init();
+        __ERC721Owl_init_unchained(_admin, baseURI_);
     }
 
     function __ERC721Owl_init_unchained(address _admin, string memory baseURI_) internal onlyInitializing {
