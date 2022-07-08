@@ -1,255 +1,283 @@
-// import { expect, assert } from 'chai';
-// import { ethers } from 'hardhat';
-// import { encodeGenesUint256, decodeGenesUint256 } from '../../../../src/nft-launcher-lib/Species';
-// import sleep from '../../../../src/utils/sleep';
-// import { BigNumber as BN } from 'ethers';
-// import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-// import {
-//     FactoryERC20__factory,
-//     FactoryERC721__factory,
-//     MinterBreeding,
-//     MinterBreeding__factory,
-//     MinterSimple__factory,
-// } from '../../../../typechain';
-// const toBN = BN.from;
+import { expect, assert } from 'chai';
+import { ethers } from 'hardhat';
+import { encodeGenesUint256, decodeGenesUint256, sleep, deployClone } from '../../utils';
+import { BigNumber as BN } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import {
+    FactoryERC20__factory,
+    MinterBreeding,
+    MinterBreeding__factory,
+    ERC721OwlAttributes,
+    ERC721OwlAttributes__factory,
+} from '../../../typechain';
+const toBN = BN.from;
 
-// describe('MinterBreeding.sol', function () {
-//     let accounts: SignerWithAddress[];
-//     let developer: SignerWithAddress;
-//     let user: SignerWithAddress;
+describe.only('MinterBreeding.sol', function () {
+    let MinterBreederFactory: MinterBreeding__factory;
+    let ERC721OwlAttributesFactory: ERC721OwlAttributes__factory;
+    let FactoryERC20: FactoryERC20__factory;
 
-//     let FactoryERC20: FactoryERC20__factory;
-//     let FactoryERC721: FactoryERC721__factory;
-//     let MinterSimpleFactory: MinterSimple__factory;
-//     let MinterBreedingFactory: MinterBreeding__factory;
+    let ERC721OwlAttributesImplementation: ERC721OwlAttributes;
+    let BreederImplementation: MinterBreeding;
 
-//     // Including lots of genes makes it unlikley that we'll be unlucky and
-//     // breed a new specimen exactly the same as an existing
-//     const speciesId = 1;
-//     const genes = [0, 8, 36, 40, 44, 48, 52, 56, 60];
-//     const baseParentGenes = [1, 100, 5, 0, 0, 0, 0, 0, 0];
-//     const parentGenes: number[][] = [];
-//     const encodedParents: BN[] = [];
-//     const numParents = 5;
-//     const defaultGenerationMultiplier = 0;
+    let nftAddress: string;
+    let mintFeeToken: string;
+    let mintFeeAddress: string;
+    let mintFeeAmount: number;
 
-//     before(async () => {
-//         MinterSimpleFactory = await ethers.getContractFactory('MinterSimple');
-//         MinterBreedingFactory = await ethers.getContractFactory('MinterBreeding');
-//         FactoryERC20 = await ethers.getContractFactory('FactoryERC20');
-//         FactoryERC721 = await ethers.getContractFactory('FactoryERC721');
+    let owner: SignerWithAddress;
+    let user: SignerWithAddress;
+    let burnAddress: SignerWithAddress;
 
-//         accounts = await ethers.getSigners();
-//         developer = accounts[0];
-//         user = accounts[1];
+    // Including lots of genes makes it unlikley that we'll be unlucky and
+    // breed a new specimen exactly the same as an existing
+    const genes = [0, 8, 36, 40, 44, 48, 52, 56, 60];
+    const baseParentGenes = [1, 100, 5, 0, 0, 0, 0, 0, 0];
+    const parentGenes: number[][] = [];
+    const encodedParents: BN[] = [];
+    const parentIds: number[] = [];
+    const numParents = 5;
+    const defaultGenerationMultiplier = 0;
 
-//         // Generate parents w incrementing values from baseParentGenes
-//         for (let i = 0; i < numParents; i++) parentGenes.push(baseParentGenes.map((v) => v + i));
+    before(async () => {
+        // Deploy contracts
+        MinterBreederFactory = (await ethers.getContractFactory('MinterBreeding')) as MinterBreeding__factory;
+        ERC721OwlAttributesFactory = (await ethers.getContractFactory(
+            'ERC721OwlAttributes',
+        )) as ERC721OwlAttributes__factory;
+        FactoryERC20 = (await ethers.getContractFactory('FactoryERC20')) as FactoryERC20__factory;
 
-//         // Create encodings
-//         for (const parent of parentGenes) encodedParents.push(encodeGenesUint256(parent, genes));
-//     });
+        [owner, user, burnAddress] = await ethers.getSigners();
 
-//     describe('MinterBreeding.breed(...)', async () => {
-//         it('Breed Specimen', async () => {
-//             const minterBreeding = await setupBreederContract();
+        BreederImplementation = await MinterBreederFactory.deploy();
+        ERC721OwlAttributesImplementation = await ERC721OwlAttributesFactory.deploy();
 
-//             // Breed our first specimen
-//             await expect(minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]])).to.emit(
-//                 minterBreeding,
-//                 'MintSpecies',
-//             );
+        await Promise.all([BreederImplementation.deployed(), ERC721OwlAttributesImplementation.deployed()]);
 
-//             // Make sure we called our simple breed function (no mutation)
-//             const newSpecimen = await getLastBredSpeciesId(minterBreeding);
-//             const newSpecimenDNA = decodeGenesUint256(newSpecimen, genes);
+        // Generate parents w incrementing values from baseParentGenes
+        for (let i = 0; i < numParents; i++) parentGenes.push(baseParentGenes.map((v) => v + i));
 
-//             // Assert our first gene is from one of our parents (mutation function not called)
-//             // Note mutation testing is done in `RosalindDNA.test.ts`
-//             // For every value, make sure it's coming from a parent
-//             for (let geneIdx = 0; geneIdx < parentGenes[0].length; geneIdx++)
-//                 assert(
-//                     newSpecimenDNA[geneIdx].eq(parentGenes[0][geneIdx]) ||
-//                     newSpecimenDNA[geneIdx].eq(parentGenes[1][geneIdx]),
-//                     `Unexpected gene created at geneIdx: ${geneIdx}`,
-//                 );
-//         });
+        // Create encodings
+        for (const parent of parentGenes) encodedParents.push(encodeGenesUint256(parent, genes));
 
-//         it('Fail on single parent', async () => {
-//             const minterBreeding = await setupBreederContract();
+        // Range loop ids (5 parents) [1,2,3,4,5]
+        for (let i = 0; i < numParents; i++) parentIds.push(i);
+    });
 
-//             await expect(minterBreeding.breed(speciesId, [encodedParents[0]])).to.be.revertedWith(
-//                 'Invalid number of parents!',
-//             );
-//         });
+    describe('MinterBreeding.breed(...)', async () => {
+        it.only('Breed Specimen', async () => {
+            const minterBreeding = await setupBreederContract();
 
-//         it('Test Cooldown', async () => {
-//             const minterBreeding = await setupBreederContract();
+            // Breed our first specimen
+            await minterBreeding.breed([parentIds[0], parentIds[1]]);
 
-//             // Breed our first specimen
-//             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]]);
-//             // Second should fail (parents on cooldown)
-//             await expect(minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]])).to.be.revertedWith(
-//                 'NFT currently on cooldown!',
-//             );
-//         });
+            // Make sure we called our simple breed function (no mutation)
+            const { dna } = await getLastBred(minterBreeding);
+            const newSpecimenDNA = decodeGenesUint256(dna, genes);
 
-//         it('Does not own parent NFT', async () => {
-//             const minterBreeding = await setupBreederContract();
+            // Assert our first gene is from one of our parents (mutation function not called)
+            // Note mutation testing is done in `RosalindDNA.test.ts`
+            // For every value, make sure it's coming from a parent
+            for (let geneIdx = 0; geneIdx < parentGenes[0].length; geneIdx++)
+                assert(
+                    newSpecimenDNA[geneIdx].eq(parentGenes[0][geneIdx]) ||
+                    newSpecimenDNA[geneIdx].eq(parentGenes[1][geneIdx]),
+                    `Unexpected gene created at geneIdx: ${geneIdx}`,
+                );
+        });
 
-//             await expect(
-//                 minterBreeding.connect(user).breed(speciesId, [encodedParents[2], encodedParents[3]]),
-//             ).to.be.revertedWith('You must own all parents!');
-//         });
+        it.only('Fail on single parent', async () => {
+            const minterBreeding = await setupBreederContract();
 
-//         it('Set Required Parents', async () => {
-//             const minterBreeding = await setupBreederContract();
-//             await minterBreeding.setBreedingRules(speciesId, 3, defaultGenerationMultiplier, 0, genes, []);
-//             // Breed w/ 3 parents
-//             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1], encodedParents[2]]);
-//         });
+            await expect(minterBreeding.breed([parentIds[0]])).to.be.revertedWith('Invalid number of parents!');
+        });
 
-//         it('Set breeding cooldown', async () => {
-//             const minterBreeding = await setupBreederContract();
-//             const cooldownSeconds = 1;
-//             await minterBreeding.setBreedingRules(
-//                 speciesId,
-//                 0,
-//                 defaultGenerationMultiplier,
-//                 cooldownSeconds,
-//                 genes,
-//                 [],
-//             );
+        it.only('Test Cooldown', async () => {
+            const minterBreeding = await setupBreederContract();
 
-//             // Breed our second specimen w/ cooldown
-//             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]]);
-//             // Allow cooldown to wear off
-//             await sleep(2000);
-//             // Cooldown now off
-//             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]]);
-//         });
+            // Breed our first specimen
+            await minterBreeding.breed([parentIds[0], parentIds[1]]);
+            // Second should fail (parents on cooldown)
+            await expect(minterBreeding.breed([parentIds[0], parentIds[1]])).to.be.revertedWith(
+                'NFT currently on cooldown!',
+            );
+        });
 
-//         it('Breed with Mutations', async () => {
-//             const minterBreeding = await setupBreederContract();
-//             // Set mutation rules
-//             const mutationRates = [];
-//             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//             for (const _ of genes) mutationRates.push(toBN(2).pow(toBN(256)).sub(1)); //every gene has 100% chance to mutate
-//             // Set mutations
-//             await minterBreeding.setBreedingRules(speciesId, 0, defaultGenerationMultiplier, 0, genes, mutationRates);
+        it.only('Does not own parent NFT', async () => {
+            const minterBreeding = await setupBreederContract();
 
-//             // Breed
-//             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]]);
+            await expect(minterBreeding.connect(user).breed([parentIds[2], encodedParents[3]])).to.be.revertedWith(
+                'You must own all parents!',
+            );
+        });
 
-//             // Make sure we called our mutation function
-//             const newSpecimen = await getLastBredSpeciesId(minterBreeding);
-//             const newSpecimenDNA = decodeGenesUint256(newSpecimen, genes);
-//             // Assert our first gene is a mutation (mutation function called)
-//             // Note mutation testing is done in `RosalindDNA.test.ts`
-//             assert.isFalse(
-//                 newSpecimenDNA[0].eq(parentGenes[0][0]) ||
-//                 newSpecimenDNA[0].eq(parentGenes[1][0]) ||
-//                 newSpecimenDNA[0].eq(parentGenes[2][0]),
-//             );
-//         });
+        it.only('Set Required Parents', async () => {
+            const minterBreeding = await setupBreederContract();
+            await minterBreeding.setBreedingRules(3, defaultGenerationMultiplier, 0, genes, []);
+            // Breed w/ 3 parents
+            await minterBreeding.breed([parentIds[0], parentIds[1], parentIds[2]]);
+        });
 
-//         it('Enable generation counter', async () => {
-//             const minterBreeding = await setupBreederContract();
+        it.only('Set breeding cooldown', async () => {
+            const minterBreeding = await setupBreederContract();
+            const cooldownSeconds = 1;
+            await minterBreeding.setBreedingRules(0, defaultGenerationMultiplier, cooldownSeconds, genes, []);
 
-//             // Enable generation counting
-//             await minterBreeding.setBreedingRules(
-//                 speciesId, // speciesId
-//                 0, // requiredParents (default to 0)
-//                 1, // enable 1x multiplier
-//                 0, // breedCooldownSeconds (defaults to 7 days)
-//                 genes, // gene encoding placements
-//                 [], // mutation rates (defaults to none)
-//             );
+            // Breed our second specimen w/ cooldown
+            await minterBreeding.breed([parentIds[0], parentIds[1]]);
+            // Allow cooldown to wear off
+            await sleep(2000);
+            // Cooldown now off
+            await minterBreeding.breed([parentIds[0], parentIds[1]]);
+        });
 
-//             // Breed our first specimen
-//             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[4]]);
+        it.only('Breed with Mutations', async () => {
+            const minterBreeding = await setupBreederContract();
+            // Set mutation rules
+            const mutationRates = [];
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            for (const _ of genes) mutationRates.push(toBN(2).pow(toBN(256)).sub(1)); //every gene has 100% chance to mutate
+            // Set mutations
+            await minterBreeding.setBreedingRules(0, defaultGenerationMultiplier, 0, genes, mutationRates);
 
-//             // Make sure we called our simple breed function (no mutation)
-//             const newSpecimen = await getLastBredSpeciesId(minterBreeding);
-//             const newSpecimenDNA = decodeGenesUint256(newSpecimen, genes);
-//             expect(newSpecimenDNA[0]).to.equal(6);
-//         });
+            // Breed
+            await minterBreeding.breed([parentIds[0], parentIds[1]]);
 
-//         it.only('Enable generational cooldowns', async () => {
-//             const minterBreeding = await setupBreederContract();
+            // Make sure we called our mutation function
+            const { dna } = await getLastBred(minterBreeding);
+            const newSpecimenDNA = decodeGenesUint256(dna, genes);
+            // Assert our first gene is a mutation (mutation function called)
+            // Note mutation testing is done in `RosalindDNA.test.ts`
+            const geneSlot = 1;
+            assert.isFalse(
+                newSpecimenDNA[0].eq(parentGenes[0][geneSlot]) ||
+                newSpecimenDNA[0].eq(parentGenes[1][geneSlot]) ||
+                newSpecimenDNA[0].eq(parentGenes[2][geneSlot]),
+            );
+        });
 
-//             // Enable generation counting
-//             await minterBreeding.setBreedingRules(
-//                 speciesId, // speciesId
-//                 0, // requiredParents (default to 0)
-//                 1, // enable 1x multiplier
-//                 1, // breedCooldownSeconds (defaults to 7 days)
-//                 genes, // gene encoding placements
-//                 [], // mutation rates (defaults to none)
-//             );
+        it.only('Enable generation counter', async () => {
+            const minterBreeding = await setupBreederContract();
 
-//             // Breed our first specimen
-//             await minterBreeding.breed(speciesId, [encodedParents[0], encodedParents[1]]);
+            // Enable generation counting
+            await minterBreeding.setBreedingRules(
+                0, // requiredParents (default to 0)
+                1, // enable 1x multiplier
+                0, // breedCooldownSeconds (defaults to 7 days)
+                genes, // gene encoding placements
+                [], // mutation rates (defaults to none)
+            );
 
-//             // Sleep off first cooldown
-//             await sleep(2500);
+            // Breed our first specimen
+            await minterBreeding.breed([parentIds[0], parentIds[4]]);
 
-//             // Grab specimen data, breed w/ first parent
-//             const newSpecimen = await getLastBredSpeciesId(minterBreeding);
-//             await minterBreeding.breed(speciesId, [encodedParents[0], newSpecimen]);
+            // Make sure we called our simple breed function (no mutation)
+            const { dna } = await getLastBred(minterBreeding);
 
-//             // Same cooldown length
-//             await sleep(2500);
+            const newSpecimenDNA = decodeGenesUint256(dna, genes);
+            expect(newSpecimenDNA[0]).to.equal(6);
+        });
 
-//             // newSpecimen now on cooldown
-//             await expect(minterBreeding.breed(speciesId, [encodedParents[0], newSpecimen])).to.be.revertedWith(
-//                 'NFT currently on cooldown!',
-//             );
-//         });
-//     });
+        it.only('Enable generational cooldowns', async () => {
+            const minterBreeding = await setupBreederContract();
 
-//     async function setupBreederContract() {
-//         // Deploy contracts
-//         const minterSimple = await MinterSimpleFactory.deploy();
-//         const minterBreeding = await MinterBreedingFactory.deploy();
-//         const nft = await FactoryERC721.deploy('NFT', 'NFT');
-//         const erc20 = await FactoryERC20.deploy('0', 'ERC20', 'ERC20');
-//         await Promise.all([minterSimple.deployed(), minterBreeding.deployed(), nft.deployed(), erc20.deployed()]);
+            // Enable generation counting
+            await minterBreeding.setBreedingRules(
+                0, // requiredParents (default to 0)
+                1, // enable 1x multiplier
+                1, // breedCooldownSeconds (defaults to 7 days)
+                genes, // gene encoding placements
+                [], // mutation rates (defaults to none)
+            );
 
-//         const speciesAddress = nft.address;
-//         const mintFeeToken = erc20.address;
-//         const mintFeeAddress = developer.address;
-//         const mintFeeAmount = 10;
+            // Breed our first specimen
+            await minterBreeding.breed([parentIds[0], parentIds[1]]);
 
-//         // Create species
-//         await minterSimple.createSpecies(speciesAddress, mintFeeToken, mintFeeAddress, mintFeeAmount);
-//         await minterBreeding.createSpecies(speciesAddress, mintFeeToken, mintFeeAddress, mintFeeAmount);
+            // Sleep off first cooldown
+            await sleep(2500);
 
-//         // Authorize transfer(s)
-//         await erc20.increaseAllowance(minterSimple.address, 10000);
-//         await erc20.increaseAllowance(minterBreeding.address, 10000);
+            // Grab specimen data, breed w/ first parent
+            const { tokenId } = await getLastBred(minterBreeding);
+            await minterBreeding.breed([parentIds[0], tokenId]);
 
-//         // Generate encoded parents
-//         for (const parent of encodedParents) await minterSimple.safeMint(speciesId, parent);
+            // Same cooldown length
+            await sleep(2500);
 
-//         // Set our gene pattern
-//         await minterBreeding.setBreedingRules(
-//             speciesId, // speciesId
-//             0, // requiredParents (default to 0)
-//             defaultGenerationMultiplier,
-//             0, // breedCooldownSeconds (defaults to 7 days)
-//             genes, // gene encoding placements
-//             [], // mutation rates (defaults to none)
-//         );
+            // newSpecimen now on cooldown
+            await expect(minterBreeding.breed([parentIds[0], tokenId])).to.be.revertedWith(
+                'NFT currently on cooldown!',
+            );
+        });
+    });
 
-//         return minterBreeding;
-//     }
+    async function setupBreederContract() {
+        // Deploy contracts
+        let address;
+        ({ address } = await deployClone(ERC721OwlAttributesImplementation, [owner.address, 'owltest', 'owl', 'abcd']));
+        const nft = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
 
-//     async function getLastBredSpeciesId(minterBreeding: MinterBreeding) {
-//         // @ts-ignore
-//         const filter = minterBreeding.filters.MintSpecies();
-//         // @ts-ignore
-//         const newSpecimen = (await minterBreeding.queryFilter(filter))[0].args.tokenId;
-//         return newSpecimen;
-//     }
-// });
+        const erc20 = await FactoryERC20.deploy('0', 'ERC20', 'ERC20');
+        await erc20.deployed();
+
+        nftAddress = nft.address;
+        mintFeeToken = erc20.address;
+        mintFeeAddress = burnAddress.address;
+        mintFeeAmount = 10;
+
+        ({ address } = await deployClone(BreederImplementation, [
+            owner.address,
+            // @ts-ignore
+            mintFeeToken,
+            // @ts-ignore
+            mintFeeAddress,
+            // @ts-ignore
+            mintFeeAmount,
+            nftAddress,
+            {
+                requiredParents: 0, // requiredParents (default to 2)
+                generationCooldownMultiplier: defaultGenerationMultiplier,
+                breedCooldownSeconds: 0, // breedCooldownSeconds (defaults to 7 days)
+                genes, // gene encoding placements
+                mutationRates: [], // mutation rates (defaults to none)
+            },
+        ]));
+
+        const minterBreeding = (await ethers.getContractAt('MinterBreeding', address)) as MinterBreeding;
+
+        // Auth minting
+        await nft.grantMinter(minterBreeding.address);
+
+        // Authorize transfer(s)
+        await erc20.increaseAllowance(minterBreeding.address, 10000);
+
+        // Generate encoded parents [will be ids: parentIds]
+        for (const parent of encodedParents) await nft.safeMint(owner.address, parent);
+
+        // Set our gene pattern
+        await minterBreeding.connect(owner).setBreedingRules(
+            0, // requiredParents (default to 2)
+            defaultGenerationMultiplier,
+            0, // breedCooldownSeconds (defaults to 7 days)
+            genes, // gene encoding placements
+            [], // mutation rates (defaults to none)
+        );
+
+        return minterBreeding;
+    }
+
+    async function getLastBred(minterBreeding: MinterBreeding) {
+        // Grab ERC721
+        const nftAddr = await minterBreeding.nftContractAddr();
+        const nft = (await ethers.getContractAt('ERC721OwlAttributes', nftAddr)) as ERC721OwlAttributes;
+
+        // Get Event
+        const filter = nft.filters.Transfer();
+        const events = await nft.queryFilter(filter);
+        const newSpecimen = events[events.length - 1].args.tokenId;
+
+        // Grab it's dna
+        const dna = await nft.getDna(newSpecimen);
+
+        return { tokenId: newSpecimen, dna };
+    }
+});

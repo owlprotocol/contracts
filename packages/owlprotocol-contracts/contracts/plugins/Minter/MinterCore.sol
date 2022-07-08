@@ -16,10 +16,10 @@ import '../../utils/ERC1820/ERC1820ImplementerAuthorizeAll.sol';
  *
  */
 abstract contract MinterCore is Initializable, ERC165Storage, ERC1820ImplementerAuthorizeAll {
-    address mintFeeToken;
-    address mintFeeAddress;
-    uint256 mintFeeAmount;
-    address nftContractAddr;
+    address public mintFeeToken;
+    address public mintFeeAddress;
+    uint256 public mintFeeAmount;
+    address public nftContractAddr;
 
     // modifier mintAllowedMerkle(
     //     uint256 speciesId,

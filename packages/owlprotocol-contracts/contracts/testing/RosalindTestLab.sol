@@ -17,7 +17,7 @@ contract RosalindTestLab {
      * @param randomSeed random value to use for gene splicing
      */
     function breedDNASimple(
-        uint256[] calldata parents,
+        uint256[] memory parents,
         uint8[] memory genes,
         uint256 randomSeed
     ) public pure returns (uint256) {
@@ -46,7 +46,7 @@ contract RosalindTestLab {
      * @return childDNA combined child DNA with mutations occuring.
      */
     function breedDNAWithMutations(
-        uint256[] calldata parents,
+        uint256[] memory parents,
         uint8[] memory genes,
         uint256 randomSeed,
         uint256[] memory mutationRates
@@ -97,7 +97,7 @@ contract RosalindTestLab {
      * @param child child dna
      * @param parents array of parent dna
      */
-    function setGenCount(uint256 child, uint256[] calldata parents) public pure returns (uint256) {
+    function setGenCount(uint256 child, uint256[] memory parents) public pure returns (uint256) {
         return RosalindDNA.setGenCount(child, parents);
     }
 }

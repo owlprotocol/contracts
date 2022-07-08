@@ -78,18 +78,18 @@ contract MinterSimple is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
      * @dev
      * @param tokenId minted token id
      */
-    function mint(uint256 tokenId) public {
+    function mint(address buyer, uint256 tokenId) public {
         // Mint Operation
-        MinterCore._mintForFee(msg.sender, tokenId);
+        MinterCore._mintForFee(buyer, tokenId);
     }
 
     /**
      * @dev
      * @param tokenId minted token id
      */
-    function safeMint(uint256 tokenId) public {
+    function safeMint(address buyer, uint256 tokenId) public {
         // Mint Operation
-        MinterCore._safeMintForFee(msg.sender, tokenId);
+        MinterCore._safeMintForFee(buyer, tokenId);
     }
 
     /**

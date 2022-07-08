@@ -1,55 +1,76 @@
-// import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-// import { expect } from 'chai';
-// import { ethers } from 'hardhat';
-// import { FactoryERC20__factory, FactoryERC721__factory, MinterAutoId__factory } from '../../../../typechain';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ethers } from 'hardhat';
+import {
+    FactoryERC20,
+    FactoryERC20__factory,
+    FactoryERC721,
+    FactoryERC721__factory,
+    MinterAutoId,
+    MinterAutoId__factory,
+} from '../../../typechain';
 
-// describe('MinterAutoId.sol', function () {
-//     let accounts: SignerWithAddress[];
-//     let owner: SignerWithAddress;
-//     let developer: SignerWithAddress;
+import { deployClone } from '../../utils';
 
-//     let MinterAutoIdFactory: MinterAutoId__factory;
-//     let FactoryERC20: FactoryERC20__factory;
-//     let FactoryERC721: FactoryERC721__factory;
+describe.only('MinterAutoId.sol', function () {
+    let owner: SignerWithAddress;
+    let burnAddress: SignerWithAddress;
 
-//     before(async () => {
-//         MinterAutoIdFactory = await ethers.getContractFactory('MinterAutoId');
-//         FactoryERC20 = await ethers.getContractFactory('FactoryERC20');
-//         FactoryERC721 = await ethers.getContractFactory('FactoryERC721');
+    let MinterAutoIdFactory: MinterAutoId__factory;
+    let FactoryERC20: FactoryERC20__factory;
+    let FactoryERC721: FactoryERC721__factory;
 
-//         accounts = await ethers.getSigners();
-//         owner = accounts[0];
-//         developer = accounts[2];
-//     });
+    let MinterImplementation: MinterAutoId;
+    let nft: FactoryERC721;
+    let erc20: FactoryERC20;
 
-//     it('MinterSimple.mint(...)', async () => {
-//         // Deploy contracts
-//         const minter = await MinterAutoIdFactory.deploy();
-//         const nft = await FactoryERC721.deploy('NFT', 'NFT');
-//         const erc20 = await FactoryERC20.deploy('0', 'ERC', 'ERC');
-//         await Promise.all([minter.deployed(), nft.deployed(), erc20.deployed()]);
+    let nftAddress: string;
+    let mintFeeToken: string;
+    let mintFeeAddress: string;
+    let mintFeeAmount: number;
 
-//         const speciesAddress = nft.address;
-//         const mintFeeToken = erc20.address;
-//         const mintFeeAddress = developer.address;
-//         const mintFeeAmount = 10;
+    before(async () => {
+        // Deploy contracts
+        MinterAutoIdFactory = (await ethers.getContractFactory('MinterAutoId')) as MinterAutoId__factory;
+        FactoryERC20 = (await ethers.getContractFactory('FactoryERC20')) as FactoryERC20__factory;
+        FactoryERC721 = (await ethers.getContractFactory('FactoryERC721')) as FactoryERC721__factory;
 
-//         // Create species
-//         await minter.createSpecies(speciesAddress, mintFeeToken, mintFeeAddress, mintFeeAmount);
+        [owner, burnAddress] = await ethers.getSigners();
 
-//         // Authorize transfer
-//         await erc20.increaseAllowance(minter.address, '20');
+        MinterImplementation = await MinterAutoIdFactory.deploy();
+        nft = await FactoryERC721.deploy('NFT', 'NFT');
+        erc20 = await FactoryERC20.deploy('0', 'ERC', 'ERC');
+        await Promise.all([MinterImplementation.deployed(), nft.deployed(), erc20.deployed()]);
 
-//         // Mint Specimen
-//         await expect(minter.mint('1'))
-//             // Event
-//             .to.emit(minter, 'MintSpecies')
-//             .withArgs('1', owner.address, '1');
+        nftAddress = nft.address;
+        mintFeeToken = erc20.address;
+        mintFeeAddress = burnAddress.address;
+        mintFeeAmount = 10;
+    });
 
-//         // Second mint increments id
-//         await expect(minter.mint('1'))
-//             // Event
-//             .to.emit(minter, 'MintSpecies')
-//             .withArgs('1', owner.address, '2');
-//     });
-// });
+    describe('MinterAutoId testing', async () => {
+        let minter: MinterAutoId;
+
+        beforeEach(async () => {
+            const { address } = await deployClone(MinterImplementation, [
+                owner.address,
+                mintFeeToken,
+                mintFeeAddress,
+                mintFeeAmount,
+                nftAddress,
+            ]);
+
+            minter = (await ethers.getContractAt('MinterAutoId', address)) as MinterAutoId;
+        });
+
+        it('MinterSimple.mint(...)', async () => {
+            // Authorize transfer
+            await erc20.increaseAllowance(minter.address, '20');
+
+            // Mint Specimen
+            await minter.mint(owner.address);
+
+            // Second mint increments id
+            await minter.safeMint(owner.address);
+        });
+    });
+});
