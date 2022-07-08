@@ -37,6 +37,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         'CryptoOwls',
         'OWL',
         'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
+        '0x83A54884bE4657706785D7309cf46B58FE5f6e8a', // TODO - add these in const file
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory
@@ -83,4 +84,4 @@ async function getBeaconAddr(
 
 export default deploy;
 deploy.tags = ['ERC721Inst', 'ERC721', 'BeaconProxy', 'Instance'];
-deploy.dependencies = ['BeaconImpl', 'BeaconProxyImpl', 'ERC721Impl', 'ERC1155Impl', 'CrafterTransferImpl', 'Beacons'];
+deploy.dependencies = ['BeaconImpl', 'BeaconProxyImpl', 'ERC721Impl', 'ERC721Beacon'];

@@ -4,8 +4,10 @@ pragma solidity ^0.8.9;
 import '@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+import "@opengsn/contracts/src/BaseRelayRecipient.sol";
 
-contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable {
+contract ERC721Owl is BaseRelayRecipient, ERC721Upgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable {
     bytes32 internal constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 internal constant URI_ROLE = keccak256('URI_ROLE');
 
@@ -23,37 +25,56 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
         address _admin,
         string calldata _name,
         string calldata _symbol,
-        string calldata baseURI_
+        string calldata baseURI_,
+        address forwarder_
     ) external virtual initializer {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, forwarder_);
     }
 
     function proxyInitialize(
         address _admin,
         string calldata _name,
         string calldata _symbol,
-        string calldata baseURI_
+        string calldata baseURI_,
+        address forwarder_
     ) external virtual onlyInitializing {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, forwarder_);
     }
 
     function __ERC721Owl_init(
         address _admin,
         string memory _name,
         string memory _symbol,
-        string memory baseURI_
+        string memory baseURI_,
+        address forwarder_
     ) internal onlyInitializing {
-        __ERC721Owl_init_unchained(_admin, baseURI_);
+        __ERC721Owl_init_unchained(_admin, baseURI_, forwarder_);
         __ERC721_init(_name, _symbol);
         __ERC721Burnable_init();
         __AccessControl_init();
     }
 
-    function __ERC721Owl_init_unchained(address _admin, string memory baseURI_) internal onlyInitializing {
+    function __ERC721Owl_init_unchained(address _admin, string memory baseURI_, address forwarder_) internal onlyInitializing {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
         baseURI = baseURI_;
+        _setTrustedForwarder(forwarder_);
+    }
+
+    /**
+     * @notice OpenGSN required overrides
+     * See
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    /**
+     * @notice OpenGSN required overrides
+     */
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
     }
 
     /**
@@ -124,6 +145,10 @@ contract ERC721Owl is ERC721Upgradeable, ERC721BurnableUpgradeable, AccessContro
 
     function version() public pure virtual returns (string memory) {
         return _version;
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return "2.0.0";
     }
 
     /**

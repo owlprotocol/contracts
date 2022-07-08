@@ -69,6 +69,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         'CryptoOwls',
         'OWL',
         'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
+        '0x83A54884bE4657706785D7309cf46B58FE5f6e8a', // TODO - add these in const file
     ]);
     const ERC721BeaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
         other,
@@ -86,6 +87,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const ERC1155Data = ERC1155Impl.interface.encodeFunctionData('proxyInitialize', [
         other,
         'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu/{id}.json',
+        'testdata', // TODO - what should this be?
     ]);
     const ERC1155BeaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
         other,
