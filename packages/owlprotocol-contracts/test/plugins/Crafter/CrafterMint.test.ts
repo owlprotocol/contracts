@@ -14,13 +14,11 @@ import {
     ERC1155,
 } from '../../../typechain';
 import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../../utils';
-
 import { BigNumber } from 'ethers';
 
 enum ConsumableType {
     unaffected,
     burned,
-    locked,
 }
 
 enum TokenType {
@@ -29,7 +27,7 @@ enum TokenType {
     erc1155,
 }
 
-describe('Crafter.sol', function () {
+describe('CrafterMint.sol', function () {
     // Extra time
     this.timeout(10000);
 

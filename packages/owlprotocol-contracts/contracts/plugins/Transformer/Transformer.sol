@@ -21,17 +21,18 @@ import '../PluginsLib.sol';
  * recipie outputs transferred from a deposit.
  */
 contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+    // Specification + ERC165
+    string public constant version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Transformer/', version)));
+
     /**********************
              Events
     **********************/
     event Transform(address indexed nftAddr, uint256 indexed tokenId, uint256 oldDna, uint256 newDna);
 
     /**********************
-             State
+             Storage
     **********************/
-    // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Transformer/', version)));
 
     address public burnAddress;
     PluginsLib.Ingredient[] private inputs;
@@ -118,10 +119,10 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
     }
 
     /**
-    * @dev Used to transform. Consumes inputs and modifies DNA of inputted NFT token.
-    * @param tokenId ID of NFT token to transform
-    * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
-    */
+     * @dev Used to transform. Consumes inputs and modifies DNA of inputted NFT token.
+     * @param tokenId ID of NFT token to transform
+     * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
+     */
 
     function transform(uint256 tokenId, uint256[][] calldata _inputERC721Ids) external {
         require(IERC721Upgradeable(nftAddr).ownerOf(tokenId) == _msgSender());
@@ -139,9 +140,9 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
                         IERC20Upgradeable(ingredient.contractAddr),
                         _msgSender(),
                         burnAddress,
-                        ingredient.amounts[0]  
+                        ingredient.amounts[0]
                     );
-                }    
+                }
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
                 //ERC721
                 uint256[] memory currInputArr = _inputERC721Ids[erc721Inputs];
@@ -185,9 +186,9 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
                         amounts,
                         new bytes(0)
                     );
-                } 
+                }
             }
-        } 
+        }
 
         // transform DNA
         uint256 currDna = ERC721OwlAttributes(nftAddr).getDna(tokenId);

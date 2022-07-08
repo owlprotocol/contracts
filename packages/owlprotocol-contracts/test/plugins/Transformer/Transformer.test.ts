@@ -33,7 +33,6 @@ enum GeneTransformType {
 enum ConsumableType {
     unaffected,
     burned,
-    locked,
     NTime,
 }
 

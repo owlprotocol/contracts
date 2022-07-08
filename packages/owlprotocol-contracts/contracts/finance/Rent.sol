@@ -14,7 +14,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '../assets/ERC721/ERC721OwlExpiring.sol';
-import '../assets/ERC721/';
 
 /**
  * @dev This Rent contract serves as a middleman and allows owners of NFTs to lock their assets in this

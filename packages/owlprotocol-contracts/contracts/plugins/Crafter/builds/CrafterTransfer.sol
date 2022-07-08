@@ -14,7 +14,7 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-import './../ICrafter.sol';
+import '../ICrafter.sol';
 import '../../PluginsLib.sol';
 
 /**
@@ -34,12 +34,16 @@ contract CrafterTransfer is
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterTransfer/', version)));
 
     /**********************
-             Types
+             Events
     **********************/
 
     event CreateRecipe(address indexed creator, PluginsLib.Ingredient[] inputs, PluginsLib.Ingredient[] outputs);
     event RecipeUpdate(uint256 craftableAmount);
     event RecipeCraft(uint256 craftedAmount, uint256 craftableAmount, address indexed user);
+
+    /**********************
+             Storage
+    **********************/
 
     address public burnAddress;
     uint96 public craftableAmount;
@@ -48,7 +52,7 @@ contract CrafterTransfer is
     PluginsLib.Ingredient[] private outputs;
 
     mapping(uint256 => uint256) nUse; //maps ingredient to nUSE (max count grabbed from amount[0])
-    mapping(address => mapping(uint256 => uint256)) usedERC721Inputs; //maps a contract address to a tokenId to nUsed 
+    mapping(address => mapping(uint256 => uint256)) usedERC721Inputs; //maps a contract address to a tokenId to nUsed
 
     /**********************
         Initialization
@@ -111,57 +115,13 @@ contract CrafterTransfer is
     ) internal onlyInitializing {
         burnAddress = _burnAddress;
 
-        // NOTE - deep copies arrays
         PluginsLib.validateInputs(_inputs, inputs, nUse);
 
-        uint256 erc721amount = 0;
+        uint256 erc721Amount = PluginsLib.validateOutputs(_outputs, outputs, _craftableAmount);
 
-        // Outputs validations
-        for (uint256 i = 0; i < _outputs.length; i++) {
-            if (_outputs[i].token == PluginsLib.TokenType.erc20) {
-                require(_outputs[i].tokenIds.length == 0, 'CrafterTransfer: tokenids.length != 0');
-                require(_outputs[i].amounts.length == 1, 'CrafterTransfer: amounts.length != 1');
-                outputs.push(_outputs[i]);
-            } else if (_outputs[i].token == PluginsLib.TokenType.erc721) {
-                require(
-                    _outputs[i].tokenIds.length == _craftableAmount,
-                    'CrafterTransfer: tokenids.length != _craftableAmount'
-                );
-                require(_outputs[i].amounts.length == 0, 'CrafterTransfer: amounts.length != 0');
-                erc721amount++;
-                //Copy token data but set tokenIds as empty (these are filled out in the _deposit function call)
-                PluginsLib.Ingredient memory x = PluginsLib.Ingredient({
-                    token: PluginsLib.TokenType.erc721,
-                    consumableType: _outputs[i].consumableType,
-                    contractAddr: _outputs[i].contractAddr,
-                    amounts: new uint256[](0),
-                    tokenIds: new uint256[](0)
-                });
-                outputs.push(x);
-            } else if (_outputs[i].token == PluginsLib.TokenType.erc1155) {
-                require(
-                    _outputs[i].tokenIds.length == _outputs[i].amounts.length,
-                    'CrafterTransfer: tokenids.length != amounts.length'
-                );
-                outputs.push(_outputs[i]);
-            }
-        }
-
-        uint256[][] memory _outputsERC721Ids = new uint256[][](erc721amount);
-        uint256 outputERC721index = 0;
-
-        for (uint256 i = 0; i < _outputs.length; i++) {
-            if (_outputs[i].token == PluginsLib.TokenType.erc721) {
-                _outputsERC721Ids[outputERC721index] = new uint256[](_craftableAmount);
-                for (uint256 j = 0; j < _craftableAmount; j++) {
-                    _outputsERC721Ids[outputERC721index][j] = _outputs[i].tokenIds[j];
-                }
-                outputERC721index++;
-            }
-        }
+        uint256[][] memory _outputsERC721Ids = PluginsLib.createOutputsArr(_outputs, _craftableAmount, erc721Amount);
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids, _admin);
-
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
     }
 
@@ -378,8 +338,6 @@ contract CrafterTransfer is
         //Track ERC721 inputs idx
         uint256 erc721Inputs = 0;
 
-     
-
         //Transfer inputs
         for (uint256 i = 0; i < inputs.length; i++) {
             PluginsLib.Ingredient storage ingredient = inputs[i];
@@ -403,11 +361,8 @@ contract CrafterTransfer is
                 }
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
                 //ERC721
-                require(
-                    _inputERC721Ids[erc721Inputs].length == craftAmount,
-                    'CrafterTransfer: _inputERC721Ids[i] != craftAmount'
-                );
                 uint256[] memory currInputArr = _inputERC721Ids[erc721Inputs];
+                require(currInputArr.length == craftAmount, 'CrafterTransfer: _inputERC721Ids[i] != craftAmount');
                 if (ingredient.consumableType == PluginsLib.ConsumableType.burned) {
                     //Transfer ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
@@ -417,22 +372,13 @@ contract CrafterTransfer is
                             currInputArr[j]
                         );
                     }
-                }  else if (ingredient.consumableType == PluginsLib.ConsumableType.unaffected) {
+                } else if (ingredient.consumableType == PluginsLib.ConsumableType.NTime) {
                     //Check ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
                             IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
                             'CrafterTransfer: User does not own token(s)!'
                         );
-                    }
-                } else if (ingredient.consumableType == PluginsLib.ConsumableType.NTime) {
-                    //Check ERC721
-                    for (uint256 j = 0; j < currInputArr.length; j++) {
-                       
-                        require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
-                            'CrafterTransfer: User does not own token(s)!'
-                        ); 
                         uint256 currTokenId = currInputArr[j];
                         require(
                             (usedERC721Inputs[ingredient.contractAddr])[currTokenId] < nUse[i],
@@ -477,7 +423,6 @@ contract CrafterTransfer is
             }
         }
 
-        //Transfer outputs
         for (uint256 i = 0; i < outputs.length; i++) {
             PluginsLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == PluginsLib.TokenType.erc20) {
@@ -495,6 +440,7 @@ contract CrafterTransfer is
                         _msgSender(),
                         ingredient.tokenIds[ingredient.tokenIds.length - 1]
                     );
+
                     ingredient.tokenIds.pop();
                 }
             } else if (ingredient.token == PluginsLib.TokenType.erc1155) {
