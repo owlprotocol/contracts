@@ -161,7 +161,7 @@ contract ERC721OwlExpiring is ERC721Owl {
         uint256 tokenId,
         uint256 expireTime
     ) public onlyRole(MINTER_ROLE) {
-        if (expires[tokenId] > block.timestamp) _burn(tokenId);
+        if (_expired(tokenId)) _burn(tokenId);
         expires[tokenId] = expireTime + block.timestamp;
         _mint(to, tokenId);
     }
@@ -177,7 +177,7 @@ contract ERC721OwlExpiring is ERC721Owl {
         uint256 tokenId,
         uint256 expireTime
     ) public onlyRole(MINTER_ROLE) {
-        if (expires[tokenId] > block.timestamp) _burn(tokenId);
+        if (_expired(tokenId)) _burn(tokenId);
         expires[tokenId] = expireTime + block.timestamp;
         _safeMint(to, tokenId);
     }

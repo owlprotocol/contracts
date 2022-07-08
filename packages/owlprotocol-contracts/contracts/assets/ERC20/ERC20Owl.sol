@@ -24,15 +24,15 @@ contract ERC20Owl is ERC20Upgradeable, ERC20BurnableUpgradeable, AccessControlUp
         string calldata _name,
         string calldata _symbol
     ) external initializer {
-        __ERC20_init(_admin, _name, _symbol);
+        __ERC20Owl_init(_admin, _name, _symbol);
     }
 
     function proxyInitialize(
         address _admin,
         string calldata _name,
         string calldata _symbol
-    ) external proxyInitialize {
-        __ERC20_init(_admin, _name, _symbol);
+    ) external onlyInitializing {
+        __ERC20Owl_init(_admin, _name, _symbol);
     }
 
     function __ERC20Owl_init(
