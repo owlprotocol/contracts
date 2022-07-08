@@ -16,6 +16,7 @@ import {
 import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../../utils';
 
 import { BigNumber } from 'ethers';
+import { deploy } from '@openzeppelin/hardhat-upgrades/dist/utils';
 
 enum ConsumableType {
     unaffected,
@@ -462,68 +463,97 @@ describe('Crafter.sol', function () {
         let CrafterTransferAddress: string;
 
         beforeEach(async () => {
-            //Deploy ERC721
+            // Deploy ERC721
             [inputERC721] = await createERC721(1, 1);
             [outputERC721] = await createERC721(1);
 
-            //Crafter Data
-            const CrafterTransferData = CrafterTransferImplementation.interface.encodeFunctionData('initialize', [
-                owner.address,
-                burnAddress,
-                1,
-                //Input any token id, input burned
+            // Predict Address
+            CrafterTransferAddress = await predictDeployClone(
+                CrafterTransferImplementation,
                 [
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: inputERC721.address,
-                        amounts: [],
-                        tokenIds: [],
-                    },
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: inputERC721.address,
-                        amounts: [],
-                        tokenIds: [],
-                    },
+                    owner.address,
+                    burnAddress,
+                    1,
+                    // Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    // Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [1],
+                        },
+                    ],
                 ],
-                //Output specific token id, output unaffected
-                [
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: outputERC721.address,
-                        amounts: [],
-                        tokenIds: [1],
-                    },
-                ],
-            ]);
-
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            CrafterTransferAddress = await ERC1167Factory.predictDeterministicAddress(
-                CrafterTransferImplementation.address,
-                salt,
-                CrafterTransferData,
+                ERC1167Factory,
             );
 
-            //Set Approval ERC721 Output
+            // Set Approval ERC721 Output
             await outputERC721.connect(owner).approve(CrafterTransferAddress, 1);
 
-            //Deploy Crafter craftableAmount=1
-            //Check balances
-            //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterTransferImplementation.address, salt, CrafterTransferData);
+            // Deploy Crafter craftableAmount=1
+            await deployClone(
+                CrafterTransferImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    1,
+                    // Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    // Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [1],
+                        },
+                    ],
+                ],
+                ERC1167Factory,
+            );
             crafter = await (ethers.getContractAt(
                 'CrafterTransfer',
                 CrafterTransferAddress,
             ) as Promise<CrafterTransfer>);
-            //Assert transferred
+            // Assert transferred
             expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
             expect(await outputERC721.ownerOf(1)).to.equal(crafter.address);
 
-            //Storage tests
+            // Storage tests
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
 
             const inputs = await crafter.getInputs();

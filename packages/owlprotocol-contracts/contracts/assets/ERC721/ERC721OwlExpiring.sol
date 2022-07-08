@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import './ERC721Owl.sol';
 import '@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol';
+import 'hardhat/console.sol';
 
 contract ERC721OwlExpiring is ERC721Owl {
     using StringsUpgradeable for uint256;

@@ -645,27 +645,24 @@ describe('DutchAuction.sol 10% Fees', function () {
 
             //DutchAuction Data
             //@ts-ignore
-            const DutchAuctionData = DutchAuctionImplementation.interface.encodeFunctionData('initialize', [
-                seller.address,
-                {
-                    token: TokenType.erc721,
-                    contractAddr: testNFT.address,
-                    tokenId: 1,
-                },
-                acceptableERC20Token.address,
-                90, //in "eth"
-                5,
-                300,
-                false,
-                9,
-                owner.address,
-            ]);
-
-            const salt = ethers.utils.formatBytes32String('1');
-            DutchAuctionAddress = await ERC1167Factory.predictDeterministicAddress(
-                DutchAuctionImplementation.address,
-                salt,
-                DutchAuctionData,
+            DutchAuctionAddress = await predictDeployClone(
+                DutchAuctionImplementation,
+                [
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    90, //in "eth"
+                    5,
+                    300,
+                    false,
+                    9,
+                    owner.address,
+                ],
+                ERC1167Factory,
             );
 
             await testNFT.connect(seller).approve(DutchAuctionAddress, 1);
@@ -674,7 +671,25 @@ describe('DutchAuction.sol 10% Fees', function () {
             await acceptableERC20Token.connect(bidder1).approve(owner.address, parseUnits('100.0', 18));
             await network.provider.send('evm_setAutomine', [false]);
 
-            ERC1167Factory.cloneDeterministic(DutchAuctionImplementation.address, salt, DutchAuctionData);
+            await deployClone(
+                DutchAuctionImplementation,
+                [
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    90, //in "eth"
+                    5,
+                    300,
+                    false,
+                    9,
+                    owner.address,
+                ],
+                ERC1167Factory,
+            );
             const auction2 = (await ethers.getContractAt('DutchAuction', DutchAuctionAddress)) as DutchAuction;
 
             auction2.connect(bidder1).bid();
@@ -690,7 +705,6 @@ describe('DutchAuction.sol 10% Fees', function () {
             // const blockBefore2 = await ethers.provider.getBlock(blockNumBefore2);
             // const timestampBefore2 = blockBefore2.timestamp;
             // console.log(timestampBefore2);
-
         });
 
         it('simple auction - 1 bidder', async () => {
