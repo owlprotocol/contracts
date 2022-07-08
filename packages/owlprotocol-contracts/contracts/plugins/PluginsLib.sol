@@ -53,55 +53,6 @@ library PluginsLib {
         uint256 value;
     }
 
-    function transform(
-        uint256 currDna,
-        uint8[] memory genes,
-        PluginsLib.GeneMod[] memory modifications
-    ) internal pure returns (uint256 newDna) {
-        for (uint16 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
-            // Gene details
-            uint16 geneStartIdx = genes[geneIdx];
-            uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 256;
-
-            uint256 bitmask = get256Bitmask(geneStartIdx, geneEndIdx);
-            uint256 gene = (currDna & bitmask) >> geneStartIdx;
-
-            uint256 maxBits = geneEndIdx - geneStartIdx;
-
-            GeneMod memory currMod = modifications[geneIdx];
-            if (currMod.geneTransformType == GeneTransformType.add) {
-                uint256 sum = gene + currMod.value;
-                if (sum > 2**maxBits - 1) gene = 2**maxBits - 1;
-                else gene = sum;
-            } else if (currMod.geneTransformType == GeneTransformType.sub) {
-                if (currMod.value > gene) gene = 0;
-                else gene = gene - currMod.value;
-            } else if (currMod.geneTransformType == GeneTransformType.mult) {
-                uint256 prod = gene * currMod.value;
-                if (prod > 2**maxBits - 1) gene = 2**maxBits - 1;
-                else gene = prod;
-            } else if (currMod.geneTransformType == GeneTransformType.set) {
-                gene = currMod.value;
-            }
-
-            gene = gene << geneStartIdx;
-
-            newDna = newDna | gene;
-        }
-    }
-
-    /**
-     * @dev Generates a 256-bit bitmask from startBit:endBit
-     * @param startBit beginning of mask
-     * @param endBit end of mask
-     * @return bitMask combined bitmask
-     */
-    function get256Bitmask(uint16 startBit, uint16 endBit) internal pure returns (uint256 bitMask) {
-        uint256 bitMaskStart = type(uint256).max << startBit;
-        uint256 bitMaskEnd = type(uint256).max >> (256 - endBit);
-        bitMask = bitMaskStart & bitMaskEnd;
-    }
-
     /**
      * @dev validates inputs array of ingredients
      * @param _inputs the inputted array to the Crafter initializer
@@ -152,6 +103,117 @@ library PluginsLib {
             }
             inputs.push(_inputs[i]);
         }
+    }
+
+    function validateOutputs(
+        Ingredient[] memory _outputs,
+        Ingredient[] storage outputs,
+        uint256 _craftableAmount
+    ) internal returns (uint256) {
+        uint256 erc721Amount = 0;
+
+        // Outputs validations
+        for (uint256 i = 0; i < _outputs.length; i++) {
+            if (_outputs[i].token == TokenType.erc20) {
+                require(_outputs[i].tokenIds.length == 0, 'CrafterTransfer: tokenids.length != 0');
+                require(_outputs[i].amounts.length == 1, 'CrafterTransfer: amounts.length != 1');
+                outputs.push(_outputs[i]);
+            } else if (_outputs[i].token == TokenType.erc721) {
+                require(
+                    _outputs[i].tokenIds.length == _craftableAmount,
+                    'CrafterTransfer: tokenids.length != _craftableAmount'
+                );
+                require(_outputs[i].amounts.length == 0, 'CrafterTransfer: amounts.length != 0');
+                erc721Amount++;
+                //Copy token data but set tokenIds as empty (these are filled out in the _deposit function call)
+                Ingredient memory x = Ingredient({
+                    token: TokenType.erc721,
+                    consumableType: _outputs[i].consumableType,
+                    contractAddr: _outputs[i].contractAddr,
+                    amounts: new uint256[](0),
+                    tokenIds: new uint256[](0)
+                });
+                outputs.push(x);
+            } else if (_outputs[i].token == TokenType.erc1155) {
+                require(
+                    _outputs[i].tokenIds.length == _outputs[i].amounts.length,
+                    'CrafterTransfer: tokenids.length != amounts.length'
+                );
+                outputs.push(_outputs[i]);
+            }
+        }
+
+        return erc721Amount;
+    }
+
+    function createOutputsArr(
+        Ingredient[] memory _outputs,
+        uint256 _craftableAmount,
+        uint256 erc721Amount
+    ) internal returns (uint256[][] memory) {
+        uint256[][] memory _outputsERC721Ids = new uint256[][](erc721Amount);
+        uint256 outputERC721index = 0;
+
+        for (uint256 i = 0; i < _outputs.length; i++) {
+            if (_outputs[i].token == TokenType.erc721) {
+                _outputsERC721Ids[outputERC721index] = new uint256[](_craftableAmount);
+                for (uint256 j = 0; j < _craftableAmount; j++) {
+                    _outputsERC721Ids[outputERC721index][j] = _outputs[i].tokenIds[j];
+                }
+                outputERC721index++;
+            }
+        }
+
+        return _outputsERC721Ids;
+    }
+
+    function transform(
+        uint256 currDna,
+        uint8[] memory genes,
+        PluginsLib.GeneMod[] memory modifications
+    ) internal pure returns (uint256 newDna) {
+        for (uint16 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
+            // Gene details
+            uint16 geneStartIdx = genes[geneIdx];
+            uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 256;
+
+            uint256 bitmask = get256Bitmask(geneStartIdx, geneEndIdx);
+            uint256 gene = (currDna & bitmask) >> geneStartIdx;
+
+            uint256 maxBits = geneEndIdx - geneStartIdx;
+
+            GeneMod memory currMod = modifications[geneIdx];
+            if (currMod.geneTransformType == GeneTransformType.add) {
+                uint256 sum = gene + currMod.value;
+                if (sum > 2**maxBits - 1) gene = 2**maxBits - 1;
+                else gene = sum;
+            } else if (currMod.geneTransformType == GeneTransformType.sub) {
+                if (currMod.value > gene) gene = 0;
+                else gene = gene - currMod.value;
+            } else if (currMod.geneTransformType == GeneTransformType.mult) {
+                uint256 prod = gene * currMod.value;
+                if (prod > 2**maxBits - 1) gene = 2**maxBits - 1;
+                else gene = prod;
+            } else if (currMod.geneTransformType == GeneTransformType.set) {
+                gene = currMod.value;
+            }
+
+            gene = gene << geneStartIdx;
+
+            newDna = newDna | gene;
+        }
+    }
+
+    /**
+     * @dev Generates a 256-bit bitmask from startBit:endBit
+     * @param startBit beginning of mask
+     * @param endBit end of mask
+     * @return bitMask combined bitmask
+     */
+    function get256Bitmask(uint16 startBit, uint16 endBit) internal pure returns (uint256 bitMask) {
+        uint256 bitMaskStart = type(uint256).max << startBit;
+        uint256 bitMaskEnd = type(uint256).max >> (256 - endBit);
+        bitMask = bitMaskStart & bitMaskEnd;
     }
 
     function arrayContains(uint256[] memory _input, uint256 num) internal returns (bool) {

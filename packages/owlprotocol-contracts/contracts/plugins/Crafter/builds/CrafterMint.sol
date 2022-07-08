@@ -118,55 +118,11 @@ contract CrafterMint is
     ) public onlyInitializing {
         burnAddress = _burnAddress;
 
-        // NOTE - deep copies arrays
-        // Inputs validations
         PluginsLib.validateInputs(_inputs, inputs, nUse);
 
-        uint256 erc721amount = 0;
+        uint256 erc721Amount = PluginsLib.validateOutputs(_outputs, outputs, _craftableAmount);
 
-        // Outputs validations
-        for (uint256 i = 0; i < _outputs.length; i++) {
-            if (_outputs[i].token == PluginsLib.TokenType.erc20) {
-                require(_outputs[i].tokenIds.length == 0, 'CrafterMint: tokenids.length != 0');
-                require(_outputs[i].amounts.length == 1, 'CrafterMint: amounts.length != 1');
-                outputs.push(_outputs[i]);
-            } else if (_outputs[i].token == PluginsLib.TokenType.erc721) {
-                require(
-                    _outputs[i].tokenIds.length == _craftableAmount,
-                    'CrafterMint: tokenids.length != _craftableAmount'
-                );
-                require(_outputs[i].amounts.length == 0, 'CrafterMint: amounts.length != 0');
-                erc721amount++;
-                //Copy token data but set tokenIds as empty (these are filled out in the _deposit function call)
-                PluginsLib.Ingredient memory x = PluginsLib.Ingredient({
-                    token: PluginsLib.TokenType.erc721,
-                    consumableType: _outputs[i].consumableType,
-                    contractAddr: _outputs[i].contractAddr,
-                    amounts: new uint256[](0),
-                    tokenIds: new uint256[](0)
-                });
-                outputs.push(x);
-            } else if (_outputs[i].token == PluginsLib.TokenType.erc1155) {
-                require(
-                    _outputs[i].tokenIds.length == _outputs[i].amounts.length,
-                    'CrafterMint: tokenids.length != amounts.length'
-                );
-                outputs.push(_outputs[i]);
-            }
-        }
-
-        uint256[][] memory _outputsERC721Ids = new uint256[][](erc721amount);
-        uint256 outputERC721index = 0;
-
-        for (uint256 i = 0; i < _outputs.length; i++) {
-            if (_outputs[i].token == PluginsLib.TokenType.erc721) {
-                _outputsERC721Ids[outputERC721index] = new uint256[](_craftableAmount);
-                for (uint256 j = 0; j < _craftableAmount; j++) {
-                    _outputsERC721Ids[outputERC721index][j] = _outputs[i].tokenIds[j];
-                }
-                outputERC721index++;
-            }
-        }
+        uint256[][] memory _outputsERC721Ids = PluginsLib.createOutputsArr(_outputs, _craftableAmount, erc721Amount);
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
