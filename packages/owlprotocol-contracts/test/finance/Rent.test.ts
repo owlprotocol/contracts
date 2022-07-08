@@ -139,8 +139,8 @@ describe('Rent.sol', function () {
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(originalERC20Balance);
 
             rentable.connect(admin).grantMinter(RentAddress);
-            rentable.connect(admin).grantRenter(RentAddress);
-            rentable.connect(admin).grantRenter(_renter.address);
+            rentable.connect(admin).grantExpiry(RentAddress);
+            rentable.connect(admin).grantExpiry(_renter.address);
         });
 
         it('simple rent - 1 rent instance', async () => {
@@ -169,7 +169,7 @@ describe('Rent.sol', function () {
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(70);
             expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(30);
 
-            await network.provider.send('evm_increaseTime', [82400]);
+            await network.provider.send('evm_increaseTime', [86400]);
 
             await rent.connect(_owner).endRental(0);
             expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
@@ -233,7 +233,7 @@ describe('Rent.sol', function () {
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(60);
             expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(10);
 
-            await network.provider.send('evm_increaseTime', [82400]);
+            await network.provider.send('evm_increaseTime', [86400]);
 
             await rent.connect(_owner).endRental(0);
             expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
