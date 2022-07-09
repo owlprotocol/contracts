@@ -48,6 +48,10 @@ const config: HardhatUserConfig = {
                 { balance: '1000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32) },
             ],
         },
+        ganache: {
+            chainId: 1337,
+            url: 'http://localhost:8545',
+        },
 
         rinkeby: {
             from: process.env.PRIV_KEY,
