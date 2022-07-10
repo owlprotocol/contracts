@@ -1,10 +1,10 @@
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
 import Web3 from 'web3';
 import type { Contract as Web3Contract } from 'web3-eth-contract';
 import { ethers } from 'hardhat'; //HH-connected ethers
 import ERC721OwlGSNArtifact from '../../artifacts/contracts/assets/ERC721/ERC721OwlGSN.sol/ERC721OwlGSN.json';
-import { ERC721OwlGSN__factory, ERC721OwlGSN, ERC1167Factory, ERC1167Factory__factory } from '../../typechain';
+import { ERC721OwlGSN, ERC721OwlGSN__factory, ERC1167Factory, ERC1167Factory__factory } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { HttpProvider } from 'web3-core';
 import { deployClone } from '../utils';
@@ -15,20 +15,27 @@ describe('ERC721OwlGSN', () => {
     let ERC721OwlGSNFactory: ERC721OwlGSN__factory;
     let OwlGSN: ERC721OwlGSN;
 
-    let signer1: SignerWithAddress;
-    //let signer2: SignerWithAddress;
+    let signer1: SignerWithAddress; //original owner of ERC721Owl
+    let signer2: SignerWithAddress; //owner after mint
+
+    let gsnForwarderAddress: string;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
 
     beforeEach(async () => {
-        [signer1] = await ethers.getSigners();
+        [signer1, signer2] = await ethers.getSigners();
         const ERC721OwlGSNFactory = (await ethers.getContractFactory('ERC721OwlGSN')) as ERC721OwlGSN__Factory;
         const ERC721OwlGSN = await ERC721OwlGSNFactory.deploy();
 
         ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
-        const { address } = await deployClone(ERC721OwlGSN, [signer1.address, 'n', 's', 'u'], ERC1167Factory, salt);
+        const { address } = await deployClone(
+            ERC721OwlGSN,
+            [signer1.address, 'n', 's', 'u', gsnForwarderAddress],
+            ERC1167Factory,
+            salt,
+        );
         OwlGSN = (await ethers.getContractAt('ERC721OwlGSN', address)) as ERC721OwlGSN;
     });
 
@@ -36,10 +43,10 @@ describe('ERC721OwlGSN', () => {
         it('mint()', async () => {
             const initialBalance = await ethers.provider.getBalance(signer1.address);
 
-            await OwlGSN.mint(signer1.address, 1);
-            const owner = await OwlGSN.ownerOf(1);
+            await OwlGSN.mint(signer2.address, 1);
+            const exists = await OwlGSN.exists(1);
 
-            assert.equal(owner, signer1.address, 'Token not minted!');
+            assert.equal(exists, true, 'Token not minted!');
 
             //Gas was spent by user
             const finalBalance = await ethers.provider.getBalance(signer1.address);
@@ -51,7 +58,6 @@ describe('ERC721OwlGSN', () => {
         let gsn: TestEnvironment;
         let gsnProvider: HttpProvider;
         let web3: Web3;
-        let gsnForwarderAddress: string;
 
         let OwlGSNContract: Web3Contract;
 
@@ -66,8 +72,8 @@ describe('ERC721OwlGSN', () => {
             web3 = new Web3(gsnProvider);
             gsnForwarderAddress = gsn.contractsDeployment.forwarderAddress as string;
 
-            //Set forwarder
-            await OwlGSN.setTrustedForwarder(gsnForwarderAddress);
+            //Set forwarder --> don't need if we are passing in as an initializer?
+            //await OwlGSN.setTrustedForwarder(gsnForwarderAddress);
 
             //Setup GSN-connected contract
             OwlGSNContract = new web3.eth.Contract(ERC721OwlGSNArtifact.abi as any, OwlGSN.address);
@@ -81,10 +87,10 @@ describe('ERC721OwlGSN', () => {
         it('mint()', async () => {
             const initialBalance = await ethers.provider.getBalance(signer1.address);
 
-            await OwlGSNContract.methods.mint(signer1.address, 1).send({ from: signer1.address });
-            const owner = await OwlGSNContract.methods.ownerOf(1).call();
+            await OwlGSNContract.methods.mint(signer2.address, 1).send({ from: signer1.address });
+            const exists = await OwlGSNContract.methods.exists(1).call();
 
-            assert.equal(owner, signer1.address, 'Token not minted!');
+            assert.equal(exists, true, 'Token not minted!');
 
             //No gas was spent by user
             const finalBalance = await ethers.provider.getBalance(signer1.address);

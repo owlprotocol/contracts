@@ -52,7 +52,6 @@ const config: HardhatUserConfig = {
             chainId: 1337,
             url: 'http://localhost:8545',
         },
-
         rinkeby: {
             from: process.env.PRIV_KEY,
             url: process.env.RINKEBY_URL || 'https://rinkeby.infura.io/v3/fee5821234524325b482f04d51c75878',
