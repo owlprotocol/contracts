@@ -98,15 +98,13 @@
         "web3": "^1.6.1",
         "web3-core": "^1.6.1",
         "web3-eth-contract": "^1.6.1",
-        "web3-utils": "^1.6.1"
+        "web3-utils": "^1.6.1",
+        "@opengsn/cli": "^2.2.6",
+        "@opengsn/provider": "^2.2.6"
     },
     "files": [
         "artifacts/contracts/**/*.json",
         "contracts/**/*.sol",
         "types"
-    ],
-    "dependencies": {
-        "@opengsn/cli": "^2.2.6",
-        "@opengsn/provider": "^2.2.6"
-    }
+    ]
 }

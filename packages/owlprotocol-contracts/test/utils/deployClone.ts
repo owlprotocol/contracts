@@ -7,6 +7,7 @@ export async function deployClone(
     initializerArgs: any[],
     cloneFactory?: ERC1167Factory,
     salt?: string,
+    initSignature = 'initialize',
 ) {
     let ERC1167Factory;
     if (cloneFactory) ERC1167Factory = cloneFactory;
@@ -18,7 +19,7 @@ export async function deployClone(
     let saltString = ethers.utils.formatBytes32String('1');
     if (salt) saltString = salt;
 
-    const deploymentData = implementation.interface.encodeFunctionData('initialize', initializerArgs);
+    const deploymentData = implementation.interface.encodeFunctionData(initSignature, initializerArgs);
 
     const deploymentAddress = await ERC1167Factory.predictDeterministicAddress(
         implementation.address,
