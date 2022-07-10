@@ -104,5 +104,9 @@
         "artifacts/contracts/**/*.json",
         "contracts/**/*.sol",
         "types"
-    ]
+    ],
+    "dependencies": {
+        "@opengsn/cli": "^2.2.6",
+        "@opengsn/provider": "^2.2.6"
+    }
 }

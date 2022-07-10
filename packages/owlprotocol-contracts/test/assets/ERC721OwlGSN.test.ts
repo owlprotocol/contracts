@@ -25,7 +25,7 @@ describe('ERC721OwlGSN', () => {
 
     beforeEach(async () => {
         [signer1, signer2] = await ethers.getSigners();
-        const ERC721OwlGSNFactory = (await ethers.getContractFactory('ERC721OwlGSN')) as ERC721OwlGSN__Factory;
+        const ERC721OwlGSNFactory = (await ethers.getContractFactory('ERC721OwlGSN')) as ERC721OwlGSN__factory;
         const ERC721OwlGSN = await ERC721OwlGSNFactory.deploy();
 
         ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
