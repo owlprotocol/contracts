@@ -1,11 +1,17 @@
 import { ethers, network } from 'hardhat';
+const { utils } = ethers;
+const { keccak256, toUtf8Bytes } = utils;
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
+    BeaconProxyInitializable,
+    BeaconProxyInitializable__factory,
     ERC1167Factory,
     ERC1167Factory__factory,
     ERC721OwlExpiring,
     ERC721OwlExpiring__factory,
+    UpgradeableBeaconInitializable,
+    UpgradeableBeaconInitializable__factory,
 } from '../../typechain';
 import { deployClone } from '../utils';
 
@@ -19,18 +25,19 @@ describe('ERC721Expiring.sol', () => {
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
 
+    let ERC721OwlExpiringImpl: ERC721OwlExpiring;
     let contrInst: ERC721OwlExpiring;
     beforeEach(async () => {
         [signer1, signer2] = await ethers.getSigners();
         const ERC721OwlExpiringFactory = (await ethers.getContractFactory(
             'ERC721OwlExpiring',
         )) as ERC721OwlExpiring__factory;
-        const ERC721OwlExpiring = await ERC721OwlExpiringFactory.deploy();
+        ERC721OwlExpiringImpl = await ERC721OwlExpiringFactory.deploy();
 
         ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
         const { address } = await deployClone(
-            ERC721OwlExpiring,
+            ERC721OwlExpiringImpl,
             [signer1.address, 'n', 's', 'u'],
             ERC1167Factory,
             salt,
@@ -42,6 +49,9 @@ describe('ERC721Expiring.sol', () => {
         beforeEach(async () => {
             await expect(contrInst.ownerOf(1)).to.be.revertedWith('ERC721: owner query for nonexistent token');
             await expect(contrInst['mint(address,uint256)'](signer1.address, 2)).to.be.revertedWith(
+                'ERC721OwlExpiring: function disabled',
+            );
+            await expect(contrInst['safeMint(address,uint256)'](signer1.address, 2)).to.be.revertedWith(
                 'ERC721OwlExpiring: function disabled',
             );
 
@@ -76,6 +86,10 @@ describe('ERC721Expiring.sol', () => {
         });
 
         it('remint', async () => {
+            await network.provider.send('evm_increaseTime', [501]);
+            await network.provider.send('evm_mine');
+            await network.provider.send('evm_setAutomine', [true]);
+
             contrInst['mint(address,uint256,uint256)'](signer1.address, 0, expireTime);
             contrInst['mint(address,uint256,uint256)'](signer1.address, 1, expireTime);
             contrInst['mint(address,uint256,uint256)'](signer1.address, 2, expireTime);
@@ -132,6 +146,10 @@ describe('ERC721Expiring.sol', () => {
         });
 
         it('remint', async () => {
+            await network.provider.send('evm_increaseTime', [501]);
+            await network.provider.send('evm_mine');
+            await network.provider.send('evm_setAutomine', [true]);
+
             contrInst['mint(address,uint256,uint256)'](signer1.address, 0, expireTime);
             contrInst['mint(address,uint256,uint256)'](signer1.address, 1, expireTime);
             contrInst['mint(address,uint256,uint256)'](signer1.address, 2, expireTime);
@@ -174,6 +192,13 @@ describe('ERC721Expiring.sol', () => {
         it('before expire', async () => {
             await network.provider.send('evm_setAutomine', [true]);
 
+            await expect(contrInst.connect(signer1).approve(signer1.address, 0)).to.be.revertedWith(
+                'ERC721: approval to current owner',
+            );
+            await expect(contrInst.connect(signer2).approve(signer2.address, 0)).to.be.revertedWith(
+                'ERC721: approve caller is not owner nor approved for all',
+            );
+
             await contrInst.approve(signer2.address, 0);
             await contrInst.approve(signer2.address, 1);
             await contrInst.approve(signer2.address, 2);
@@ -191,6 +216,12 @@ describe('ERC721Expiring.sol', () => {
             await network.provider.send('evm_increaseTime', [501]);
             await network.provider.send('evm_mine');
             await network.provider.send('evm_setAutomine', [true]);
+
+            await expect(contrInst.getApproved(0)).to.be.revertedWith('ERC721: approved query for nonexistent token');
+            await expect(contrInst.getApproved(1)).to.be.revertedWith('ERC721: approved query for nonexistent token');
+            await expect(contrInst.getApproved(2)).to.be.revertedWith('ERC721: approved query for nonexistent token');
+            await expect(contrInst.getApproved(3)).to.be.revertedWith('ERC721: approved query for nonexistent token');
+            await expect(contrInst.getApproved(4)).to.be.revertedWith('ERC721: approved query for nonexistent token');
 
             await expect(contrInst.approve(signer2.address, 0)).to.be.revertedWith(
                 'ERC721: owner query for nonexistent token',
@@ -210,6 +241,10 @@ describe('ERC721Expiring.sol', () => {
         });
 
         it('remint', async () => {
+            await network.provider.send('evm_increaseTime', [501]);
+            await network.provider.send('evm_mine');
+            await network.provider.send('evm_setAutomine', [true]);
+
             contrInst['mint(address,uint256,uint256)'](signer1.address, 0, expireTime);
             contrInst['mint(address,uint256,uint256)'](signer1.address, 1, expireTime);
             contrInst['mint(address,uint256,uint256)'](signer1.address, 2, expireTime);
@@ -289,6 +324,10 @@ describe('ERC721Expiring.sol', () => {
         });
 
         it('remint', async () => {
+            await network.provider.send('evm_increaseTime', [501]);
+            await network.provider.send('evm_mine');
+            await network.provider.send('evm_setAutomine', [true]);
+
             contrInst['mint(address,uint256,uint256)'](signer1.address, 0, expireTime);
             contrInst['mint(address,uint256,uint256)'](signer1.address, 1, expireTime);
             contrInst['mint(address,uint256,uint256)'](signer1.address, 2, expireTime);
@@ -309,5 +348,150 @@ describe('ERC721Expiring.sol', () => {
         afterEach(async () => {
             await network.provider.send('evm_setAutomine', [true]);
         });
+    });
+
+    describe('safeTransferFrom()', async () => {
+        beforeEach(async () => {
+            await expect(
+                contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 1),
+            ).to.be.revertedWith('ERC721: operator query for nonexistent token');
+
+            await network.provider.send('evm_setAutomine', [false]);
+
+            contrInst['safeMint(address,uint256,uint256)'](signer1.address, 0, expireTime);
+            contrInst['safeMint(address,uint256,uint256)'](signer1.address, 1, expireTime);
+            contrInst['safeMint(address,uint256,uint256)'](signer1.address, 2, expireTime);
+            contrInst['safeMint(address,uint256,uint256)'](signer2.address, 3, expireTime);
+            contrInst['safeMint(address,uint256,uint256)'](signer2.address, 4, expireTime);
+
+            await network.provider.send('evm_increaseTime', [0]);
+            await network.provider.send('evm_mine');
+        });
+
+        it('before expire', async () => {
+            await network.provider.send('evm_setAutomine', [true]);
+
+            await contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 0);
+            await contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 1);
+            await contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 2);
+            await contrInst
+                .connect(signer2)
+                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3);
+            await contrInst
+                .connect(signer2)
+                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4);
+        });
+
+        it('after expire', async () => {
+            await network.provider.send('evm_increaseTime', [501]);
+            await network.provider.send('evm_mine');
+            await network.provider.send('evm_setAutomine', [true]);
+
+            await expect(
+                contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 0),
+            ).to.be.revertedWith('ERC721: transfer query for nonexistent token');
+            await expect(
+                contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 1),
+            ).to.be.revertedWith('ERC721: transfer query for nonexistent token');
+            await expect(
+                contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 2),
+            ).to.be.revertedWith('ERC721: transfer query for nonexistent token');
+            await expect(
+                contrInst
+                    .connect(signer2)
+                    ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3),
+            ).to.be.revertedWith('ERC721: transfer query for nonexistent token');
+            await expect(
+                contrInst
+                    .connect(signer2)
+                    ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4),
+            ).to.be.revertedWith('ERC721: transfer query for nonexistent token');
+        });
+
+        it('remint', async () => {
+            await network.provider.send('evm_increaseTime', [501]);
+            await network.provider.send('evm_mine');
+            await network.provider.send('evm_setAutomine', [true]);
+
+            contrInst['safeMint(address,uint256,uint256)'](signer1.address, 0, expireTime);
+            contrInst['safeMint(address,uint256,uint256)'](signer1.address, 1, expireTime);
+            contrInst['safeMint(address,uint256,uint256)'](signer1.address, 2, expireTime);
+            contrInst['safeMint(address,uint256,uint256)'](signer2.address, 3, expireTime);
+            contrInst['safeMint(address,uint256,uint256)'](signer2.address, 4, expireTime);
+
+            await network.provider.send('evm_increaseTime', [0]);
+            await network.provider.send('evm_mine');
+            await network.provider.send('evm_setAutomine', [true]);
+
+            await contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 0);
+            await contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 1);
+            await contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 2);
+            await contrInst
+                .connect(signer2)
+                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3);
+            await contrInst
+                .connect(signer2)
+                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4);
+        });
+
+        afterEach(async () => {
+            await network.provider.send('evm_setAutomine', [true]);
+        });
+    });
+
+    it('grantExpiry() and extendExpiry()', async () => {
+        const increaseTime = 100;
+        const tokenId = 0;
+
+        await contrInst['mint(address,uint256,uint256)'](signer1.address, tokenId, expireTime);
+
+        const currExpiry = await contrInst.getExpiry(tokenId);
+        await contrInst.connect(signer1).extendExpiry(tokenId, increaseTime);
+
+        expect(await contrInst.getExpiry(tokenId)).to.equal(currExpiry.toNumber() + increaseTime);
+
+        //no permissions
+        await expect(contrInst.connect(signer2).extendExpiry(tokenId, increaseTime)).to.be.revertedWith(
+            `AccessControl: account ${signer2.address.toLowerCase()} is missing role ${keccak256(
+                toUtf8Bytes('EXPIRY_ROLE'),
+            )}`,
+        );
+
+        //grant permissions
+        await contrInst.connect(signer1).grantExpiry(signer2.address);
+
+        const currExpiry2 = await contrInst.getExpiry(tokenId);
+        await contrInst.connect(signer2).extendExpiry(tokenId, increaseTime);
+
+        expect(await contrInst.getExpiry(tokenId)).to.equal(currExpiry2.toNumber() + increaseTime);
+    });
+
+    it('beacon proxy initialization', async () => {
+        const name = 'name';
+        const symbol = 'symbol';
+        const uri = 'uri';
+
+        const beaconFactory = (await ethers.getContractFactory(
+            'UpgradeableBeaconInitializable',
+        )) as UpgradeableBeaconInitializable__factory;
+        const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+        const beaconProxyFactory = (await ethers.getContractFactory(
+            'BeaconProxyInitializable',
+        )) as BeaconProxyInitializable__factory;
+        const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+        const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, ERC721OwlExpiringImpl.address]);
+        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [
+            signer1.address,
+            beaconAddr,
+            ERC721OwlExpiringImpl.interface.encodeFunctionData('proxyInitialize', [signer1.address, name, symbol, uri]),
+        ]);
+
+        contrInst = (await ethers.getContractAt('ERC721OwlExpiring', beaconProxyAddr)) as ERC721OwlExpiring;
+
+        expect(await contrInst.name()).to.equal(name);
+        expect(await contrInst.symbol()).to.equal(symbol);
+        expect(await contrInst.baseURI()).to.equal(uri);
     });
 });

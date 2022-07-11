@@ -17,7 +17,7 @@ describe('Contract Version Testing', async () => {
             'ERC20Owl',
             'ERC721Owl',
             'ERC721OwlAttributes',
-            // 'ERC721OwlExpiring',
+            'ERC721OwlExpiring',
             // 'Bundle',
             // 'DutchAuction',
             // 'EnglishAuction',
