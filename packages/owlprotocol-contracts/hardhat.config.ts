@@ -44,6 +44,11 @@ const config: HardhatUserConfig = {
         hardhat: {
             from: process.env.PRIV_KEY,
             chainId: 1337,
+            forking: {
+                url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
+                enabled: false,
+                blockNumber: 11005998,
+            },
             accounts: [
                 //@ts-ignore
                 { balance: '10000000000000000000000', privateKey: process.env.PRIV_KEY },

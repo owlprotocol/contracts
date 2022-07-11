@@ -86,6 +86,7 @@
         "prettier": "^2.5.1",
         "rimraf": "^3.0.2",
         "solc-0.8": "npm:solc@^0.8.12",
+        "solidity-coverage": "^0.7.21",
         "solidity-docgen": "^0.6.0-beta.8",
         "ts-node": "^10.8.1",
         "typechain": "^5.2.0",
