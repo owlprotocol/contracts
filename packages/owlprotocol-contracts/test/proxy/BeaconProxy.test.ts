@@ -10,10 +10,8 @@ import {
     ERC721Owl__factory,
     ERC721Owl,
 } from '../../typechain';
-import { deployClone, predictDeployClone } from '../utils';
-import { ContractReceipt } from 'ethers';
-
-const salt = ethers.utils.formatBytes32String('1');
+import { deployClone } from '../utils';
+import { expect } from 'chai';
 
 describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async () => {
     let owlAdmin: SignerWithAddress;
@@ -62,7 +60,17 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
 
     it('deployment', async () => {
         //Deploy Beacon Instance with ProxyFactory
-        const deployBeacon = await deployClone(Beacon, [owlAdmin.address, ERC721Owl.address], ERC1167Factory);
+        const { address: beaconAddr } = await deployClone(
+            Beacon,
+            [owlAdmin.address, ERC721Owl.address],
+            ERC1167Factory,
+        );
+        const { address: beaconAddr2 } = await deployClone(
+            Beacon,
+            [owlAdmin.address, ERC721Owl.address],
+            ERC1167Factory,
+            ethers.utils.formatBytes32String('2'),
+        );
 
         //Deploy BeaconProxy Instance with ProxyFactory
         const ERC721Data = ERC721Owl.interface.encodeFunctionData('proxyInitialize', [
@@ -71,13 +79,39 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
             'OWL',
             'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
         ]);
-        const deployBeaconProxy = await deployClone(
+        const { address: beaconProxyAddr } = await deployClone(
             BeaconProxy,
-            [gameDev.address, deployBeacon.address, ERC721Data],
+            [gameDev.address, beaconAddr, ERC721Data],
             ERC1167Factory,
         );
-        const receipt: ContractReceipt = deployBeaconProxy.receipt!;
 
-        console.log('gas used: ', receipt.gasUsed.toNumber());
+        const beaconProxyInst = (await ethers.getContractAt(
+            'BeaconProxyInitializable',
+            beaconProxyAddr,
+        )) as BeaconProxyInitializable;
+
+        expect(await beaconProxyInst.beacon()).to.equal(beaconAddr);
+
+        await beaconProxyInst.connect(gameDev).setBeacon(beaconAddr2, '0x');
+        expect(await beaconProxyInst.beacon()).to.equal(beaconAddr2);
+    });
+
+    it('upgrade beacon', async () => {
+        const { address } = await deployClone(Beacon, [owlAdmin.address, ERC721Owl.address], ERC1167Factory);
+
+        const beaconInst = (await ethers.getContractAt(
+            'UpgradeableBeaconInitializable',
+            address,
+        )) as UpgradeableBeaconInitializable;
+
+        const ERC721OwlV2 = await ERC721OwlFactory.deploy();
+        await ERC721OwlV2.deployed();
+
+        await beaconInst.upgradeTo(ERC721OwlV2.address);
+        expect(await beaconInst.implementation()).to.equal(ERC721OwlV2.address);
+
+        await expect(beaconInst.upgradeTo(owlAdmin.address)).to.be.revertedWith(
+            'UpgradeableBeacon: implementation is not a contract',
+        );
     });
 });
