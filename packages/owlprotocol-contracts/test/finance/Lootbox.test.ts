@@ -24,13 +24,16 @@ import { ERC721Owl } from '../../typechain';
 import { deploy } from '@openzeppelin/hardhat-upgrades/dist/utils';
 import { pick } from 'lodash';
 import { parse } from 'path';
-import { keccakFromString, zeroAddress } from 'ethereumjs-util';
-import { AbiCoder } from '@ethersproject/abi';
+import { zeroAddress } from 'ethereumjs-util';
 
 enum ConsumableType {
     unaffected,
     burned,
+<<<<<<< HEAD
     NTime,
+=======
+    locked,
+>>>>>>> 8644d37 (create lootbox + tests)
 }
 enum TokenType {
     erc20,
@@ -45,7 +48,10 @@ describe('Lootbox.sol', function () {
     this.timeout(10000);
     let client: SignerWithAddress;
     let admin: SignerWithAddress;
+<<<<<<< HEAD
     let burnSigner: SignerWithAddress;
+=======
+>>>>>>> 8644d37 (create lootbox + tests)
 
     let lootboxImplementationFactory: Lootbox__factory;
     let lootboxImplementation: Lootbox;

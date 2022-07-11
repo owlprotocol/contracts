@@ -34,7 +34,6 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
     address[] public crafterContracts;
     uint256[] public probabilities;
 
-
     /**********************
         Initialization
     **********************/
@@ -54,7 +53,6 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
-        
     ) external initializer {
         __EnglishAuction_init(_admin, _crafterContracts, _probabilities);
     }
@@ -63,16 +61,14 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
-       
     ) external onlyInitializing {
-        __EnglishAuction_init(_admin,  _crafterContracts, _probabilities);
+        __EnglishAuction_init(_admin, _crafterContracts, _probabilities);
     }
 
     function __EnglishAuction_init(
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
-        
     ) internal onlyInitializing {
         __Ownable_init();
         _transferOwnership(_admin);
@@ -84,9 +80,11 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
-        
     ) internal onlyInitializing {
-        require(_probabilities.length == _crafterContracts.length, 'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!');
+        require(
+            _probabilities.length == _crafterContracts.length,
+            'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!'
+        );
 
         admin = _admin;
         crafterContracts = _crafterContracts;
@@ -101,27 +99,29 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         //randomly choose the crafter transfer contract to call
         uint256 randomSeed = SourceRandom.getRandomDebug(); //1 to 100
         console.log(randomSeed);
-        uint selectedContract = Probability.probabilityDistribution(randomSeed, probabilities);
-        
-        //check lootbox is owned by msgSender
-        (, ,address contractAddr, ,) = CrafterTransfer(crafterContracts[selectedContract]).getInputIngredient(0);
-        require(IERC721Upgradeable(contractAddr).ownerOf(lootboxId) == _msgSender(), 'Lootbox: you do not own this lootbox!');
+        uint256 selectedContract = Probability.probabilityDistribution(randomSeed, probabilities);
 
-        //craft outputs to msgSender 
+        //check lootbox is owned by msgSender
+        (, , address contractAddr, , ) = CrafterTransfer(crafterContracts[selectedContract]).getInputIngredient(0);
+        require(
+            IERC721Upgradeable(contractAddr).ownerOf(lootboxId) == _msgSender(),
+            'Lootbox: you do not own this lootbox!'
+        );
+
+        //craft outputs to msgSender
         uint256[][] memory inputERC721Id = new uint256[][](1);
         for (uint256 i = 0; i < 1; i++) {
             inputERC721Id[i] = new uint256[](1);
             inputERC721Id[0][0] = lootboxId;
             CrafterTransfer(crafterContracts[selectedContract]).craft(1, inputERC721Id, _msgSender()); //craft amount set to one, assuming recipes made for 1 lootbox
         }
-        
+
         emit Unlock();
     }
 
     /**
     Getters
     */
-
 
     /**
     Upgradeable functions
