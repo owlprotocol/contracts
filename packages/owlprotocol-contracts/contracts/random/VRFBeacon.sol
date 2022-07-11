@@ -7,8 +7,11 @@ import '@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol';
 
 import './RandomBeacon.sol';
 
+import 'hardhat/console.sol';
+
 contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
     event Fulfilled(uint256 indexed requestId, uint256 randomNumber);
+    event Requested(uint256 indexed requestId);
 
     VRFCoordinatorV2Interface COORDINATOR;
     bytes32 internal keyHash;
@@ -17,8 +20,6 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
     uint32 callbackGasLimit;
     uint16 requestConfirmations = 3;
     uint32 numWords = 1;
-
-    uint256[] public s_randomWords;
 
     mapping(uint256 => uint256) public blockNumberToRequestId;
     mapping(uint256 => uint256) public requestIdToRandomness;
@@ -40,8 +41,14 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
         EPOCH_PERIOD = _epochPeriod;
     }
 
+    function getRequestId(uint256 blockNumber) external view returns (uint256) {
+        uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
+        return blockNumberToRequestId[epochBlockNumber];
+    }
+
     function getRandomness(uint256 blockNumber) external view override returns (uint256) {
-        return requestIdToRandomness[blockNumberToRequestId[blockNumber]];
+        uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
+        return requestIdToRandomness[blockNumberToRequestId[epochBlockNumber]];
     }
 
     /**
@@ -50,7 +57,7 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
     function requestRandomness(uint256 blockNumber) public returns (uint256) {
         // Max request per EPOCH
         uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
-        require(blockNumberToRequestId[epochBlockNumber] == 0, 'Already requested!');
+        require(blockNumberToRequestId[epochBlockNumber] == 0, 'VRFBeacon: Already requested!');
 
         uint256 requestId = COORDINATOR.requestRandomWords(
             keyHash,
