@@ -33,10 +33,6 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
     address public admin;
     address[] public crafterContracts;
     uint256[] public probabilities;
-<<<<<<< HEAD
-=======
-
->>>>>>> a8db743 (lootbox updates)
 
     /**********************
         Initialization
@@ -85,15 +81,10 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
     ) internal onlyInitializing {
-<<<<<<< HEAD
         require(
             _probabilities.length == _crafterContracts.length,
             'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!'
         );
-=======
-        require(_probabilities.length == _crafterContracts.length, 'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!');
-        require(_probabilities[_probabilities.length - 1] == 100, 'Lootbox.sol: probabilities is not cumulative!');
->>>>>>> a8db743 (lootbox updates)
 
         admin = _admin;
         crafterContracts = _crafterContracts;
@@ -107,7 +98,6 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
     function unlock(uint256 lootboxId) external {
         //randomly choose the crafter transfer contract to call
         uint256 randomSeed = SourceRandom.getRandomDebug(); //1 to 100
-        console.log(randomSeed);
         uint256 selectedContract = Probability.probabilityDistribution(randomSeed, probabilities);
 
         //check lootbox is owned by msgSender

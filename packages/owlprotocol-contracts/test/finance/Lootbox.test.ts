@@ -21,24 +21,11 @@ import { createERC20, createERC721, createERC1155, deployClone, predictDeployClo
 import { BigNumber } from 'ethers';
 import { ERC721Owl__factory } from '../../typechain';
 import { ERC721Owl } from '../../typechain';
-import { deploy } from '@openzeppelin/hardhat-upgrades/dist/utils';
-import { pick } from 'lodash';
-import { parse } from 'path';
-import { keccakFromString, zeroAddress } from 'ethereumjs-util';
-import { AbiCoder } from '@ethersproject/abi';
 
 enum ConsumableType {
     unaffected,
     burned,
-<<<<<<< HEAD
-<<<<<<< HEAD
     NTime,
-=======
-    locked,
->>>>>>> 8644d37 (create lootbox + tests)
-=======
-    NTime,
->>>>>>> a8db743 (lootbox updates)
 }
 enum TokenType {
     erc20,
@@ -53,14 +40,7 @@ describe('Lootbox.sol', function () {
     this.timeout(10000);
     let client: SignerWithAddress;
     let admin: SignerWithAddress;
-<<<<<<< HEAD
-<<<<<<< HEAD
     let burnSigner: SignerWithAddress;
-=======
->>>>>>> 8644d37 (create lootbox + tests)
-=======
-    let burnSigner: SignerWithAddress;
->>>>>>> a8db743 (lootbox updates)
 
     let lootboxImplementationFactory: Lootbox__factory;
     let lootboxImplementation: Lootbox;
@@ -359,21 +339,14 @@ describe('Lootbox.sol', function () {
 
         it('multiple lootboxes with different assets', async () => {
             //Create lootboxImplementation instance
-<<<<<<< HEAD
             let crafterTransferArr = [
-=======
-            let arr = [
->>>>>>> a8db743 (lootbox updates)
                 crafterTransferERC20OutputAddress,
                 crafterTransferERC721OutputAddress,
                 crafterTransferERC1155OutputAddress,
                 crafterTransferAllOutputsAddress,
             ];
-<<<<<<< HEAD
 
             let probDistArr = [25, 50, 75, 100];
-=======
->>>>>>> a8db743 (lootbox updates)
             const { address: lootboxInstanceAddress } = await deployClone(
                 lootboxImplementation,
                 [
@@ -381,18 +354,8 @@ describe('Lootbox.sol', function () {
                     //array of crafterContract addresses
                     //array of probabilities
                     admin.address,
-<<<<<<< HEAD
                     crafterTransferArr,
                     probDistArr,
-=======
-                    [
-                        crafterTransferERC20OutputAddress,
-                        crafterTransferERC721OutputAddress,
-                        crafterTransferERC1155OutputAddress,
-                        crafterTransferAllOutputsAddress,
-                    ],
-                    [25, 50, 75, 100],
->>>>>>> a8db743 (lootbox updates)
                 ],
                 ERC1167Factory,
             );
@@ -406,7 +369,6 @@ describe('Lootbox.sol', function () {
             await lootboxNFT.connect(client).setApprovalForAll(crafterTransferERC721OutputAddress, true);
             await lootboxNFT.connect(client).setApprovalForAll(crafterTransferERC1155OutputAddress, true);
             await lootboxNFT.connect(client).setApprovalForAll(crafterTransferAllOutputsAddress, true);
-<<<<<<< HEAD
 
             await crafterInstanceERC20.grantForwarder(lootboxInstanceAddress);
             await crafterInstanceERC721.grantForwarder(lootboxInstanceAddress);
@@ -427,9 +389,6 @@ describe('Lootbox.sol', function () {
                     break;
                 }
             }
-
-            console.log(seedModNum);
-            console.log(index);
 
             if (index == 0) {
                 expect(await lootboxNFT.ownerOf(1)).to.equal(burnSigner.address);
@@ -486,22 +445,6 @@ describe('Lootbox.sol', function () {
                     ERC1167Factory,
                 ),
             ).to.be.revertedWith('Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!');
-=======
-
-            await crafterInstanceERC20.grantForwarder(lootboxInstanceAddress);
-            await crafterInstanceERC721.grantForwarder(lootboxInstanceAddress);
-            await crafterInstanceERC1155.grantForwarder(lootboxInstanceAddress);
-            await crafterInstanceAllOutputs.grantForwarder(lootboxInstanceAddress);
-
-            const tx = await lootboxInstance.connect(client).unlock(1);
-            await tx.wait();
-
-            let random = parseInt(keccak256(hexZeroPad(hexlify(await getTime()), 32)));
-            console.log(random);
-
-            // expect(await lootboxNFT.ownerOf(1)).to.equal(burnSigner.address);
-            // expect(await testOutputERC20.balanceOf(client.address)).to.equal(1);
->>>>>>> a8db743 (lootbox updates)
         });
     });
 });

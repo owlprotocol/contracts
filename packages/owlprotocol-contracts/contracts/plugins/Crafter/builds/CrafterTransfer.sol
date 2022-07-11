@@ -72,7 +72,7 @@ contract CrafterTransfer is
      * @dev Configures crafting recipe with inputs/outputs
      * @param _admin owner, can control outputs on contract
      * @param _burnAddress Burn address for burn inputs
-     * @param _craftableAmount limit on the number of times this recipe can be crafted 
+     * @param _craftableAmount limit on the number of times this recipe can be crafted
      * @param _inputs inputs for recipe
      * @param _outputs outputs for recipe
      */
@@ -130,7 +130,7 @@ contract CrafterTransfer is
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
     }
 
-   /**
+    /**
      * @notice Must have owner role
      * @dev Grants FORWARDER_ROLE to {a}
      * @param to address to
@@ -339,18 +339,26 @@ contract CrafterTransfer is
         _craft(craftAmount, _inputERC721Ids, _msgSender());
     }
 
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids, address _crafter) external onlyRole(FORWARDER_ROLE) {
+    function craft(
+        uint96 craftAmount,
+        uint256[][] calldata _inputERC721Ids,
+        address _crafter
+    ) external onlyRole(FORWARDER_ROLE) {
         _craft(craftAmount, _inputERC721Ids, _crafter);
     }
 
     /**
      * @notice Craft {craftAmount}
-     * @dev Used to craft. Consumes inputs and transfers outputs. Can only be called by forwarder contracts. 
+     * @dev Used to craft. Consumes inputs and transfers outputs. Can only be called by forwarder contracts.
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      * @param _crafter the address of the client requesting to craft
      */
-    function _craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids, address _crafter) internal  {
+    function _craft(
+        uint96 craftAmount,
+        uint256[][] calldata _inputERC721Ids,
+        address _crafter
+    ) internal {
         // Requires
         require(craftAmount > 0, 'CrafterTransfer: craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'CrafterTransfer: Not enough resources to craft!');
@@ -448,7 +456,6 @@ contract CrafterTransfer is
 
         for (uint256 i = 0; i < outputs.length; i++) {
             PluginsLib.Ingredient storage ingredient = outputs[i];
-            console.log(i);
             if (ingredient.token == PluginsLib.TokenType.erc20) {
                 //Transfer ERC20
                 SafeERC20Upgradeable.safeTransfer(
@@ -497,7 +504,13 @@ contract CrafterTransfer is
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        returns (bool)
+    {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }

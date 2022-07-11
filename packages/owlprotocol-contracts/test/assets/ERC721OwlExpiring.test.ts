@@ -47,7 +47,7 @@ describe('ERC721Expiring.sol', () => {
 
     describe('ownerOf()', async () => {
         beforeEach(async () => {
-            await expect(contrInst.ownerOf(1)).to.be.revertedWith('ERC721: owner query for nonexistent token');
+            await expect(contrInst.ownerOf(1)).to.be.revertedWith('ERC721: invalid token ID');
             await expect(contrInst['mint(address,uint256)'](signer1.address, 2)).to.be.revertedWith(
                 'ERC721OwlExpiring: function disabled',
             );
@@ -173,9 +173,7 @@ describe('ERC721Expiring.sol', () => {
 
     describe('approve()', async () => {
         beforeEach(async () => {
-            await expect(contrInst.approve(signer2.address, 1)).to.be.revertedWith(
-                'ERC721: owner query for nonexistent token',
-            );
+            await expect(contrInst.approve(signer2.address, 1)).to.be.revertedWith('ERC721: invalid token ID');
 
             await network.provider.send('evm_setAutomine', [false]);
 
@@ -276,7 +274,7 @@ describe('ERC721Expiring.sol', () => {
     describe('transferFrom()', async () => {
         beforeEach(async () => {
             await expect(contrInst.transferFrom(signer1.address, signer2.address, 1)).to.be.revertedWith(
-                'ERC721: operator query for nonexistent token',
+                'ERC721: invalid token ID',
             );
 
             await network.provider.send('evm_setAutomine', [false]);
@@ -354,7 +352,7 @@ describe('ERC721Expiring.sol', () => {
         beforeEach(async () => {
             await expect(
                 contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 1),
-            ).to.be.revertedWith('ERC721: operator query for nonexistent token');
+            ).to.be.revertedWith('ERC721: invalid token ID');
 
             await network.provider.send('evm_setAutomine', [false]);
 

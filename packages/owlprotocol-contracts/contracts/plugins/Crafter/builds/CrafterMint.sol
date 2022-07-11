@@ -129,7 +129,7 @@ contract CrafterMint is
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
     }
-    
+
     /**
      * @notice Must have owner role
      * @dev Grants FORWARDER_ROLE to {a}
@@ -282,15 +282,15 @@ contract CrafterMint is
         emit RecipeUpdate(craftableAmount);
     }
 
-<<<<<<< HEAD
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) public {
-=======
     function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
->>>>>>> a8db743 (lootbox updates)
         _craft(craftAmount, _inputERC721Ids, _msgSender());
     }
 
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids, address _crafter) external onlyRole(FORWARDER_ROLE) {
+    function craft(
+        uint96 craftAmount,
+        uint256[][] calldata _inputERC721Ids,
+        address _crafter
+    ) external onlyRole(FORWARDER_ROLE) {
         _craft(craftAmount, _inputERC721Ids, _crafter);
     }
 
@@ -300,7 +300,11 @@ contract CrafterMint is
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function _craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids, address _crafter) internal {
+    function _craft(
+        uint96 craftAmount,
+        uint256[][] calldata _inputERC721Ids,
+        address _crafter
+    ) internal {
         // Requires
         require(craftAmount > 0, 'CrafterMint: craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'CrafterMint: Not enough resources to craft!');
@@ -404,20 +408,11 @@ contract CrafterMint is
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
                 //Pop token ids from storage
                 for (uint256 j = 0; j < craftAmount; j++) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    ERC721Owl(ingredient.contractAddr).mint(_crafter, ingredient.tokenIds[ingredient.tokenIds.length - 1]);
-=======
-                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
->>>>>>> d76ad40 (Update CrafterMint.sol)
-=======
-                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
->>>>>>> 0738462 (Update CrafterMint.sol)
-=======
-                    ERC721Owl(ingredient.contractAddr).mint(_crafter, ingredient.tokenIds[ingredient.tokenIds.length - 1]);
->>>>>>> a8db743 (lootbox updates)
-                    
+                    ERC721Owl(ingredient.contractAddr).mint(
+                        _crafter,
+                        ingredient.tokenIds[ingredient.tokenIds.length - 1]
+                    );
+
                     //Update ingredient, remove withdrawn tokenId
                     ingredient.tokenIds.pop();
                 }
@@ -445,7 +440,13 @@ contract CrafterMint is
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        returns (bool)
+    {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
