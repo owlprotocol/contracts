@@ -1,5 +1,3 @@
-
-
 ## RentableERC721Owl
 
 ### MINTER_ROLE
@@ -56,13 +54,13 @@ function initialize(address _admin, string _name, string _symbol, string baseURI
 function proxyInitialize(address _admin, string _name, string _symbol, string baseURI_) external
 ```
 
-### __RentableERC721Owl_init
+### \_\_RentableERC721Owl_init
 
 ```solidity
 function __RentableERC721Owl_init(address _admin, string _name, string _symbol, string baseURI_) internal
 ```
 
-### __RentableERC721Owl_init_unchained
+### \_\_RentableERC721Owl_init_unchained
 
 ```solidity
 function __RentableERC721Owl_init_unchained(address _admin, string baseURI_) internal
@@ -78,9 +76,9 @@ Must have DEFAULT_ADMIN_ROLE
 
 _Grants MINTER_ROLE to {a}_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| to | address | address to |
+| Name | Type    | Description |
+| ---- | ------- | ----------- |
+| to   | address | address to  |
 
 ### grantUriRole
 
@@ -92,9 +90,9 @@ Must have DEFAULT_ADMIN_ROLE
 
 _Grants URI_ROLE to {a}_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| to | address | address to |
+| Name | Type    | Description |
+| ---- | ------- | ----------- |
+| to   | address | address to  |
 
 ### grantRenter
 
@@ -106,9 +104,9 @@ Must have DEFAULT_ADMIN_ROLE
 
 _Grants RENTER_ROLE to {a}_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| to | address | address to |
+| Name | Type    | Description |
+| ---- | ------- | ----------- |
+| to   | address | address to  |
 
 ### mint
 
@@ -120,11 +118,11 @@ Must have MINTER_ROLE
 
 _Allows MINTER_ROLE to mint NFTs_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| to | address | address to |
-| tokenId | uint256 | tokenId value |
-| expireTime | uint256 |  |
+| Name       | Type    | Description   |
+| ---------- | ------- | ------------- |
+| to         | address | address to    |
+| tokenId    | uint256 | tokenId value |
+| expireTime | uint256 |               |
 
 ### safeMint
 
@@ -136,9 +134,9 @@ Must have MINTER_ROLE
 
 _Allows caller to mint NFTs (safeMint)_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| to | address | address to |
+| Name    | Type    | Description   |
+| ------- | ------- | ------------- |
+| to      | address | address to    |
 | tokenId | uint256 | tokenId value |
 
 ### setBaseURI
@@ -151,11 +149,11 @@ Must have URI_ROLE role!
 
 _Allows setting the baseURI_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| baseURI_ | string | set the baseURI value. |
+| Name      | Type   | Description            |
+| --------- | ------ | ---------------------- |
+| baseURI\_ | string | set the baseURI value. |
 
-### _baseURI
+### \_baseURI
 
 ```solidity
 function _baseURI() internal view returns (string)
@@ -175,10 +173,10 @@ function exists(uint256 tokenId) external view returns (bool)
 function burn(uint256 tokenId) public virtual
 ```
 
-### extendRental
+### extendExpiry
 
 ```solidity
-function extendRental(uint256 tokenId, uint256 extendAmount) external
+function extendExpiry(uint256 tokenId, uint256 extendAmount) external
 ```
 
 ### ownerOf
@@ -197,11 +195,10 @@ function supportsInterface(bytes4 interfaceId) public view virtual returns (bool
 
 _ERC165 Support_
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
+| Name        | Type   | Description                       |
+| ----------- | ------ | --------------------------------- |
 | interfaceId | bytes4 | hash of the interface testing for |
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | bool | bool whether interface is supported |
-
+| Name | Type | Description                         |
+| ---- | ---- | ----------------------------------- |
+| [0]  | bool | bool whether interface is supported |

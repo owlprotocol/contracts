@@ -86,6 +86,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const ERC1155Data = ERC1155Impl.interface.encodeFunctionData('proxyInitialize', [
         other,
         'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu/{id}.json',
+        'newContractURI',
     ]);
     const ERC1155BeaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
         other,
