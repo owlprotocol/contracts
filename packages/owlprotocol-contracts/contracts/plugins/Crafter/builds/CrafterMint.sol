@@ -282,7 +282,11 @@ contract CrafterMint is
         emit RecipeUpdate(craftableAmount);
     }
 
+<<<<<<< HEAD
     function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) public {
+=======
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
+>>>>>>> a8db743 (lootbox updates)
         _craft(craftAmount, _inputERC721Ids, _msgSender());
     }
 
@@ -402,6 +406,7 @@ contract CrafterMint is
                 for (uint256 j = 0; j < craftAmount; j++) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                     ERC721Owl(ingredient.contractAddr).mint(_crafter, ingredient.tokenIds[ingredient.tokenIds.length - 1]);
 =======
                     ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
@@ -409,6 +414,9 @@ contract CrafterMint is
 =======
                     ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
 >>>>>>> 0738462 (Update CrafterMint.sol)
+=======
+                    ERC721Owl(ingredient.contractAddr).mint(_crafter, ingredient.tokenIds[ingredient.tokenIds.length - 1]);
+>>>>>>> a8db743 (lootbox updates)
                     
                     //Update ingredient, remove withdrawn tokenId
                     ingredient.tokenIds.pop();

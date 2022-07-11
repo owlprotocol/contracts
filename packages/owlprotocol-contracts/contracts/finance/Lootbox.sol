@@ -33,6 +33,10 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
     address public admin;
     address[] public crafterContracts;
     uint256[] public probabilities;
+<<<<<<< HEAD
+=======
+
+>>>>>>> a8db743 (lootbox updates)
 
     /**********************
         Initialization
@@ -81,10 +85,15 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
     ) internal onlyInitializing {
+<<<<<<< HEAD
         require(
             _probabilities.length == _crafterContracts.length,
             'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!'
         );
+=======
+        require(_probabilities.length == _crafterContracts.length, 'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!');
+        require(_probabilities[_probabilities.length - 1] == 100, 'Lootbox.sol: probabilities is not cumulative!');
+>>>>>>> a8db743 (lootbox updates)
 
         admin = _admin;
         crafterContracts = _crafterContracts;
@@ -115,7 +124,6 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
             inputERC721Id[0][0] = lootboxId;
             CrafterTransfer(crafterContracts[selectedContract]).craft(1, inputERC721Id, _msgSender()); //craft amount set to one, assuming recipes made for 1 lootbox
         }
-
         emit Unlock();
     }
 
