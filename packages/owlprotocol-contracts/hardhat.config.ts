@@ -13,6 +13,7 @@ import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'solidity-docgen';
+import 'solidity-coverage';
 
 import { ethers } from 'ethers';
 
