@@ -74,8 +74,7 @@ contract ERC721OwlExpiring is ERC721Owl {
      */
     function ownerOf(uint256 tokenId) public view override returns (address) {
         require(!_expired(tokenId), 'ERC721: owner query for nonexistent token');
-        address owner = ERC721Upgradeable.ownerOf(tokenId);
-        require(owner != address(0), 'ERC721: owner query for nonexistent token');
+        address owner = ERC721Upgradeable.ownerOf(tokenId); //can never be zero address
         return owner;
     }
 
@@ -185,6 +184,11 @@ contract ERC721OwlExpiring is ERC721Owl {
 
     function extendExpiry(uint256 tokenId, uint256 extendAmount) external onlyRole(EXPIRY_ROLE) {
         expires[tokenId] += extendAmount;
+    }
+
+    function getExpiry(uint256 tokenId) external view returns (uint256) {
+        // require(!_expired(tokenId), 'ERC721Expiring: expiry query for nonexistent token');
+        return expires[tokenId];
     }
 
     function _expired(uint256 tokenId) internal view virtual returns (bool) {
