@@ -101,5 +101,8 @@
         "artifacts/contracts/**/*.json",
         "contracts/**/*.sol",
         "types"
-    ]
+    ],
+    "dependencies": {
+        "@chainlink/contracts": "^0.4.1"
+    }
 }

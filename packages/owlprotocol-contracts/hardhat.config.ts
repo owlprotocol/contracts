@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -35,17 +34,32 @@ const config: HardhatUserConfig = {
         other: 1,
     },
     networks: {
+        localhost: {
+            from: process.env.PRIV_KEY,
+            url: 'http://127.0.0.1:8545/',
+            //@ts-ignore
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
+        },
         hardhat: {
             from: process.env.PRIV_KEY,
             chainId: 1337,
             accounts: [
                 //@ts-ignore
-                { balance: '1000000000000000000', privateKey: process.env.PRIV_KEY },
+                { balance: '10000000000000000000000', privateKey: process.env.PRIV_KEY },
                 //@ts-ignore
-                { balance: '1000000000000000000', privateKey: process.env.PROXY_PRIV_KEY },
-                { balance: '1000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32) },
-                { balance: '1000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(2), 32) },
-                { balance: '1000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32) },
+                { balance: '10000000000000000000000', privateKey: process.env.PROXY_PRIV_KEY },
+                {
+                    balance: '10000000000000000000000',
+                    privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32),
+                },
+                {
+                    balance: '10000000000000000000000',
+                    privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(2), 32),
+                },
+                {
+                    balance: '10000000000000000000000',
+                    privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32),
+                },
             ],
         },
 

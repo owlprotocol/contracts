@@ -129,12 +129,12 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     **********************/
 
     /**
-    * @dev Creates a single Rental based on the inputted Rental Term Struct that outlines all of the terms
-    * for that specific rental instance.
-    * Updates the various mappings and gives the Rental an ID.
-    * Increments the number of Rentals handled by this contract
-    * @param rentalTerm inputted rental term struct
-    */
+     * @dev Creates a single Rental based on the inputted Rental Term Struct that outlines all of the terms
+     * for that specific rental instance.
+     * Updates the various mappings and gives the Rental an ID.
+     * Increments the number of Rentals handled by this contract
+     * @param rentalTerm inputted rental term struct
+     */
     function createRental(RentalTerms calldata rentalTerm) external {
         rentTermsId[numRentals] = rentalTerm; //maps ID = numRentals to the passed in rentalTerm
         timePeriodsPaid[numRentals] = 0; //initial number of rent periods paid for this Rental set to 0
@@ -155,28 +155,27 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /**
-    * @notice this function can only be called at the very start of a Rental process. It must be called
-    * to mint the shadow NFT
-    * @dev Starts the payment process for the Rental with rentId with it's first payment
-    * @param rentId inputted Rental ID that is used in the mapping to get the corresponding rental term struct
-    */
+     * @notice this function can only be called at the very start of a Rental process. It must be called
+     * to mint the shadow NFT
+     * @dev Starts the payment process for the Rental with rentId with it's first payment
+     * @param rentId inputted Rental ID that is used in the mapping to get the corresponding rental term struct
+     */
     function startRent(uint256 rentId) external payable {
         //startRent should be called by the renter
         require(timePeriodsPaid[rentId] == 0, 'rent has already been started'); //makes sure no rent has been payed yet
         RentalTerms memory r = rentTermsId[rentId]; //uses mapping to get the corresponding rental term struct based on rentId
 
-
         payRent(rentId, 1); //calls the payRent method to pay rent for 1 time period only
-        RentableERC721Owl(shadowAddr).mint(r.renter, r.nftId, r.expireTimePerPeriod); //mints "shadow" NFT on the separate address
+        ERC721OwlExpiring(shadowAddr).mint(r.renter, r.nftId, r.expireTimePerPeriod); //mints "shadow" NFT on the separate address
 
         emit Pay(rentId, r.pricePerPeriod);
     }
 
     /**
-    * @dev function that allows a renter to pay rent for any number of time periods
-    * @param rentId inputted Rental ID that is used in the mapping to get the corresponding rental term struct
-    * @param timePeriodsToPay allows the renter to decide how many time periods they want to pay for at once
-    */
+     * @dev function that allows a renter to pay rent for any number of time periods
+     * @param rentId inputted Rental ID that is used in the mapping to get the corresponding rental term struct
+     * @param timePeriodsToPay allows the renter to decide how many time periods they want to pay for at once
+     */
     function payRent(uint256 rentId, uint256 timePeriodsToPay) public payable {
         //payRent should be called by the renter
         require(_msgSender() == rentTermsId[rentId].renter, 'you are not the renter and cannot pay rent');
@@ -203,17 +202,17 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
 
         //updates the "shadow" address with the rent duration based on how much has been paid
         //ensures that "shadow" NFT will not be destroyed yet because rent has been paid
-        RentableERC721Owl(shadowAddr).extendRental(rentId, timePeriodsToPay * r.expireTimePerPeriod);
+        ERC721OwlExpiring(shadowAddr).extendExpiry(rentId, timePeriodsToPay * r.expireTimePerPeriod);
 
         emit Pay(rentId, timePeriodsToPay * r.pricePerPeriod);
     }
 
     /**
-    * @notice this function only updates the boolean for the rent status (ended vs not) and
-    * transfers the ownership of the NFT back to its owner. It does not give funds to the owner in ERC20 tokens
-    * @dev this function allows the owner to end the rental at any point in time
-    * @param rentalId inputted Rental ID that is used in the mapping to get the corresponding rental term struct
-    */
+     * @notice this function only updates the boolean for the rent status (ended vs not) and
+     * transfers the ownership of the NFT back to its owner. It does not give funds to the owner in ERC20 tokens
+     * @dev this function allows the owner to end the rental at any point in time
+     * @param rentalId inputted Rental ID that is used in the mapping to get the corresponding rental term struct
+     */
     function endRental(uint256 rentalId) external payable {
         //endRental can only be paid by the owner
         require(_msgSender() == rentTermsId[rentalId].owner, 'you are not the owner and cannot end the rental');
@@ -230,10 +229,9 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
         emit End(rentalId, timePeriodsPaid[rentalId] * rentTermsId[rentalId].pricePerPeriod);
     }
 
-
     /**
-    * @dev this function enables the owner to claim the balances paid by the renter
-    */
+     * @dev this function enables the owner to claim the balances paid by the renter
+     */
     function ownerClaim() external payable {
         uint256 bal = balances[_msgSender()]; //temporarily holds all funds for the owner calling this function
         balances[_msgSender()] = 0; //resets funds to 0 after owner claims balances
@@ -249,43 +247,43 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     */
 
     /**
-    * @dev gets a rental instance based on the inputted rentId
-    * @param rentId inputted rental term struct id
-    */
+     * @dev gets a rental instance based on the inputted rentId
+     * @param rentId inputted rental term struct id
+     */
     function getRental(uint256 rentId) external view returns (RentalTerms memory) {
         //returns a rental based on the rentalId using the mapping
         return rentTermsId[rentId];
     }
 
     /**
-    * @dev gets the number of rentals created on this contract
-    */
+     * @dev gets the number of rentals created on this contract
+     */
     function getNumRentals() external view returns (uint256) {
         return numRentals;
     }
 
     /**
-    * @dev gets the number of time periods paid by a renter for a specific Rental based on the inputted rentId
-    * @param rentalId inputted rental term struct id
-    */
+     * @dev gets the number of time periods paid by a renter for a specific Rental based on the inputted rentId
+     * @param rentalId inputted rental term struct id
+     */
     function getTimePeriodsPaid(uint256 rentalId) external view returns (uint256) {
         //returns number of time periods paid based on the rentalId using the mapping
         return timePeriodsPaid[rentalId];
     }
 
     /**
-    * @dev gets how many time periods are left to pay for a specific Rental
-    * @param rentalId inputted rental term struct id
-    */
+     * @dev gets how many time periods are left to pay for a specific Rental
+     * @param rentalId inputted rental term struct id
+     */
     function getTimePeriodsLeftToPay(uint256 rentalId) external view returns (uint256) {
         //returns number of time periods left to pay in a specific Rental
         return rentTermsId[rentalId].timePeriods - timePeriodsPaid[rentalId];
     }
 
     /**
-    * @dev gets the total balance that is claimable by an owner
-    * @param owner owner of a Rental that can call this function to see how much they can claim
-    */
+     * @dev gets the total balance that is claimable by an owner
+     * @param owner owner of a Rental that can call this function to see how much they can claim
+     */
     function getBalance(address owner) external view returns (uint256) {
         //returns claimable funds for an owner
         return balances[owner];
