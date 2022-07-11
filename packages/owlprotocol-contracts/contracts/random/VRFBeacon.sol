@@ -8,28 +8,35 @@ import '@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol';
 import './RandomBeacon.sol';
 
 contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
+    event Fulfilled(uint256 indexed requestId, uint256 randomNumber);
+
     VRFCoordinatorV2Interface COORDINATOR;
-    LinkTokenInterface LINKTOKEN;
+    bytes32 internal keyHash;
 
     uint64 s_subscriptionId;
-    bytes32 internal keyHash;
-    uint256 internal fee;
+    uint32 callbackGasLimit;
+    uint16 requestConfirmations = 3;
+    uint32 numWords = 1;
 
-    mapping(uint256 => bytes32) public blockNumberToRequestId;
-    mapping(bytes32 => uint256) public requestIdToRandomness;
+    uint256[] public s_randomWords;
+
+    mapping(uint256 => uint256) public blockNumberToRequestId;
+    mapping(uint256 => uint256) public requestIdToRandomness;
 
     /**
      * Constructor inherits VRFConsumerBase
      */
     constructor(
+        uint64 _subscriptionId,
         address _vrf,
-        address _link,
         bytes32 _keyHash,
-        uint256 _fee,
+        uint32 _callbackGasLimit,
         uint256 _epochPeriod
-    ) VRFConsumerBase(_vrf, _link) RandomBeacon(_epochPeriod) {
+    ) VRFConsumerBaseV2(_vrf) RandomBeacon(_epochPeriod) {
+        s_subscriptionId = _subscriptionId;
+        COORDINATOR = VRFCoordinatorV2Interface(_vrf);
         keyHash = _keyHash;
-        fee = _fee;
+        callbackGasLimit = _callbackGasLimit;
         EPOCH_PERIOD = _epochPeriod;
     }
 
@@ -40,14 +47,18 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
     /**
      * Requests randomness from a block hash
      */
-    function requestRandomness(uint256 blockNumber) public returns (bytes32) {
-        require(LINK.balanceOf(address(this)) > fee, 'Not enough LINK - fill contract with faucet');
-
+    function requestRandomness(uint256 blockNumber) public returns (uint256) {
         // Max request per EPOCH
         uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
         require(blockNumberToRequestId[epochBlockNumber] == 0, 'Already requested!');
 
-        bytes32 requestId = super.requestRandomness(keyHash, fee);
+        uint256 requestId = COORDINATOR.requestRandomWords(
+            keyHash,
+            s_subscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
+        );
         blockNumberToRequestId[epochBlockNumber] = requestId;
 
         return requestId;
@@ -56,7 +67,9 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
     /**
      * Callback function used by VRF Coordinator
      */
-    function fulfillRandomness(bytes32 _requestId, uint256 _randomness) internal override {
-        requestIdToRandomness[_requestId] = _randomness;
+    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
+        requestIdToRandomness[requestId] = randomWords[0];
+
+        emit Fulfilled(requestId, randomWords[0]);
     }
 }
