@@ -105,6 +105,7 @@
         "types"
     ],
     "dependencies": {
-        "@chainlink/contracts": "^0.4.1"
+        "@chainlink/contracts": "^0.4.1",
+        "solidity-coverage": "^0.7.21"
     }
 }

@@ -282,7 +282,7 @@ contract CrafterMint is
         emit RecipeUpdate(craftableAmount);
     }
 
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) public {
         _craft(craftAmount, _inputERC721Ids, _msgSender());
     }
 

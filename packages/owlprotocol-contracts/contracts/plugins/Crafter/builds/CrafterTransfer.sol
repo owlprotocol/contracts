@@ -448,6 +448,7 @@ contract CrafterTransfer is
 
         for (uint256 i = 0; i < outputs.length; i++) {
             PluginsLib.Ingredient storage ingredient = outputs[i];
+            console.log(i);
             if (ingredient.token == PluginsLib.TokenType.erc20) {
                 //Transfer ERC20
                 SafeERC20Upgradeable.safeTransfer(

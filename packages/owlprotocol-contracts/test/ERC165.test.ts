@@ -30,6 +30,7 @@ describe('ERC165 Testing', async () => {
             'MinterBreeding',
             'MinterRandom',
             'MinterSimple',
+            'Lootbox',
         ];
 
         const supportsAll = contracts.map((c) => assertSupportsInterface(c));

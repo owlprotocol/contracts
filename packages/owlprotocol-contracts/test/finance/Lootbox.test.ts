@@ -344,12 +344,14 @@ describe('Lootbox.sol', function () {
 
         it('multiple lootboxes with different assets', async () => {
             //Create lootboxImplementation instance
-            let arr = [
+            let crafterTransferArr = [
                 crafterTransferERC20OutputAddress,
                 crafterTransferERC721OutputAddress,
                 crafterTransferERC1155OutputAddress,
                 crafterTransferAllOutputsAddress,
             ];
+
+            let probDistArr = [25, 50, 75, 100];
             const { address: lootboxInstanceAddress } = await deployClone(
                 lootboxImplementation,
                 [
@@ -357,13 +359,8 @@ describe('Lootbox.sol', function () {
                     //array of crafterContract addresses
                     //array of probabilities
                     admin.address,
-                    [
-                        crafterTransferERC20OutputAddress,
-                        crafterTransferERC721OutputAddress,
-                        crafterTransferERC1155OutputAddress,
-                        crafterTransferAllOutputsAddress,
-                    ],
-                    [25, 50, 75, 100],
+                    crafterTransferArr,
+                    probDistArr,
                 ],
                 ERC1167Factory,
             );
@@ -386,11 +383,76 @@ describe('Lootbox.sol', function () {
             const tx = await lootboxInstance.connect(client).unlock(1);
             await tx.wait();
 
-            let random = parseInt(keccak256(hexZeroPad(hexlify(await getTime()), 32)));
-            console.log(random);
+            let random = BigNumber.from(keccak256(hexZeroPad(hexlify(await getTime()), 32)));
 
-            // expect(await lootboxNFT.ownerOf(1)).to.equal(burnSigner.address);
-            // expect(await testOutputERC20.balanceOf(client.address)).to.equal(1);
+            let seedMod = random.mod(probDistArr[probDistArr.length - 1]).add(1);
+            let seedModNum = seedMod.toNumber();
+            let index;
+            for (let j = 0; j < probDistArr.length; j++) {
+                if (seedModNum <= probDistArr[j]) {
+                    index = j;
+                    break;
+                }
+            }
+
+            console.log(seedModNum);
+            console.log(index);
+
+            if (index == 0) {
+                expect(await lootboxNFT.ownerOf(1)).to.equal(burnSigner.address);
+                expect(await testOutputERC20.balanceOf(client.address)).to.equal(1);
+            } else if (index == 1) {
+                expect(await lootboxNFT.ownerOf(1)).to.equal(burnSigner.address);
+                expect(await testOutputERC721.ownerOf(1)).to.equal(client.address);
+            } else if (index == 2) {
+                expect(await lootboxNFT.ownerOf(1)).to.equal(client.address);
+                expect(await testOutputERC1155.balanceOf(client.address, 1)).to.equal(5);
+            } else if (index == 3) {
+                expect(await testOutputERC20.balanceOf(client.address)).to.equal(5);
+                expect(await testOutputERC721.ownerOf(2)).to.equal(client.address);
+                expect(await testOutputERC1155.balanceOf(client.address, 2)).to.equal(1);
+                expect(await testOutputERC1155.balanceOf(client.address, 3)).to.equal(1);
+            }
+        });
+
+        it('error: user does not own lootbox', async () => {
+            //Create lootboxImplementation instance
+            const { address: lootboxInstanceAddress } = await deployClone(
+                lootboxImplementation,
+                [
+                    //admin address
+                    //array of crafterContract addresses
+                    //array of probabilities
+                    admin.address,
+                    [crafterTransferERC20OutputAddress],
+                    [100],
+                ],
+                ERC1167Factory,
+            );
+
+            await lootboxNFT.mint(burnSigner.address, 1);
+
+            lootboxInstance = (await ethers.getContractAt('Lootbox', lootboxInstanceAddress)) as Lootbox;
+
+            await expect(lootboxInstance.unlock(1)).to.be.revertedWith('Lootbox: you do not own this lootbox!');
+        });
+
+        it('error: length of probabilities and crafterContracts is not equal', async () => {
+            //Create lootboxImplementation instance
+            await expect(
+                deployClone(
+                    lootboxImplementation,
+                    [
+                        //admin address
+                        //array of crafterContract addresses
+                        //array of probabilities
+                        admin.address,
+                        [crafterTransferERC20OutputAddress],
+                        [100, 200],
+                    ],
+                    ERC1167Factory,
+                ),
+            ).to.be.revertedWith('Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!');
         });
     });
 });
