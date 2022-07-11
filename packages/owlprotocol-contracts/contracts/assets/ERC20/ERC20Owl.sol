@@ -24,10 +24,28 @@ contract ERC20Owl is ERC20Upgradeable, ERC20BurnableUpgradeable, AccessControlUp
         string calldata _name,
         string calldata _symbol
     ) external initializer {
-        __ERC20_init(_name, _symbol);
+        __ERC20Owl_init(_admin, _name, _symbol);
+    }
+
+    function proxyInitialize(
+        address _admin,
+        string calldata _name,
+        string calldata _symbol
+    ) external onlyInitializing {
+        __ERC20Owl_init(_admin, _name, _symbol);
+    }
+
+    function __ERC20Owl_init(
+        address _admin,
+        string calldata _name,
+        string calldata _symbol
+    ) internal onlyInitializing {
         __ERC20Burnable_init();
         __AccessControl_init();
+        __ERC20Owl_init_unchained(_admin);
+    }
 
+    function __ERC20Owl_init_unchained(address _admin) internal onlyInitializing {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
     }

@@ -5,8 +5,6 @@ import {ClonesUpgradeable} from '@openzeppelin/contracts-upgradeable/proxy/Clone
 import {ContextUpgradeable} from '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol';
 
-import 'hardhat/console.sol';
-
 /**
  * @dev ERC1167 Minimal Proxy Factory
  */

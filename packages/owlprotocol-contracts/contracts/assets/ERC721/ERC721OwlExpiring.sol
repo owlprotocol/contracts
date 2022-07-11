@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import './ERC721Owl.sol';
 import '@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol';
+import 'hardhat/console.sol';
 
 contract ERC721OwlExpiring is ERC721Owl {
     using StringsUpgradeable for uint256;
@@ -41,9 +42,8 @@ contract ERC721OwlExpiring is ERC721Owl {
         string memory _symbol,
         string memory baseURI_
     ) internal onlyInitializing {
-        __ERC721OwlExpiring_init_unchained(_admin);
-
         __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlExpiring_init_unchained(_admin);
     }
 
     function __ERC721OwlExpiring_init_unchained(address _admin) internal onlyInitializing {
@@ -74,8 +74,7 @@ contract ERC721OwlExpiring is ERC721Owl {
      */
     function ownerOf(uint256 tokenId) public view override returns (address) {
         require(!_expired(tokenId), 'ERC721: owner query for nonexistent token');
-        address owner = ERC721Upgradeable.ownerOf(tokenId);
-        require(owner != address(0), 'ERC721: owner query for nonexistent token');
+        address owner = ERC721Upgradeable.ownerOf(tokenId); //can never be zero address
         return owner;
     }
 
@@ -162,7 +161,7 @@ contract ERC721OwlExpiring is ERC721Owl {
         uint256 tokenId,
         uint256 expireTime
     ) public onlyRole(MINTER_ROLE) {
-        if (expires[tokenId] > block.timestamp) _burn(tokenId);
+        if (_expired(tokenId)) _burn(tokenId);
         expires[tokenId] = expireTime + block.timestamp;
         _mint(to, tokenId);
     }
@@ -178,13 +177,18 @@ contract ERC721OwlExpiring is ERC721Owl {
         uint256 tokenId,
         uint256 expireTime
     ) public onlyRole(MINTER_ROLE) {
-        if (expires[tokenId] > block.timestamp) _burn(tokenId);
+        if (_expired(tokenId)) _burn(tokenId);
         expires[tokenId] = expireTime + block.timestamp;
         _safeMint(to, tokenId);
     }
 
     function extendExpiry(uint256 tokenId, uint256 extendAmount) external onlyRole(EXPIRY_ROLE) {
         expires[tokenId] += extendAmount;
+    }
+
+    function getExpiry(uint256 tokenId) external view returns (uint256) {
+        // require(!_expired(tokenId), 'ERC721Expiring: expiry query for nonexistent token');
+        return expires[tokenId];
     }
 
     function _expired(uint256 tokenId) internal view virtual returns (bool) {

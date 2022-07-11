@@ -28,7 +28,7 @@ Similar to EnglishAuction and DutchAuction, FixedPriceAuction handles the asset 
 
 Upon initialization of the contract, the asset will be transferred from the seller to the contract, and the auction will also be started, and the timestamp of the current block is recorded as the start time.
 
-From here, there are two things that can happen: (1) a buyer buys within the auction duration timeframe or (2) nobody buys within the timeframe. In (1), a buyer calls the `buy()` function, and an amount of the acceptable ERC20 token in the amount of `price` is transfeered to the seller directly (along with the sale fee to the sale fee address), after which the asset will be transferred from the contract to the buyer.
+From here, there are two things that can happen: (1) a buyer buys within the auction duration timeframe or (2) nobody buys within the timeframe. In (1), a buyer calls the `buy()` function, and an amount of the acceptable ERC20 token in the amount of `price` is transferred to the seller directly (along with the sale fee to the sale fee address), after which the asset will be transferred from the contract to the buyer.
 
 In (2), nobody is eligible to buy the asset after the auction is over. The only action possible is for the owner (the seller of the asset) to claim the listed asset back from the contract. This can only happen after the auction duration has passed.
 

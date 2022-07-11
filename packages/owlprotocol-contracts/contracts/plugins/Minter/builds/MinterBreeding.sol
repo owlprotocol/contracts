@@ -72,10 +72,8 @@ contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _nftContractAddr,
         BreedingRules calldata breedingRules_
     ) internal onlyInitializing {
-        __MinterBreeding_init_unchained(_admin, breedingRules_);
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-
-        __Ownable_init();
+        __MinterBreeding_init_unchained(_admin, breedingRules_);
     }
 
     function __MinterBreeding_init_unchained(address _admin, BreedingRules calldata breedingRules_)

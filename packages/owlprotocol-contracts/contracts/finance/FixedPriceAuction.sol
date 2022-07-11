@@ -15,6 +15,15 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import './AuctionLib.sol';
 
+/*
+ * @dev This contract executes a simple fixed price, sell-buy auction.
+ * The owner can set the price of the asset which will remain fixed throughout
+ * the auction. If a buyer buys within the auction duration timeframe, then the asset
+ * is transferred to the buyer and the price in ERC20 tokens is transferred from
+ * the buyer to the seller. If no buyer buys within the auction duration, then the
+ * owner must claim the asset back from the contract and no one is eligible to buy the asset
+ * after the auction duration has passed.
+ */
 contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
@@ -109,7 +118,6 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
         uint256 _saleFee,
         address payable _saleFeeAddress
     ) internal onlyInitializing {
-        __Ownable_init();
         _transferOwnership(_seller);
         __FixedPriceAuction_init_unchained(
             _seller,
@@ -145,7 +153,7 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
         saleFee = _saleFee;
         saleFeeAddress = _saleFeeAddress;
 
-        //transferring ERC 721
+        //transferring ERC 721 to contract
         if (_asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(_asset.contractAddr).transferFrom(seller, address(this), _asset.tokenId);
         else if (_asset.token == AuctionLib.TokenType.erc1155) {
@@ -165,9 +173,8 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
     **********************/
 
     /**
-    Getters
-    */
-
+     * @dev function that allows a buyer to buy the asset at the fixed price
+     */
     function buy() external {
         //operations done in "wei"
         require(block.timestamp < startTime + auctionDuration, 'FixedPriceAuction: ended');
@@ -188,6 +195,7 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
             price - (saleFee * price) / 100
         );
 
+        //transfer asset to buyer
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
         else if (asset.token == AuctionLib.TokenType.erc1155) {
@@ -203,6 +211,10 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
         emit Buy(_msgSender(), price);
     }
 
+    /**
+     * @notice must be the owner to call this function
+     * @dev allows the owner to reclaim their asset if no one buys
+     */
     function claim() external onlyOwner {
         //owner withdraws asset if nobody buys
         require(
@@ -211,6 +223,7 @@ contract FixedPriceAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable,
         );
         require(!isBought, 'FixedPriceAuction: cannot claim when the token has been sold already!');
 
+        //transfer asset back to owner
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);
         else if (asset.token == AuctionLib.TokenType.erc1155) {

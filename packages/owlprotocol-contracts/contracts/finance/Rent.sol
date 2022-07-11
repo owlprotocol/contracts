@@ -15,8 +15,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '../assets/ERC721/ERC721OwlExpiring.sol';
 
-import 'hardhat/console.sol';
-
 /**
  * @dev This Rent contract serves as a middleman and allows owners of NFTs to lock their assets in this
  * smart contract for a fixed epoch period. The contract then mints a new identical "shadow" NFT on a separate
@@ -107,7 +105,7 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
         address _contractAddr,
         address _shadowAddr
     ) internal onlyInitializing {
-        __Ownable_init();
+        _transferOwnership(_admin);
         __Rent_init_unchained(_admin, _acceptableToken, _contractAddr, _shadowAddr);
     }
 
@@ -117,7 +115,6 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
         address _contractAddr,
         address _shadowAddr
     ) internal onlyInitializing {
-        _transferOwnership(_admin);
         acceptableToken = _acceptableToken;
         contractAddr = _contractAddr;
         shadowAddr = _shadowAddr;

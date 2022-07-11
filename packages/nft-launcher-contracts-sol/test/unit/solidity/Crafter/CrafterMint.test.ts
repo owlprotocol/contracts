@@ -6,6 +6,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 enum ConsumableType {
     unaffected,
     burned,
+    NTime,
 }
 
 describe('CrafterMint.sol', () => {
@@ -40,7 +41,7 @@ describe('CrafterMint.sol', () => {
             [
                 {
                     contractAddr: leatherContr.address,
-                    consumableType: ConsumableType.unaffected,
+                    consumableType: ConsumableType.NTime,
                 },
             ],
             [],

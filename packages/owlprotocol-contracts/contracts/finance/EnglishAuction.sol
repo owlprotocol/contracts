@@ -14,7 +14,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import './AuctionLib.sol';
-import 'hardhat/console.sol';
 
 /**
  * @dev This contract is a standard English Auction smart contract that allows bidders
@@ -128,9 +127,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _saleFee,
         address payable _saleFeeAddress
     ) internal onlyInitializing {
-        __Ownable_init();
         _transferOwnership(_seller);
-
         __EnglishAuction_init_unchained(
             _seller,
             _asset,

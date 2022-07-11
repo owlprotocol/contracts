@@ -15,7 +15,7 @@ import {
     ERC721OwlExpiring__factory,
 } from '../../typechain';
 
-import { createERC20, createERC721 } from '../utils';
+import { createERC20, createERC721, deployClone, predictDeployClone } from '../utils';
 import { BigNumber } from 'ethers';
 
 describe('Rent.sol', function () {
@@ -58,26 +58,22 @@ describe('Rent.sol', function () {
         ERC721OwlExpiringFactory = (await ethers.getContractFactory('ERC721OwlExpiring')) as ERC721OwlExpiring__factory;
         ERC721OwlExpiringImplementation = await ERC721OwlExpiringFactory.deploy();
 
-        const ERC721OwlExpiringData = ERC721OwlExpiringImplementation.interface.encodeFunctionData('initialize', [
-            //admin
-            //name
-            //symbol
-            //baseURI
-            admin.address,
-            name,
-            symbol,
-            baseURI,
-        ]);
-
-        //Predict address
-        const salt = ethers.utils.formatBytes32String('1');
-        shadowAddress = await ERC1167Factory.predictDeterministicAddress(
-            ERC721OwlExpiringImplementation.address,
-            salt,
-            ERC721OwlExpiringData,
+        // predict address
+        let { address, receipt } = await deployClone(
+            ERC721OwlExpiringImplementation,
+            [
+                //admin
+                //name
+                //symbol
+                //baseURI
+                admin.address,
+                name,
+                symbol,
+                baseURI,
+            ],
+            ERC1167Factory,
         );
-
-        await ERC1167Factory.cloneDeterministic(ERC721OwlExpiringImplementation.address, salt, ERC721OwlExpiringData);
+        shadowAddress = address;
         rentable = (await ethers.getContractAt('ERC721OwlExpiring', shadowAddress)) as ERC721OwlExpiring;
     });
 
@@ -95,21 +91,12 @@ describe('Rent.sol', function () {
             [acceptableERC20Token] = await createERC20(1); //mints 1,000,000,000 by default
             [testNFT] = await createERC721(1, 10); //minting one token
 
-            //Rent Data
-            const RentData = RentImplementation.interface.encodeFunctionData('initialize', [
-                //admin
-                //acceptableToken
-                //contract address
-                //shadow address
-                admin.address,
-                acceptableERC20Token.address,
-                testNFT.address,
-                shadowAddress,
-            ]);
-
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            RentAddress = await ERC1167Factory.predictDeterministicAddress(RentImplementation.address, salt, RentData);
+            // predict address
+            RentAddress = await predictDeployClone(
+                RentImplementation,
+                [admin.address, acceptableERC20Token.address, testNFT.address, shadowAddress],
+                ERC1167Factory,
+            );
 
             //Set Approval ERC721 for sale
             await testNFT.connect(admin).setApprovalForAll(RentAddress, true);
@@ -126,9 +113,12 @@ describe('Rent.sol', function () {
             expect(await acceptableERC20Token.balanceOf(admin.address)).to.equal(totalERC20Minted.sub(100));
 
             //deploy rent
-            //check balances
-            ///clone deterministic
-            await ERC1167Factory.cloneDeterministic(RentImplementation.address, salt, RentData);
+            await deployClone(
+                RentImplementation,
+                [admin.address, acceptableERC20Token.address, testNFT.address, shadowAddress],
+                ERC1167Factory,
+            );
+
             rent = (await ethers.getContractAt('Rent', RentAddress)) as Rent;
 
             //assert initial token amounts
@@ -143,8 +133,8 @@ describe('Rent.sol', function () {
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(originalERC20Balance);
 
             rentable.connect(admin).grantMinter(RentAddress);
-            rentable.connect(admin).grantRenter(RentAddress);
-            rentable.connect(admin).grantRenter(_renter.address);
+            rentable.connect(admin).grantExpiry(RentAddress);
+            rentable.connect(admin).grantExpiry(_renter.address);
         });
 
         it('simple rent - 1 rent instance', async () => {
@@ -173,7 +163,7 @@ describe('Rent.sol', function () {
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(70);
             expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(30);
 
-            await network.provider.send('evm_increaseTime', [82400]);
+            await network.provider.send('evm_increaseTime', [86400]);
 
             await rent.connect(_owner).endRental(0);
             expect(await testNFT.ownerOf(1)).to.equal(_owner.address);
@@ -182,7 +172,7 @@ describe('Rent.sol', function () {
             await rent.connect(_owner).ownerClaim();
             expect(await acceptableERC20Token.balanceOf(_owner.address)).to.equal(30);
 
-            await expect(rentable.ownerOf(1)).to.revertedWith('ERC721: owner query for nonexistent token');
+            await expect(rentable.ownerOf(1)).to.be.revertedWith('ERC721: owner query for nonexistent token');
         });
 
         it('multiple rent', async () => {
@@ -237,7 +227,7 @@ describe('Rent.sol', function () {
             expect(await acceptableERC20Token.balanceOf(_renter.address)).to.equal(60);
             expect(await acceptableERC20Token.balanceOf(RentAddress)).to.equal(10);
 
-            await network.provider.send('evm_increaseTime', [82400]);
+            await network.provider.send('evm_increaseTime', [86400]);
 
             await rent.connect(_owner).endRental(0);
             expect(await testNFT.ownerOf(1)).to.equal(_owner.address);

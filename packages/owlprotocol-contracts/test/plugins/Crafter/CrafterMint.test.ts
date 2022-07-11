@@ -13,14 +13,12 @@ import {
     ERC721,
     ERC1155,
 } from '../../../typechain';
-import { createERC20, createERC721, createERC1155 } from '../../utils';
-
+import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../../utils';
 import { BigNumber } from 'ethers';
 
 enum ConsumableType {
     unaffected,
     burned,
-    locked,
 }
 
 enum TokenType {
@@ -29,7 +27,7 @@ enum TokenType {
     erc1155,
 }
 
-describe('Crafter.sol', function () {
+describe('CrafterMint.sol', function () {
     // Extra time
     this.timeout(10000);
 
@@ -71,47 +69,71 @@ describe('Crafter.sol', function () {
             //Deploy ERC20
             //Mints 1,000,000,000 by default
             [inputERC20, outputERC20] = await createERC20(2);
-            //Crafter Data
-            const CrafterMintData = CrafterMintImplementation.interface.encodeFunctionData('initialize', [
-                owner.address,
-                burnAddress,
-                1,
-                [
-                    {
-                        token: TokenType.erc20,
-                        consumableType: ConsumableType.burned,
-                        contractAddr: inputERC20.address,
-                        amounts: [1],
-                        tokenIds: [],
-                    },
-                ],
-                //Output specific token id, output unaffected
-                [
-                    {
-                        token: TokenType.erc20,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: outputERC20.address,
-                        amounts: [1],
-                        tokenIds: [],
-                    },
-                ],
-            ]);
 
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            CrafterMintAddress = await ERC1167Factory.predictDeterministicAddress(
-                CrafterMintImplementation.address,
-                salt,
-                CrafterMintData,
+            // predict address
+            CrafterMintAddress = await predictDeployClone(
+                CrafterMintImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                ],
+                ERC1167Factory,
             );
 
             //Set Approval ERC20 Output
             await outputERC20.connect(owner).approve(CrafterMintAddress, 1);
 
             //Deploy Crafter craftableAmount=1
-            //Check balances
-            //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterMintImplementation.address, salt, CrafterMintData);
+
+            await deployClone(
+                CrafterMintImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                ],
+                ERC1167Factory,
+            );
+
             crafter = (await ethers.getContractAt('CrafterMint', CrafterMintAddress)) as CrafterMint;
             //Assert not transferred
             originalInputBalance = parseUnits('1000000000.0', 'ether');
@@ -224,48 +246,70 @@ describe('Crafter.sol', function () {
             //Deploy ERC721
             [inputERC721, outputERC721] = await createERC721(2);
 
-            //Crafter Data
-            const CrafterMintData = CrafterMintImplementation.interface.encodeFunctionData('initialize', [
-                owner.address,
-                burnAddress,
-                1,
-                //Input any token id, input burned
-                [
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.burned,
-                        contractAddr: inputERC721.address,
-                        amounts: [],
-                        tokenIds: [],
-                    },
-                ],
-                //Output specific token id, output unaffected
-                [
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: outputERC721.address,
-                        amounts: [],
-                        tokenIds: [11],
-                    },
-                ],
-            ]);
-
             //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            CrafterMintAddress = await ERC1167Factory.predictDeterministicAddress(
-                CrafterMintImplementation.address,
-                salt,
-                CrafterMintData,
+            CrafterMintAddress = await predictDeployClone(
+                CrafterMintImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    1,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [11],
+                        },
+                    ],
+                ],
+                ERC1167Factory,
             );
 
             //Set Approval ERC721 Output
             await outputERC721.connect(owner).approve(CrafterMintAddress, 1);
 
             //Deploy Crafter craftableAmount=1
-            //Check balances
-            //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterMintImplementation.address, salt, CrafterMintData);
+            await deployClone(
+                CrafterMintImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    1,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [11],
+                        },
+                    ],
+                ],
+                ERC1167Factory,
+            );
             crafter = await (ethers.getContractAt('CrafterMint', CrafterMintAddress) as Promise<CrafterMint>);
             //Assert not transferred
             expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
@@ -409,47 +453,69 @@ describe('Crafter.sol', function () {
             [inputERC1155, outputERC1155] = await createERC1155(2);
             //Crafter Data
 
-            const CrafterMintData = CrafterMintImplementation.interface.encodeFunctionData('initialize', [
-                owner.address,
-                burnAddress,
-                1,
-                //Input any token id, input burned
+            CrafterMintAddress = await predictDeployClone(
+                CrafterMintImplementation,
                 [
-                    {
-                        token: TokenType.erc1155,
-                        consumableType: ConsumableType.burned,
-                        contractAddr: inputERC1155.address,
-                        amounts: [inputAmount],
-                        tokenIds: [inputId],
-                    },
+                    owner.address,
+                    burnAddress,
+                    1,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC1155.address,
+                            amounts: [inputAmount],
+                            tokenIds: [inputId],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC1155.address,
+                            amounts: [outputAmount],
+                            tokenIds: [outputId],
+                        },
+                    ],
                 ],
-                //Output specific token id, output unaffected
-                [
-                    {
-                        token: TokenType.erc1155,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: outputERC1155.address,
-                        amounts: [outputAmount],
-                        tokenIds: [outputId],
-                    },
-                ],
-            ]);
-
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            CrafterMintAddress = await ERC1167Factory.predictDeterministicAddress(
-                CrafterMintImplementation.address,
-                salt,
-                CrafterMintData,
+                ERC1167Factory,
             );
 
             //Set Approval ERC721 Output
             await outputERC1155.connect(owner).setApprovalForAll(CrafterMintAddress, true);
 
             //Deploy Crafter craftableAmount=1
-            //Check balances
-            //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterMintImplementation.address, salt, CrafterMintData);
+            await deployClone(
+                CrafterMintImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    1,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC1155.address,
+                            amounts: [inputAmount],
+                            tokenIds: [inputId],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC1155.address,
+                            amounts: [outputAmount],
+                            tokenIds: [outputId],
+                        },
+                    ],
+                ],
+                ERC1167Factory,
+            );
             crafter = await (ethers.getContractAt('CrafterMint', CrafterMintAddress) as Promise<CrafterMint>);
             //Assert not transferred
             expect(await inputERC1155.balanceOf(owner.address, inputId)).to.equal(ORIGINAL_AMOUNT);
@@ -573,71 +639,67 @@ describe('Crafter.sol', function () {
             [inputERC721, outputERC721] = await createERC721(2);
             //Mint tokenIds 0-9; 100 each
             [inputERC1155, outputERC1155] = await createERC1155(2);
-            //Crafter Data
 
             originalInputBalance = parseUnits('1000000000.0', 'ether');
             originalOutputBalance = parseUnits('1000000000.0', 'ether');
 
-            const CrafterMintData = CrafterMintImplementation.interface.encodeFunctionData('initialize', [
-                owner.address,
-                burnAddress,
-                1,
-                //Input any token id, input burned
+            //predict address
+            CrafterMintAddress = await predictDeployClone(
+                CrafterMintImplementation,
                 [
-                    {
-                        token: TokenType.erc20,
-                        consumableType: ConsumableType.burned,
-                        contractAddr: inputERC20.address,
-                        amounts: [1],
-                        tokenIds: [],
-                    },
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.burned,
-                        contractAddr: inputERC721.address,
-                        amounts: [],
-                        tokenIds: [],
-                    },
-                    {
-                        token: TokenType.erc1155,
-                        consumableType: ConsumableType.burned,
-                        contractAddr: inputERC1155.address,
-                        amounts: [inputAmount1155],
-                        tokenIds: [inputId1155],
-                    },
+                    owner.address,
+                    burnAddress,
+                    1,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC1155.address,
+                            amounts: [inputAmount1155],
+                            tokenIds: [inputId1155],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [11],
+                        },
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC1155.address,
+                            amounts: [outputAmount1155],
+                            tokenIds: [outputId1155],
+                        },
+                    ],
                 ],
-                //Output specific token id, output unaffected
-                [
-                    {
-                        token: TokenType.erc20,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: outputERC20.address,
-                        amounts: [1],
-                        tokenIds: [],
-                    },
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: outputERC721.address,
-                        amounts: [],
-                        tokenIds: [11],
-                    },
-                    {
-                        token: TokenType.erc1155,
-                        consumableType: ConsumableType.unaffected,
-                        contractAddr: outputERC1155.address,
-                        amounts: [outputAmount1155],
-                        tokenIds: [outputId1155],
-                    },
-                ],
-            ]);
-
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            CrafterMintAddress = await ERC1167Factory.predictDeterministicAddress(
-                CrafterMintImplementation.address,
-                salt,
-                CrafterMintData,
+                ERC1167Factory,
             );
 
             //Set Approval Output
@@ -645,8 +707,64 @@ describe('Crafter.sol', function () {
             await outputERC721.connect(owner).approve(CrafterMintAddress, 1);
             await outputERC1155.connect(owner).setApprovalForAll(CrafterMintAddress, true);
 
-            //Clone deterministic
-            await ERC1167Factory.cloneDeterministic(CrafterMintImplementation.address, salt, CrafterMintData);
+            //deploy
+            await deployClone(
+                CrafterMintImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    1,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC1155.address,
+                            amounts: [inputAmount1155],
+                            tokenIds: [inputId1155],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [11],
+                        },
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC1155.address,
+                            amounts: [outputAmount1155],
+                            tokenIds: [outputId1155],
+                        },
+                    ],
+                ],
+                ERC1167Factory,
+            );
             crafter = await (ethers.getContractAt('CrafterMint', CrafterMintAddress) as Promise<CrafterMint>);
 
             //Storage tests
