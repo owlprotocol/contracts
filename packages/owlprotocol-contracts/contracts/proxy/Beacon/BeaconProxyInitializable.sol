@@ -52,6 +52,10 @@ contract BeaconProxyInitializable is Initializable, ProxyUpgradeable, ERC1967Upg
         return _getBeacon();
     }
 
+    function beacon() external view virtual returns (address) {
+        return _beacon();
+    }
+
     /**
      * @dev Returns the current implementation address of the associated beacon.
      */
