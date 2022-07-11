@@ -170,7 +170,7 @@ describe('CrafterMint.sol', function () {
         it('craft', async () => {
             //Craft 1
             await inputERC20.connect(owner).approve(CrafterMintAddress, 1);
-            await crafter.craft(1, [[]]);
+            await crafter['craft(uint96,uint256[][])'](1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -207,7 +207,7 @@ describe('CrafterMint.sol', function () {
 
             //Craft 1
             await inputERC20.connect(owner).approve(CrafterMintAddress, 1);
-            await crafter.craft(1, [[]]);
+            await crafter['craft(uint96,uint256[][])'](1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -343,7 +343,7 @@ describe('CrafterMint.sol', function () {
         it('craft', async () => {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterMintAddress, 1);
-            await crafter.craft(1, [[1]]);
+            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -425,7 +425,7 @@ describe('CrafterMint.sol', function () {
             });
             //Craft 1
             await inputERC721.connect(owner).setApprovalForAll(CrafterMintAddress, true);
-            await crafter.craft(1, [[1]]);
+            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -550,7 +550,7 @@ describe('CrafterMint.sol', function () {
         it('craft', async () => {
             //Craft 1
             await inputERC1155.connect(owner).setApprovalForAll(CrafterMintAddress, true);
-            await crafter.craft(1, [[]]);
+            await crafter['craft(uint96,uint256[][])'](1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -581,7 +581,7 @@ describe('CrafterMint.sol', function () {
             expect(await outputERC1155.balanceOf(crafter.address, outputId)).to.equal(0);
             //Craft 1
             await inputERC1155.connect(owner).setApprovalForAll(CrafterMintAddress, true);
-            await crafter.craft(1, [[]]);
+            await crafter['craft(uint96,uint256[][])'](1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -845,7 +845,7 @@ describe('CrafterMint.sol', function () {
 
         it('craft', async () => {
             //Craft 1
-            await crafter.craft(1, [[1]]);
+            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
 
             //Check balances
             expect(await inputERC20.balanceOf(burnAddress)).to.equal(1);

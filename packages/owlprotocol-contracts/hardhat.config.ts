@@ -1,4 +1,6 @@
+//@ts-ignore
 /**
+ *
  * @type import('hardhat/config').HardhatUserConfig
  */
 
@@ -173,16 +175,16 @@ const config: HardhatUserConfig = {
     },
     etherscan: {
         apiKey: {
-            mainnet: process.env.MAINNET_API_KEY,
-            polygon: process.env.POLYGON_API_KEY,
-            bsc: process.env.BINANCE_API_KEY,
-            arbitrumOne: process.env.ARBITRUM_API_KEY,
-            optimisticEthereum: process.env.OPTIMISM_API_KEY,
-            avalanche: process.env.AVAX_API_KEY,
-            opera: process.env.FANTOM_API_KEY,
-            aurora: process.env.AURORA_API_KEY,
-            moonriver: process.env.MOONRIVER_API_KEY,
-            moonbeam: process.env.MOONBEAM_API_KEY,
+            mainnet: process.env.MAINNET_API_KEY!,
+            polygon: process.env.POLYGON_API_KEY!,
+            bsc: process.env.BINANCE_API_KEY!,
+            arbitrumOne: process.env.ARBITRUM_API_KEY!,
+            optimisticEthereum: process.env.OPTIMISM_API_KEY!,
+            avalanche: process.env.AVAX_API_KEY!,
+            opera: process.env.FANTOM_API_KEY!,
+            aurora: process.env.AURORA_API_KEY!,
+            moonriver: process.env.MOONRIVER_API_KEY!,
+            moonbeam: process.env.MOONBEAM_API_KEY!,
         },
         //@ts-ignore
         customChains: [

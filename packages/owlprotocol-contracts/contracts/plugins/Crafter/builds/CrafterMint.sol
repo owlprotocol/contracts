@@ -13,6 +13,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 
 import '../../../assets/ERC20/ERC20Owl.sol';
 import '../../../assets/ERC721/ERC721Owl.sol';
@@ -31,9 +32,11 @@ contract CrafterMint is
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
     OwnableUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    AccessControlUpgradeable
 {
     // Specification + ERC165
+    bytes32 internal constant FORWARDER_ROLE = keccak256('FORWARDER_ROLE');
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterMint/', version)));
 
@@ -125,6 +128,15 @@ contract CrafterMint is
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
+    }
+    
+    /**
+     * @notice Must have owner role
+     * @dev Grants FORWARDER_ROLE to {a}
+     * @param to address to
+     */
+    function grantForwarder(address to) public onlyOwner {
+        _grantRole(FORWARDER_ROLE, to);
     }
 
     /**********************
@@ -270,13 +282,25 @@ contract CrafterMint is
         emit RecipeUpdate(craftableAmount);
     }
 
+<<<<<<< HEAD
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) public {
+=======
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
+>>>>>>> a8db743 (lootbox updates)
+        _craft(craftAmount, _inputERC721Ids, _msgSender());
+    }
+
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids, address _crafter) external onlyRole(FORWARDER_ROLE) {
+        _craft(craftAmount, _inputERC721Ids, _crafter);
+    }
+
     /**
      * @notice Craft {craftAmount}
      * @dev Used to craft. Consumes inputs and transfers outputs.
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) public {
+    function _craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids, address _crafter) internal {
         // Requires
         require(craftAmount > 0, 'CrafterMint: craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'CrafterMint: Not enough resources to craft!');
@@ -296,14 +320,14 @@ contract CrafterMint is
                     //Transfer ERC20
                     SafeERC20Upgradeable.safeTransferFrom(
                         IERC20Upgradeable(ingredient.contractAddr),
-                        _msgSender(),
+                        _crafter,
                         burnAddress,
                         ingredient.amounts[0] * craftAmount
                     );
                 } else if (ingredient.consumableType == PluginsLib.ConsumableType.unaffected) {
                     //Check ERC20
                     require(
-                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_msgSender()) >=
+                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_crafter) >=
                             ingredient.amounts[0] * craftAmount,
                         'CrafterMint: User missing minimum token balance(s)!'
                     );
@@ -316,7 +340,7 @@ contract CrafterMint is
                     //Transfer ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                            _msgSender(),
+                            _crafter,
                             burnAddress,
                             currInputArr[j]
                         );
@@ -325,7 +349,7 @@ contract CrafterMint is
                     //Check ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _crafter,
                             'CrafterMint: User does not own token(s)!'
                         );
                         uint256 currTokenId = currInputArr[j];
@@ -346,7 +370,7 @@ contract CrafterMint is
                         amounts[j] = ingredient.amounts[j] * craftAmount;
                     }
                     IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                        _msgSender(),
+                        _crafter,
                         burnAddress,
                         ingredient.tokenIds,
                         amounts,
@@ -358,7 +382,7 @@ contract CrafterMint is
                     address[] memory accounts = new address[](ingredient.amounts.length);
                     for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                         amounts[j] = ingredient.amounts[j] * craftAmount;
-                        accounts[j] = _msgSender();
+                        accounts[j] = _crafter;
                     }
 
                     uint256[] memory balances = IERC1155Upgradeable(ingredient.contractAddr).balanceOfBatch(
@@ -376,15 +400,25 @@ contract CrafterMint is
             PluginsLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == PluginsLib.TokenType.erc20) {
                 //Transfer ERC20
-                ERC20Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.amounts[0] * craftAmount);
+                ERC20Owl(ingredient.contractAddr).mint(_crafter, ingredient.amounts[0] * craftAmount);
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
                 //Pop token ids from storage
                 for (uint256 j = 0; j < craftAmount; j++) {
-                    ERC721Owl(ingredient.contractAddr).mint(
-                        _msgSender(),
-                        ingredient.tokenIds[ingredient.tokenIds.length - 1]
-                    );
-
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+                    ERC721Owl(ingredient.contractAddr).mint(_crafter, ingredient.tokenIds[ingredient.tokenIds.length - 1]);
+=======
+                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
+>>>>>>> d76ad40 (Update CrafterMint.sol)
+=======
+                    ERC721Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.tokenIds[ingredient.tokenIds.length - 1]);
+>>>>>>> 0738462 (Update CrafterMint.sol)
+=======
+                    ERC721Owl(ingredient.contractAddr).mint(_crafter, ingredient.tokenIds[ingredient.tokenIds.length - 1]);
+>>>>>>> a8db743 (lootbox updates)
+                    
+                    //Update ingredient, remove withdrawn tokenId
                     ingredient.tokenIds.pop();
                 }
             } else if (ingredient.token == PluginsLib.TokenType.erc1155) {
@@ -393,11 +427,11 @@ contract CrafterMint is
                 for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                     amounts[j] = ingredient.amounts[j] * craftAmount;
                 }
-                ERC1155Owl(ingredient.contractAddr).mintBatch(_msgSender(), ingredient.tokenIds, amounts, new bytes(0));
+                ERC1155Owl(ingredient.contractAddr).mintBatch(_crafter, ingredient.tokenIds, amounts, new bytes(0));
             }
         }
 
-        emit RecipeCraft(craftAmount, craftableAmount, _msgSender());
+        emit RecipeCraft(craftAmount, craftableAmount, _crafter);
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
@@ -411,7 +445,7 @@ contract CrafterMint is
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable) returns (bool) {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
