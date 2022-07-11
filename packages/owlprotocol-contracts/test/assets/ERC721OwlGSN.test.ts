@@ -99,8 +99,9 @@ describe.only('ERC721OwlGSN', () => {
         it('mint()', async () => {
             const initialBalance = await ethers.provider.getBalance(signer2.address);
 
-            await OwlGSNContract.methods.mint(signer2.address, 1).send({ from: signer2.address });
-            // const exists = await OwlGSNContract.methods.exists(1).call();
+            console.log(`Signer2: ${signer2.address}`);
+            // await OwlGSNContract.methods.mint(signer2.address, 2).send({ from: signer2.address, gas: 3_000_000 });
+            const exists = await OwlGSNContract.methods.exists(1).call({ from: signer2.address, gas: 3_000_000 });
 
             // assert.equal(exists, true, 'Token not minted!');
 
