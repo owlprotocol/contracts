@@ -17,6 +17,7 @@ import '../plugins/Crafter/builds/CrafterTransfer.sol';
 import '../plugins/PluginsLib.sol';
 import './LootboxLib.sol';
 import '../utils/SourceRandom.sol';
+import '../utils/Probability.sol';
 import 'hardhat/console.sol';
 
 contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
@@ -31,7 +32,7 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
 
     address public admin;
     address[] public crafterContracts;
-    uint8[] public probabilities;
+    uint256[] public probabilities;
 
 
     /**********************
@@ -85,8 +86,8 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         uint8[] calldata _probabilities
         
     ) internal onlyInitializing {
-        require(probabilities.length == _crafterContracts.length, 'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!');
-        require(probabilities[probabilities.length - 1] == 100, 'Lootbox.sol: probabilities is not cumulative!');
+        require(_probabilities.length == _crafterContracts.length, 'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!');
+        require(_probabilities[_probabilities.length - 1] == 100, 'Lootbox.sol: probabilities is not cumulative!');
 
         admin = _admin;
         crafterContracts = _crafterContracts;
@@ -97,63 +98,25 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
          Interaction
     **********************/
 
-    function unlock(uint256 lootBoxId) external {
+    function unlock(uint256 lootboxId) external {
         //randomly choose the crafter transfer contract to call
-        uint256 randomSeed = SourceRandom.getRandomDebug() % 100 + 1; //1 to 100
-        uint selectedContract;
-        for (uint j = 0; j < probabilities.length; j++) {
-            if (j == 0) {
-                if (randomSeed <= probabilities[j]) 
-                    selectedContract = j;
-            } else {
-                if (randomSeed <= probabilities[j] && randomSeed > probabilities[j-1])
-                    selectedContract = j;
-            }
-        }
+        uint256 randomSeed = SourceRandom.getRandomDebug(); //1 to 100
+        console.log(randomSeed);
+        uint selectedContract = Probability.probabilityDistribution(randomSeed, probabilities);
+        console.log(selectedContract);
+        
+        //check lootbox is owned by msgSender
+        (, ,address contractAddr, ,) = CrafterTransfer(crafterContracts[selectedContract]).getInputIngredient(0);
+        require(IERC721Upgradeable(contractAddr).ownerOf(lootboxId) == _msgSender(), 'Lootbox: you do not own this lootbox!');
 
-        //craft outputs to contract 
+        //craft outputs to msgSender 
         uint256[][] memory inputERC721Id = new uint256[][](1);
-        inputERC721Id[0][0] = lootBoxId;
-        CrafterTransfer(crafterContracts[selectedContract]).craft(1, inputERC721Id); //craft amount set to one, assuming recipes made for 1 lootbox
-        
-        // Transfer outputs to _msgSender()
-        // why no delegate call to CrafterTransfer?
-        PluginsLib.Ingredient[] memory outputs = CrafterTransfer(crafterContracts[selectedContract]).getOutputs();
-        
-        for (uint256 i = 0; i < outputs.length; i++) {
-            PluginsLib.Ingredient memory ingredient = outputs[i];
-            if (ingredient.token == PluginsLib.TokenType.erc20) {
-                //Transfer ERC20
-                SafeERC20Upgradeable.safeTransfer(
-                    IERC20Upgradeable(ingredient.contractAddr),
-                    _msgSender(),
-                    ingredient.amounts[0]
-                );
-            } else if (ingredient.token == PluginsLib.TokenType.erc721) {
-                //Pop token ids from storage
-
-                IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                    address(this),
-                    _msgSender(),
-                    ingredient.tokenIds[ingredient.tokenIds.length - 1]
-                );
-                
-            } else if (ingredient.token == PluginsLib.TokenType.erc1155) {
-                //Transfer ERC1155
-                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
-                for (uint256 j = 0; j < ingredient.amounts.length; j++) {
-                    amounts[j] = ingredient.amounts[j];
-                }
-                IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                    address(this),
-                    _msgSender(),
-                    ingredient.tokenIds,
-                    amounts,
-                    new bytes(0)
-                );
-            }
+        for (uint256 i = 0; i < 1; i++) {
+            inputERC721Id[i] = new uint256[](1);
+            inputERC721Id[0][0] = lootboxId;
+            CrafterTransfer(crafterContracts[selectedContract]).craft(1, inputERC721Id, _msgSender()); //craft amount set to one, assuming recipes made for 1 lootbox
         }
-       
+        
         emit Unlock();
     }
 
