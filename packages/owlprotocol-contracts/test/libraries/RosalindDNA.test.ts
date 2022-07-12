@@ -6,7 +6,7 @@ import { RosalindTestLab__factory, RosalindTestLab } from '../../typechain';
 
 const toBN = BigNumber.from;
 
-describe.only('RosalindDNA.sol', async () => {
+describe('RosalindDNA.sol', async () => {
     let dnaLibFactory: RosalindTestLab__factory;
     let dnaLib: RosalindTestLab;
 
