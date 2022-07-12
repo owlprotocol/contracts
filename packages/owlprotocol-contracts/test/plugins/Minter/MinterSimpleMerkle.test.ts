@@ -13,7 +13,7 @@ import {
 } from '../../../typechain';
 import { deployClone } from '../../utils';
 
-describe.only('MinterSimpleMerkle.sol', function () {
+describe('MinterSimpleMerkle.sol', function () {
     let owner: SignerWithAddress;
     let user: SignerWithAddress;
     let burnAddress: SignerWithAddress;
@@ -64,14 +64,21 @@ describe.only('MinterSimpleMerkle.sol', function () {
 
         // Fresh minter for each test
         beforeEach(async () => {
-            const { address } = await deployClone(MinterImplementation, [
-                owner.address,
-                mintFeeToken,
-                mintFeeAddress,
-                mintFeeAmount,
-                nftAddress,
-                '0x' + 'a'.repeat(64), // dummy proof
-            ]);
+            const { address } = await deployClone(
+                MinterImplementation,
+                [
+                    owner.address,
+                    mintFeeToken,
+                    mintFeeAddress,
+                    mintFeeAmount,
+                    nftAddress,
+                    '0x' + 'a'.repeat(64), // dummy proof
+                    '0x' + '0'.repeat(40), // dummy forwarder
+                ],
+                undefined,
+                undefined,
+                'initialize(address,address,address,uint256,address,bytes32,address)',
+            );
 
             minter = (await ethers.getContractAt('MinterSimpleMerkle', address)) as MinterSimpleMerkle;
         });
@@ -105,11 +112,11 @@ describe.only('MinterSimpleMerkle.sol', function () {
 
         it('Bad proof', async () => {
             // Mint denied (bad proof)
-            await expect(minter.connect(user).mint(user.address, badProof)).to.be.revertedWith('Not member of merkleTree!');
+            await expect(minter.connect(user)['mint(address,bytes32[])'](user.address, badProof)).to.be.revertedWith('Not member of merkleTree!');
         });
 
         it('Wrong user', async () => {
-            await expect(minter.mint(user.address, proof)).to.be.revertedWith('Not member of merkleTree!');
+            await expect(minter['mint(address,bytes32[])'](user.address, proof)).to.be.revertedWith('Not member of merkleTree!');
         });
 
         it('Successful mint', async () => {
@@ -121,7 +128,7 @@ describe.only('MinterSimpleMerkle.sol', function () {
             await minter.updateMerkleRoot(root);
 
             // Mint Specimen
-            await minter.connect(user).mint(user.address, proof);
+            await minter.connect(user)['mint(address,bytes32[])'](user.address, proof);
         });
     });
 });

@@ -213,7 +213,13 @@ describe('MinterBreeding.sol', function () {
     async function setupBreederContract() {
         // Deploy contracts
         let address;
-        ({ address } = await deployClone(ERC721OwlAttributesImplementation, [owner.address, 'owltest', 'owl', 'abcd']));
+        ({ address } = await deployClone(ERC721OwlAttributesImplementation, [
+            owner.address,
+            'owltest',
+            'owl',
+            'abcd',
+            '0x' + '0'.repeat(40),
+        ]));
         const nft = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
 
         const erc20 = await FactoryERC20.deploy('0', 'ERC20', 'ERC20');
@@ -240,6 +246,7 @@ describe('MinterBreeding.sol', function () {
                 genes, // gene encoding placements
                 mutationRates: [], // mutation rates (defaults to none)
             },
+            '0x' + '0'.repeat(40), // trusted forwarder
         ]));
 
         const minterBreeding = (await ethers.getContractAt('MinterBreeding', address)) as MinterBreeding;

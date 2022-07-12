@@ -59,6 +59,7 @@ describe('MinterSimple.sol', function () {
                 mintFeeAddress,
                 mintFeeAmount,
                 nftAddress,
+                '0x' + '0'.repeat(40), // trusted forwarder
             ]);
 
             minter = (await ethers.getContractAt('MinterSimple', address)) as MinterSimple;

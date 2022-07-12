@@ -1,8 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ethers } from 'hardhat';
 import {
-    ERC1167Factory,
-    ERC1167Factory__factory,
     FactoryERC20__factory,
     FactoryERC721__factory,
     FactoryERC20,
@@ -58,6 +56,7 @@ describe('MinterRandom.sol', function () {
                 mintFeeAddress,
                 mintFeeAmount,
                 nftAddress,
+                '0x' + '0'.repeat(40), // trusted forwarder
             ]);
 
             minter = (await ethers.getContractAt('MinterRandom', address)) as MinterRandom;
