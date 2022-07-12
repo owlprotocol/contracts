@@ -54,7 +54,7 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
     ) external initializer {
-        __EnglishAuction_init(_admin, _crafterContracts, _probabilities);
+        __Lootbox_init(_admin, _crafterContracts, _probabilities);
     }
 
     function proxyInitialize(
@@ -62,10 +62,10 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
     ) external onlyInitializing {
-        __EnglishAuction_init(_admin, _crafterContracts, _probabilities);
+        __Lootbox_init(_admin, _crafterContracts, _probabilities);
     }
 
-    function __EnglishAuction_init(
+    function __Lootbox_init(
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
@@ -73,10 +73,10 @@ contract Lootbox is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUp
         __Ownable_init();
         _transferOwnership(_admin);
 
-        __EnglishAuction_init_unchained(_admin, _crafterContracts, _probabilities);
+        __Lootbox_init_unchained(_admin, _crafterContracts, _probabilities);
     }
 
-    function __EnglishAuction_init_unchained(
+    function __Lootbox_init_unchained(
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities
