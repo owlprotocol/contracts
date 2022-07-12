@@ -16,6 +16,8 @@ import {
 import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../../utils';
 import { BigNumber } from 'ethers';
 
+const ZERO_ADDR = '0x' + '0'.repeat(40);
+
 enum ConsumableType {
     unaffected,
     burned,
@@ -27,7 +29,7 @@ enum TokenType {
     erc1155,
 }
 
-describe('CrafterMint.sol', function () {
+describe.only('CrafterMint.sol', function () {
     // Extra time
     this.timeout(10000);
 
@@ -96,6 +98,7 @@ describe('CrafterMint.sol', function () {
                             tokenIds: [],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -130,6 +133,7 @@ describe('CrafterMint.sol', function () {
                             tokenIds: [],
                         },
                     ],
+                    ZERO_ADDR, // Forwarder
                 ],
                 ERC1167Factory,
             );
@@ -273,6 +277,7 @@ describe('CrafterMint.sol', function () {
                             tokenIds: [11],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -307,6 +312,7 @@ describe('CrafterMint.sol', function () {
                             tokenIds: [11],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -479,6 +485,7 @@ describe('CrafterMint.sol', function () {
                             tokenIds: [outputId],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -513,6 +520,7 @@ describe('CrafterMint.sol', function () {
                             tokenIds: [outputId],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -698,6 +706,7 @@ describe('CrafterMint.sol', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -762,6 +771,7 @@ describe('CrafterMint.sol', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
