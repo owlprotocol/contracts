@@ -51,6 +51,7 @@
         "@openzeppelin/contracts": "^4.4.2",
         "@openzeppelin/contracts-upgradeable": "^4.6.0",
         "@openzeppelin/hardhat-upgrades": "^1.17.0",
+        "@owlprotocol/contract-helpers-opengsn": "../../packages/owlprotocol-contract-helpers/opengsn",
         "@owlprotocol/networks": "^1.0.0",
         "@typechain/ethers-v5": "^7.2.0",
         "@typechain/hardhat": "^2.3.1",
@@ -82,6 +83,7 @@
         "hardhat": "^2.9.1",
         "hardhat-deploy": "^0.11.10",
         "hardhat-deploy-ethers": "^0.3.0-beta.13",
+        "hardhat-preprocessor": "^0.1.4",
         "lint-staged": "^11.2.6",
         "lodash": "^4.17.21",
         "merkletreejs": "^0.2.31",
@@ -101,8 +103,7 @@
         "web3": "^1.6.1",
         "web3-core": "^1.6.1",
         "web3-eth-contract": "^1.6.1",
-        "web3-utils": "^1.6.1",
-        "@owlprotocol/contract-helpers-opengsn": "../../packages/owlprotocol-contract-helpers/opengsn"
+        "web3-utils": "^1.6.1"
     },
     "files": [
         "artifacts/contracts/**/*.json",
