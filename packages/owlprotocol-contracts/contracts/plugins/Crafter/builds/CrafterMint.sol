@@ -15,6 +15,9 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import '../../../assets/ERC20/ERC20Owl.sol';
 import '../../../assets/ERC721/ERC721Owl.sol';
 import '../../../assets/ERC1155/ERC1155Owl.sol';
@@ -29,6 +32,7 @@ import '../../PluginsLib.sol';
  */
 contract CrafterMint is
     ICrafter,
+    BaseRelayRecipient,
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
     OwnableUpgradeable,
@@ -76,15 +80,17 @@ contract CrafterMint is
      * @param _burnAddress Burn address for burn inputs
      * @param _inputs inputs for recipe
      * @param _outputs outputs for recipe
+     * @param _forwarder trusted forwarder address for open GSN
      */
     function initialize(
         address _admin,
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) public initializer {
-        __CrafterMint_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
+        __CrafterMint_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
     function proxyInitialize(
@@ -92,9 +98,10 @@ contract CrafterMint is
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) public onlyInitializing {
-        __CrafterMint_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
+        __CrafterMint_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
     function __CrafterMint_init(
@@ -102,21 +109,23 @@ contract CrafterMint is
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) public onlyInitializing {
         require(_burnAddress != address(0), 'CrafterMint: burn address must not be 0');
         require(_inputs.length > 0, 'CrafterMint: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterMint: A crafting output must be given!');
 
         _transferOwnership(_admin);
-        __CrafterMint_init_unchained(_burnAddress, _craftableAmount, _inputs, _outputs);
+        __CrafterMint_init_unchained(_burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
     function __CrafterMint_init_unchained(
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) public onlyInitializing {
         burnAddress = _burnAddress;
 
@@ -125,6 +134,9 @@ contract CrafterMint is
         uint256 erc721Amount = PluginsLib.validateOutputs(_outputs, outputs, _craftableAmount);
 
         uint256[][] memory _outputsERC721Ids = PluginsLib.createOutputsArr(_outputs, _craftableAmount, erc721Amount);
+
+        //sets trusted forwarder address for open gsn
+        _setTrustedForwarder(_forwarder);
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
@@ -427,6 +439,21 @@ contract CrafterMint is
         }
 
         emit RecipeCraft(craftAmount, craftableAmount, _crafter);
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}

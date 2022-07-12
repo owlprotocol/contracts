@@ -13,6 +13,9 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import '../assets/ERC721/ERC721OwlExpiring.sol';
 
 /**
@@ -24,7 +27,7 @@ import '../assets/ERC721/ERC721OwlExpiring.sol';
  * is great for allowing owners of NFTs to earn income by renting out their assets and incentivizes renters to get a
  * chance to temporarily own a cool NFT.
  */
-contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract Rent is BaseRelayRecipient, ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Rent/', version)));
@@ -80,45 +83,53 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
      * @param _acceptableToken accepted ERC20 token for payment
      * @param _contractAddr contract address for original NFT
      * @param _shadowAddr address where "shadow" NFT is minted
+     * @param _forwarder address for trusted forwarder for openGSN
      */
     function initialize(
         address _admin,
         address _acceptableToken,
         address _contractAddr,
-        address _shadowAddr
+        address _shadowAddr,
+        address _forwarder
     ) external initializer {
-        __Rent_init(_admin, _acceptableToken, _contractAddr, _shadowAddr);
+        __Rent_init(_admin, _acceptableToken, _contractAddr, _shadowAddr, _forwarder);
     }
 
     function proxyInitialize(
         address _admin,
         address _acceptableToken,
         address _contractAddr,
-        address _shadowAddr
+        address _shadowAddr,
+        address _forwarder
     ) external onlyInitializing {
-        __Rent_init(_admin, _acceptableToken, _contractAddr, _shadowAddr);
+        __Rent_init(_admin, _acceptableToken, _contractAddr, _shadowAddr, _forwarder);
     }
 
     function __Rent_init(
         address _admin,
         address _acceptableToken,
         address _contractAddr,
-        address _shadowAddr
+        address _shadowAddr,
+        address _forwarder
     ) internal onlyInitializing {
         _transferOwnership(_admin);
-        __Rent_init_unchained(_admin, _acceptableToken, _contractAddr, _shadowAddr);
+        __Rent_init_unchained(_admin, _acceptableToken, _contractAddr, _shadowAddr, _forwarder);
     }
 
     function __Rent_init_unchained(
         address _admin,
         address _acceptableToken,
         address _contractAddr,
-        address _shadowAddr
+        address _shadowAddr,
+        address _forwarder
     ) internal onlyInitializing {
         acceptableToken = _acceptableToken;
         contractAddr = _contractAddr;
         shadowAddr = _shadowAddr;
         numRentals = 0;
+
+        //sets trusted forwarder for openGSN
+        _setTrustedForwarder(_forwarder);
     }
 
     /**********************
@@ -302,5 +313,20 @@ contract Rent is ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
      */
     function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
         return interfaceId == ERC165TAG;
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 }

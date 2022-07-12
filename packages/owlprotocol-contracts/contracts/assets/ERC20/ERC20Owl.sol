@@ -4,8 +4,10 @@ pragma solidity ^0.8.4;
 import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
-contract ERC20Owl is ERC20Upgradeable, ERC20BurnableUpgradeable, AccessControlUpgradeable {
+contract ERC20Owl is BaseRelayRecipient, ERC20Upgradeable, ERC20BurnableUpgradeable, AccessControlUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
     // Specification + ERC165
@@ -22,32 +24,36 @@ contract ERC20Owl is ERC20Upgradeable, ERC20BurnableUpgradeable, AccessControlUp
     function initialize(
         address _admin,
         string calldata _name,
-        string calldata _symbol
+        string calldata _symbol,
+        address _forwarder
     ) external initializer {
-        __ERC20Owl_init(_admin, _name, _symbol);
+        __ERC20Owl_init(_admin, _name, _symbol, _forwarder);
     }
 
     function proxyInitialize(
         address _admin,
         string calldata _name,
-        string calldata _symbol
+        string calldata _symbol,
+        address _forwarder
     ) external onlyInitializing {
-        __ERC20Owl_init(_admin, _name, _symbol);
+        __ERC20Owl_init(_admin, _name, _symbol, _forwarder);
     }
 
     function __ERC20Owl_init(
         address _admin,
         string calldata _name,
-        string calldata _symbol
+        string calldata _symbol,
+        address _forwarder
     ) internal onlyInitializing {
         __ERC20Burnable_init();
         __AccessControl_init();
-        __ERC20Owl_init_unchained(_admin);
+        __ERC20Owl_init_unchained(_admin, _forwarder);
     }
 
-    function __ERC20Owl_init_unchained(address _admin) internal onlyInitializing {
+    function __ERC20Owl_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
+        _setTrustedForwarder(_forwarder);
     }
 
     /**
@@ -77,5 +83,20 @@ contract ERC20Owl is ERC20Upgradeable, ERC20BurnableUpgradeable, AccessControlUp
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 }

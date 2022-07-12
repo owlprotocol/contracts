@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
@@ -13,6 +14,9 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import '../PluginsLib.sol';
 
 /**
@@ -20,7 +24,13 @@ import '../PluginsLib.sol';
  * Players can interact with the contract to have
  * recipie outputs transferred from a deposit.
  */
-contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract Transformer is
+    BaseRelayRecipient,
+    ERC721HolderUpgradeable,
+    ERC1155HolderUpgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Transformer/', version)));
@@ -52,6 +62,7 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
      * @dev Configures crafting recipe with inputs/outputs
      * @param _burnAddress Burn address for burn inputs
      * @param _inputs inputs for recipe
+     * @param _forwarder trusted forwarder address for open GSN
      */
     function initialize(
         address _admin,
@@ -59,9 +70,10 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
         PluginsLib.Ingredient[] memory _inputs,
         uint8[] memory _genes,
         PluginsLib.GeneMod[] memory _modifications,
-        address _nftAddr
+        address _nftAddr,
+        address _forwarder
     ) external initializer {
-        __Transformer_init(_admin, _burnAddress, _inputs, _genes, _modifications, _nftAddr);
+        __Transformer_init(_admin, _burnAddress, _inputs, _genes, _modifications, _nftAddr, _forwarder);
     }
 
     function proxyInitialize(
@@ -70,9 +82,10 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
         PluginsLib.Ingredient[] memory _inputs,
         uint8[] memory _genes,
         PluginsLib.GeneMod[] memory _modifications,
-        address _nftAddr
+        address _nftAddr,
+        address _forwarder
     ) external onlyInitializing {
-        __Transformer_init(_admin, _burnAddress, _inputs, _genes, _modifications, _nftAddr);
+        __Transformer_init(_admin, _burnAddress, _inputs, _genes, _modifications, _nftAddr, _forwarder);
     }
 
     function __Transformer_init(
@@ -81,13 +94,14 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
         PluginsLib.Ingredient[] memory _inputs,
         uint8[] memory _genes,
         PluginsLib.GeneMod[] memory _modifications,
-        address _nftAddr
+        address _nftAddr,
+        address _forwarder
     ) internal onlyInitializing {
         require(_burnAddress != address(0), 'Transformer: burn address must not be 0');
         require(_inputs.length > 0, 'Transformer: A crafting input must be given!');
 
         _transferOwnership(_admin);
-        __Transformer_init_unchained(_burnAddress, _inputs, _genes, _modifications, _nftAddr);
+        __Transformer_init_unchained(_burnAddress, _inputs, _genes, _modifications, _nftAddr, _forwarder);
     }
 
     function __Transformer_init_unchained(
@@ -95,7 +109,8 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
         PluginsLib.Ingredient[] memory _inputs,
         uint8[] memory _genes,
         PluginsLib.GeneMod[] memory _modifications,
-        address _nftAddr
+        address _nftAddr,
+        address _forwarder
     ) internal onlyInitializing {
         PluginsLib.validateInputs(_inputs, inputs, nUse);
 
@@ -111,6 +126,9 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
         burnAddress = _burnAddress;
         genes = _genes;
         nftAddr = _nftAddr;
+
+        //set trusted forwarder for open gsn
+        _setTrustedForwarder(_forwarder);
     }
 
     /**
@@ -191,6 +209,21 @@ contract Transformer is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ownab
         ERC721OwlAttributes(nftAddr).updateDna(tokenId, newDna);
 
         emit Transform(nftAddr, tokenId, currDna, newDna);
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}

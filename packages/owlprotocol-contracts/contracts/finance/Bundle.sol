@@ -13,10 +13,19 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import './BundleLib.sol';
 import '../plugins/Minter/builds/MinterAutoId.sol';
 
-contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract Bundle is
+    BaseRelayRecipient,
+    ERC721HolderUpgradeable,
+    ERC1155HolderUpgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Bundle/', version)));
@@ -47,41 +56,49 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
     /**
      * @dev Create auction instance
      * @param _admin the admin/owner of the contract
-     * @param _client the caller of the lock and unlock functions
+     * @param _client the caller of the lock and unlock functions,
+     * @param _forwarder the address for the trusted forwarder for openGSN integration
      */
     function initialize(
         address _admin,
         address payable _client,
-        address _lootBoxMinterAddress
+        address _lootBoxMinterAddress,
+        address _forwarder
     ) external initializer {
-        __Bundle_init(_admin, _client, _lootBoxMinterAddress);
+        __Bundle_init(_admin, _client, _lootBoxMinterAddress, _forwarder);
     }
 
     function proxyInitialize(
         address _admin,
         address payable _client,
-        address _lootBoxMinterAddress
+        address _lootBoxMinterAddress,
+        address _forwarder
     ) external onlyInitializing {
-        __Bundle_init(_admin, _client, _lootBoxMinterAddress);
+        __Bundle_init(_admin, _client, _lootBoxMinterAddress, _forwarder);
     }
 
     function __Bundle_init(
         address _admin,
         address payable _client,
-        address _lootBoxMinterAddress
+        address _lootBoxMinterAddress,
+        address _forwarder
     ) internal onlyInitializing {
         _transferOwnership(_admin);
-        __Bundle_init_unchained(_admin, _client, _lootBoxMinterAddress);
+        __Bundle_init_unchained(_admin, _client, _lootBoxMinterAddress, _forwarder);
     }
 
     function __Bundle_init_unchained(
         address _admin,
         address payable _client,
-        address _lootBoxMinterAddress
+        address _lootBoxMinterAddress,
+        address _forwarder
     ) internal onlyInitializing {
         admin = _admin;
         client = _client;
         lootBoxMinterAddress = _lootBoxMinterAddress;
+
+        //Sets trusted forwarder for open GSN
+        _setTrustedForwarder(_forwarder);
     }
 
     /**********************
@@ -186,5 +203,20 @@ contract Bundle is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpg
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 }

@@ -13,6 +13,9 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import './AuctionLib.sol';
 
 /**
@@ -23,7 +26,13 @@ import './AuctionLib.sol';
  * Theoretically, the auction can go on forever if higher bids continue to be made within the resetTime period.
  * Once the ending time is passed, the auction finishes and the NFT is transferred to the highest bidder.
  */
-contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract EnglishAuction is
+    BaseRelayRecipient,
+    ERC721HolderUpgradeable,
+    ERC1155HolderUpgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://EnglishAuction/', version)));
@@ -72,6 +81,7 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
      * @param _resetTime time at which the auction resets when a bid is made within this time frame (in seconds)
      * @param _saleFee the percentage of the sale to be sent to the original owner as commission
      * @param _saleFeeAddress the address to which the sale fee is sent
+     * @param _forwarder the address for the Trusted Forwarder for Open GSN integration
      */
     function initialize(
         address payable _seller,
@@ -81,7 +91,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _auctionDuration,
         uint256 _resetTime,
         uint256 _saleFee,
-        address payable _saleFeeAddress
+        address payable _saleFeeAddress,
+        address _forwarder
     ) external initializer {
         __EnglishAuction_init(
             _seller,
@@ -91,7 +102,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
             _auctionDuration,
             _resetTime,
             _saleFee,
-            _saleFeeAddress
+            _saleFeeAddress,
+            _forwarder
         );
     }
 
@@ -103,7 +115,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _auctionDuration,
         uint256 _resetTime,
         uint256 _saleFee,
-        address payable _saleFeeAddress
+        address payable _saleFeeAddress,
+        address _forwarder
     ) external onlyInitializing {
         __EnglishAuction_init(
             _seller,
@@ -113,7 +126,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
             _auctionDuration,
             _resetTime,
             _saleFee,
-            _saleFeeAddress
+            _saleFeeAddress,
+            _forwarder
         );
     }
 
@@ -125,7 +139,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _auctionDuration,
         uint256 _resetTime,
         uint256 _saleFee,
-        address payable _saleFeeAddress
+        address payable _saleFeeAddress,
+        address _forwarder
     ) internal onlyInitializing {
         _transferOwnership(_seller);
         __EnglishAuction_init_unchained(
@@ -136,7 +151,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
             _auctionDuration,
             _resetTime,
             _saleFee,
-            _saleFeeAddress
+            _saleFeeAddress,
+            _forwarder
         );
     }
 
@@ -148,7 +164,8 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         uint256 _auctionDuration,
         uint256 _resetTime,
         uint256 _saleFee,
-        address payable _saleFeeAddress
+        address payable _saleFeeAddress,
+        address _forwarder
     ) internal onlyInitializing {
         require(_saleFee <= 100, 'EnglishAuction: saleFee cannot be above 100 percent!');
         asset = _asset;
@@ -161,6 +178,9 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
         resetTime = _resetTime;
         saleFee = _saleFee;
         saleFeeAddress = _saleFeeAddress;
+
+        //Setting trusted forwarder for open GSN integration
+        _setTrustedForwarder(_forwarder);
 
         //transferring ERC 721
         if (asset.token == AuctionLib.TokenType.erc721)
@@ -331,5 +351,20 @@ contract EnglishAuction is ERC721HolderUpgradeable, ERC1155HolderUpgradeable, Ow
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 }

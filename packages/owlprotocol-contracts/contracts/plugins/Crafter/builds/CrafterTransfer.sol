@@ -15,6 +15,9 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import '../ICrafter.sol';
 import '../../PluginsLib.sol';
 import 'hardhat/console.sol';
@@ -25,6 +28,7 @@ import 'hardhat/console.sol';
  * recipie outputs transferred from a deposit.
  */
 contract CrafterTransfer is
+    BaseRelayRecipient,
     ICrafter,
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
@@ -75,15 +79,17 @@ contract CrafterTransfer is
      * @param _craftableAmount limit on the number of times this recipe can be crafted
      * @param _inputs inputs for recipe
      * @param _outputs outputs for recipe
+     * @param _forwarder trusted forwarder address for openGSN
      */
     function initialize(
         address _admin,
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) external initializer {
-        __CrafterTransfer_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
+        __CrafterTransfer_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
     function proxyInitialize(
@@ -91,9 +97,10 @@ contract CrafterTransfer is
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) external onlyInitializing {
-        __CrafterTransfer_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
+        __CrafterTransfer_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
     function __CrafterTransfer_init(
@@ -101,14 +108,15 @@ contract CrafterTransfer is
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) internal onlyInitializing {
         require(_burnAddress != address(0), 'CrafterTransfer: burn address must not be 0');
         require(_inputs.length > 0, 'CrafterTransfer: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterTransfer: A crafting output must be given!');
 
         _transferOwnership(_admin);
-        __CrafterTransfer_init_unchained(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
+        __CrafterTransfer_init_unchained(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
     function __CrafterTransfer_init_unchained(
@@ -116,7 +124,8 @@ contract CrafterTransfer is
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) internal onlyInitializing {
         burnAddress = _burnAddress;
 
@@ -125,6 +134,9 @@ contract CrafterTransfer is
         uint256 erc721Amount = PluginsLib.validateOutputs(_outputs, outputs, _craftableAmount);
 
         uint256[][] memory _outputsERC721Ids = PluginsLib.createOutputsArr(_outputs, _craftableAmount, erc721Amount);
+
+        //sets trusted forwarder for open gsn
+        _setTrustedForwarder(_forwarder);
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids, _admin);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
@@ -491,6 +503,21 @@ contract CrafterTransfer is
         }
 
         emit RecipeCraft(craftAmount, craftableAmount, _crafter);
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
