@@ -5,13 +5,16 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import '../MinterCore.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterSimpleMerkle is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
+contract MinterSimpleMerkle is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     // @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -23,9 +26,10 @@ contract MinterSimpleMerkle is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeToken,
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
-        address _nftContractAddr
+        address _nftContractAddr,
+        address _forwarder
     ) external initializer {
-        __MinterSimpleMerkle_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+        __MinterSimpleMerkle_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
     function proxyInitialize(
@@ -33,9 +37,10 @@ contract MinterSimpleMerkle is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeToken,
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
-        address _nftContractAddr
+        address _nftContractAddr,
+        address _forwarder
     ) external onlyInitializing {
-        __MinterSimpleMerkle_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+        __MinterSimpleMerkle_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
     function __MinterSimpleMerkle_init(
@@ -43,18 +48,22 @@ contract MinterSimpleMerkle is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeToken,
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
-        address _nftContractAddr
+        address _nftContractAddr,
+        address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterSimpleMerkle_init_unchained(_admin);
+        __MinterSimpleMerkle_init_unchained(_admin, _forwarder);
     }
 
-    function __MinterSimpleMerkle_init_unchained(address _admin) internal onlyInitializing {
+    function __MinterSimpleMerkle_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
         // Register ERC1820 Private Interface
         bytes32 interfaceName = keccak256('OWLProtocol://MinterSimpleMerkle');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
         // Register ERC165 Interface
         ERC165Storage._registerInterface(type(IMinterSimpleMerkle).interfaceId);
+
+        //set trusted forwarder for open gsn
+        _setTrustedForwarder(_forwarder);
 
         _transferOwnership(_admin);
     }
@@ -85,6 +94,21 @@ contract MinterSimpleMerkle is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
 
     function hashKeccakUser() public view returns (bytes32) {
         return keccak256(abi.encode(msg.sender));
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}

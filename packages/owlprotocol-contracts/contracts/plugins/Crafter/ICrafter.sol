@@ -6,7 +6,7 @@ import '../PluginsLib.sol';
  * @dev Pluggable Crafting Contract.
  * Each contract is it's own recipe definition.
  * Players can interact with the contract to have
- * recipie outputs either minted or transferred 
+ * recipie outputs either minted or transferred
  * from a deposit.
  */
 interface ICrafter {
@@ -17,13 +17,15 @@ interface ICrafter {
      * @param _burnAddress Burn address for burn inputs
      * @param _inputs inputs for recipe
      * @param _outputs outputs for recipe
+     * @param _forwarder address for trusted forwarder
      */
     function initialize(
         address _admin,
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs
+        PluginsLib.Ingredient[] calldata _outputs,
+        address _forwarder
     ) external;
 
     /**

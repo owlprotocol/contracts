@@ -22,32 +22,36 @@ contract ERC721OwlExpiring is ERC721Owl {
         address _admin,
         string calldata _name,
         string calldata _symbol,
-        string calldata baseURI_
+        string calldata baseURI_,
+        address _forwarder
     ) external override initializer {
-        __ERC721OwlExpiring_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlExpiring_init(_admin, _name, _symbol, baseURI_, _forwarder);
     }
 
     function proxyInitialize(
         address _admin,
         string calldata _name,
         string calldata _symbol,
-        string calldata baseURI_
+        string calldata baseURI_,
+        address _forwarder
     ) external override onlyInitializing {
-        __ERC721OwlExpiring_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlExpiring_init(_admin, _name, _symbol, baseURI_, _forwarder);
     }
 
     function __ERC721OwlExpiring_init(
         address _admin,
         string memory _name,
         string memory _symbol,
-        string memory baseURI_
+        string memory baseURI_,
+        address _forwarder
     ) internal onlyInitializing {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
-        __ERC721OwlExpiring_init_unchained(_admin);
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder);
+        __ERC721OwlExpiring_init_unchained(_admin, _forwarder);
     }
 
-    function __ERC721OwlExpiring_init_unchained(address _admin) internal onlyInitializing {
+    function __ERC721OwlExpiring_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
         _grantRole(EXPIRY_ROLE, _admin);
+        _setTrustedForwarder(_forwarder);
     }
 
     /**

@@ -5,6 +5,9 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import '../../../assets/ERC721/ERC721Owl.sol';
 import '../MinterCore.sol';
 import '../../../utils/SourceRandom.sol';
@@ -14,7 +17,7 @@ import '../../../utils/RosalindDNA.sol';
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
+contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     uint8 public constant defaultGenesNum = 8;
     uint8 public constant defaultRequiredParents = 2;
     uint256 public constant defaultBreedingCooldownSeconds = 604800; // 7 days
@@ -48,9 +51,18 @@ contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        BreedingRules calldata breedingRules_
+        BreedingRules calldata breedingRules_,
+        address _forwarder
     ) external initializer {
-        __MinterBreeding_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, breedingRules_);
+        __MinterBreeding_init(
+            _admin,
+            _mintFeeToken,
+            _mintFeeAddress,
+            _mintFeeAmount,
+            _nftContractAddr,
+            breedingRules_,
+            _forwarder
+        );
     }
 
     function proxyIntiialize(
@@ -59,9 +71,18 @@ contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        BreedingRules calldata breedingRules_
+        BreedingRules calldata breedingRules_,
+        address _forwarder
     ) external onlyInitializing {
-        __MinterBreeding_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, breedingRules_);
+        __MinterBreeding_init(
+            _admin,
+            _mintFeeToken,
+            _mintFeeAddress,
+            _mintFeeAmount,
+            _nftContractAddr,
+            breedingRules_,
+            _forwarder
+        );
     }
 
     function __MinterBreeding_init(
@@ -70,16 +91,18 @@ contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        BreedingRules calldata breedingRules_
+        BreedingRules calldata breedingRules_,
+        address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterBreeding_init_unchained(_admin, breedingRules_);
+        __MinterBreeding_init_unchained(_admin, breedingRules_, _forwarder);
     }
 
-    function __MinterBreeding_init_unchained(address _admin, BreedingRules calldata breedingRules_)
-        internal
-        onlyInitializing
-    {
+    function __MinterBreeding_init_unchained(
+        address _admin,
+        BreedingRules calldata breedingRules_,
+        address _forwarder
+    ) internal onlyInitializing {
         // Register ERC1820 Private Interface
         bytes32 interfaceName = keccak256('OWLProtocol://MinterBreeding');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
@@ -87,6 +110,10 @@ contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         ERC165Storage._registerInterface(type(IMinterBreeding).interfaceId);
 
         _breedingRules = breedingRules_;
+
+        //set trusted forwarder for opengsn
+        _setTrustedForwarder(_forwarder);
+
         _transferOwnership(_admin);
     }
 
@@ -255,6 +282,21 @@ contract MinterBreeding is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
             // Copy over mutation data
             for (uint256 i = 0; i < mutationRates.length; i++) mutationRates[i] = rules.mutationRates[i];
         }
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}

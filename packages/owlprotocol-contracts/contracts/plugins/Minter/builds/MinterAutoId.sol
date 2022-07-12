@@ -5,13 +5,16 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import '../MinterCore.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
+contract MinterAutoId is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUPSUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', version)));
@@ -30,9 +33,10 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeToken,
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
-        address _nftContractAddr
+        address _nftContractAddr,
+        address _forwarder
     ) external initializer {
-        __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+        __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
     function proxyInitialize(
@@ -40,9 +44,10 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeToken,
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
-        address _nftContractAddr
+        address _nftContractAddr,
+        address _forwarder
     ) external onlyInitializing {
-        __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+        __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
     function __MinterAutoId_init(
@@ -50,18 +55,22 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
         address _mintFeeToken,
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
-        address _nftContractAddr
+        address _nftContractAddr,
+        address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterAutoId_init_unchained(_admin);
+        __MinterAutoId_init_unchained(_admin, _forwarder);
     }
 
-    function __MinterAutoId_init_unchained(address _admin) internal onlyInitializing {
+    function __MinterAutoId_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
         // Register ERC1820 Private Interface
         bytes32 interfaceName = keccak256('OWLProtocol://MinterAutoId');
         ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
         // Register ERC165 Interface
         ERC165Storage._registerInterface(type(IMinterAutoId).interfaceId);
+
+        //set trusted forwarder for open gsn
+        _setTrustedForwarder(_forwarder);
 
         _transferOwnership(_admin);
     }
@@ -92,6 +101,21 @@ contract MinterAutoId is MinterCore, OwnableUpgradeable, UUPSUpgradeable {
      */
     function setNextTokenId(uint256 nextTokenId_) public onlyOwner {
         nextTokenId = nextTokenId_;
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}

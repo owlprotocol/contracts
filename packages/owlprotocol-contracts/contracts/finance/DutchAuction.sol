@@ -13,6 +13,9 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+
 import '../utils/FractionalExponents.sol';
 import './AuctionLib.sol';
 
@@ -25,6 +28,7 @@ import './AuctionLib.sol';
  * transferred to the bidder.
  */
 contract DutchAuction is
+    BaseRelayRecipient,
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
     OwnableUpgradeable,
@@ -77,6 +81,7 @@ contract DutchAuction is
      * @param _isNonLinear set true if the seller wants to set a nonlinear decrease in price
      * @param _saleFee the percentage of the sale to be sent to the original owner as commission
      * @param _saleFeeAddress the address to which the sale fee is sent
+     * @param _forwarder the address for the Trusted Forwarder for Open GSN integration
      */
     function initialize(
         address payable _seller,
@@ -87,7 +92,8 @@ contract DutchAuction is
         uint256 _auctionDuration,
         bool _isNonLinear,
         uint256 _saleFee,
-        address payable _saleFeeAddress
+        address payable _saleFeeAddress,
+        address _forwarder
     ) external initializer {
         __DutchAuction_init(
             _seller,
@@ -98,7 +104,8 @@ contract DutchAuction is
             _auctionDuration,
             _isNonLinear,
             _saleFee,
-            _saleFeeAddress
+            _saleFeeAddress,
+            _forwarder
         );
     }
 
@@ -111,7 +118,8 @@ contract DutchAuction is
         uint256 _auctionDuration,
         bool _isNonLinear,
         uint256 _saleFee,
-        address payable _saleFeeAddress
+        address payable _saleFeeAddress,
+        address _forwarder
     ) external onlyInitializing {
         __DutchAuction_init(
             _seller,
@@ -122,7 +130,8 @@ contract DutchAuction is
             _auctionDuration,
             _isNonLinear,
             _saleFee,
-            _saleFeeAddress
+            _saleFeeAddress,
+            _forwarder
         );
     }
 
@@ -135,7 +144,8 @@ contract DutchAuction is
         uint256 _auctionDuration,
         bool _isNonLinear,
         uint256 _saleFee,
-        address payable _saleFeeAddress
+        address payable _saleFeeAddress,
+        address _forwarder
     ) internal onlyInitializing {
         _transferOwnership(_seller);
         __DutchAuction_init_unchained(
@@ -147,7 +157,8 @@ contract DutchAuction is
             _auctionDuration,
             _isNonLinear,
             _saleFee,
-            _saleFeeAddress
+            _saleFeeAddress,
+            _forwarder
         );
     }
 
@@ -160,7 +171,8 @@ contract DutchAuction is
         uint256 _auctionDuration,
         bool _isNonLinear,
         uint256 _saleFee,
-        address payable _saleFeeAddress
+        address payable _saleFeeAddress,
+        address _forwarder
     ) internal onlyInitializing {
         require(_startPrice > _endPrice, 'DutchAuction: start price must be greater than end price');
         asset = _asset;
@@ -175,6 +187,9 @@ contract DutchAuction is
         isBought = false;
         saleFee = _saleFee;
         saleFeeAddress = _saleFeeAddress;
+
+        //Setting trusted forwarder for open GSN integration
+        _setTrustedForwarder(_forwarder);
 
         //transferring ERC 721
         if (_asset.token == AuctionLib.TokenType.erc721)
@@ -304,5 +319,20 @@ contract DutchAuction is
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 }
