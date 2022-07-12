@@ -8,7 +8,7 @@ import { Web3Provider } from '@ethersproject/providers';
 
 const salt = ethers.utils.formatBytes32String('1');
 
-describe.only('ERC721OwlGSN', () => {
+describe('ERC721OwlGSN', () => {
     let ERC721OwlGSNFactory: ERC721OwlGSN__factory;
     let ERC721OwlGSNImplementation: ERC721OwlGSN;
     let OwlGSN: ERC721OwlGSN;

@@ -101,7 +101,8 @@
         "web3": "^1.6.1",
         "web3-core": "^1.6.1",
         "web3-eth-contract": "^1.6.1",
-        "web3-utils": "^1.6.1"
+        "web3-utils": "^1.6.1",
+        "@owlprotocol/contract-helpers-opengsn": "../../packages/owlprotocol-contract-helpers/opengsn"
     },
     "files": [
         "artifacts/contracts/**/*.json",
