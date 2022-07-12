@@ -44,7 +44,6 @@ const config: HardhatUserConfig = {
             accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
         },
         hardhat: {
-            from: process.env.PRIV_KEY,
             chainId: 1337,
             forking: {
                 url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -70,7 +69,10 @@ const config: HardhatUserConfig = {
                 },
             ],
         },
-
+        local: {
+            chainId: 1337,
+            url: 'http://localhost:8545',
+        },
         rinkeby: {
             from: process.env.PRIV_KEY,
             url: process.env.RINKEBY_URL || 'https://rinkeby.infura.io/v3/fee5821234524325b482f04d51c75878',
