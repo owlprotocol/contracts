@@ -3,3 +3,4 @@ packages:
   - "packages/nft-launcher-contracts-sol"
   - "packages/owlprotocol-contracts"
   - "packages/owlprotocol-contracts-docs"
+  - "packages/owlprotocol-contract-helpers/opengsn"

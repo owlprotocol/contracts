@@ -1,0 +1,25 @@
+{
+  "name": "@owlprotocol/contract-helpers-opengsn",
+  "version": "0.1.0",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oyunprotocol/contracts.git"
+  },
+  "homepage": "https://github.com/oyunprotocol/contracts.git",
+  "copyright": "Copyright 2021 OYUNPROTOCOL",
+  "license": "MIT",
+  "scripts": {},
+  "peerDependencies": {
+    "typechain": "^5.1.2"
+  },
+  "devDependencies": {
+    "@typechain/hardhat": "^2.3.1",
+    "hardhat": "^2.9.1"
+  },
+  "files": [
+    "artifacts/contracts/**/*.json",
+    "contracts/**/*.sol",
+    "types"
+  ]
+}
