@@ -59,19 +59,11 @@ contract MinterAutoId is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterAutoId_init_unchained(_admin, _forwarder);
+        __MinterAutoId_init_unchained(_admin);
+        _setTrustedForwarder(_forwarder);
     }
 
-    function __MinterAutoId_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256('OWLProtocol://MinterAutoId');
-        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-        // Register ERC165 Interface
-        ERC165Storage._registerInterface(type(IMinterAutoId).interfaceId);
-
-        //set trusted forwarder for open gsn
-        _setTrustedForwarder(_forwarder);
-
+    function __MinterAutoId_init_unchained(address _admin) internal onlyInitializing {
         _transferOwnership(_admin);
     }
 
@@ -79,7 +71,7 @@ contract MinterAutoId is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
      * @dev Create a new type of species and define attributes.
      * @return nextTokenId
      */
-    function mint(address buyer) public returns (uint256) {
+    function mint(address buyer) public virtual returns (uint256) {
         MinterCore._mintForFee(buyer, nextTokenId++);
         return nextTokenId;
     }
@@ -88,7 +80,7 @@ contract MinterAutoId is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
      * @dev Create a new type of species and define attributes.
      * @return nextTokenId
      */
-    function safeMint(address buyer) public returns (uint256) {
+    function safeMint(address buyer) public virtual returns (uint256) {
         MinterCore._safeMintForFee(buyer, nextTokenId++);
         return nextTokenId;
     }

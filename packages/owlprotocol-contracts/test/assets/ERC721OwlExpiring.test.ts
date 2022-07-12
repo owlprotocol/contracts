@@ -374,10 +374,10 @@ describe('ERC721Expiring.sol', () => {
             await contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 2);
             await contrInst
                 .connect(signer2)
-                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3);
+            ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3);
             await contrInst
                 .connect(signer2)
-                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4);
+            ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4);
         });
 
         it('after expire', async () => {
@@ -397,12 +397,12 @@ describe('ERC721Expiring.sol', () => {
             await expect(
                 contrInst
                     .connect(signer2)
-                    ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3),
+                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3),
             ).to.be.revertedWith('ERC721: transfer query for nonexistent token');
             await expect(
                 contrInst
                     .connect(signer2)
-                    ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4),
+                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4),
             ).to.be.revertedWith('ERC721: transfer query for nonexistent token');
         });
 
@@ -426,10 +426,10 @@ describe('ERC721Expiring.sol', () => {
             await contrInst['safeTransferFrom(address,address,uint256)'](signer1.address, signer2.address, 2);
             await contrInst
                 .connect(signer2)
-                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3);
+            ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 3);
             await contrInst
                 .connect(signer2)
-                ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4);
+            ['safeTransferFrom(address,address,uint256)'](signer2.address, signer1.address, 4);
         });
 
         afterEach(async () => {
@@ -480,12 +480,14 @@ describe('ERC721Expiring.sol', () => {
         const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
 
         const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, ERC721OwlExpiringImpl.address]);
-        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [
+        const data = contrInst.interface.encodeFunctionData('proxyInitialize', [
             signer1.address,
-            beaconAddr,
-            ERC721OwlExpiringImpl.interface.encodeFunctionData('proxyInitialize', [signer1.address, name, symbol, uri]),
+            name,
+            symbol,
+            uri,
+            '0x' + '0'.repeat(40),
         ]);
-
+        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data]);
         contrInst = (await ethers.getContractAt('ERC721OwlExpiring', beaconProxyAddr)) as ERC721OwlExpiring;
 
         expect(await contrInst.name()).to.equal(name);

@@ -5,3 +5,4 @@ export { deployClone } from './deployClone';
 export { predictDeployClone } from './predictDeployClone';
 export { encodeGenesUint256, decodeGenesUint256 } from './species';
 export { default as getTime } from './getTime';
+export { default as sleep } from './sleep';

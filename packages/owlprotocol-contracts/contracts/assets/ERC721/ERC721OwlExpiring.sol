@@ -15,9 +15,6 @@ contract ERC721OwlExpiring is ERC721Owl {
 
     mapping(uint256 => uint256) internal expires;
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {}
-
     function initialize(
         address _admin,
         string calldata _name,

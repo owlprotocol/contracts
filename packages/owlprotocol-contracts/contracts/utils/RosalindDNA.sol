@@ -15,7 +15,7 @@ library RosalindDNA {
 
     /**
      * @dev Breeds multiple parents DNA, returning a new combined
-     * @param parents N different parent DNAs
+     * @param parentsDNA N different parent DNAs
      * @param genes start indicies of each gene.
      * First index should ALWAYS be 0. Using [0, 128] splits
      * the DNA into two genes of equal length
@@ -23,7 +23,7 @@ library RosalindDNA {
      * @return childDNA combined child DNA
      */
     function breedDNASimple(
-        uint256[] calldata parents,
+        uint256[] memory parentsDNA,
         uint8[] memory genes,
         uint256 randomSeed
     ) internal pure returns (uint256 childDNA) {
@@ -34,8 +34,8 @@ library RosalindDNA {
             uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 256;
 
             // Select parent
-            uint8 randomParentIdx = uint8(SourceRandom.getSeededRandom(randomSeed, geneIdx) % parents.length);
-            uint256 selectedParent = parents[randomParentIdx];
+            uint8 randomParentIdx = uint8(SourceRandom.getSeededRandom(randomSeed, geneIdx) % parentsDNA.length);
+            uint256 selectedParent = parentsDNA[randomParentIdx];
 
             // Isolate our gene
             uint256 bitmask = get256Bitmask(geneStartIdx, geneEndIdx);
@@ -51,7 +51,7 @@ library RosalindDNA {
     /**
      * @dev Breeds multiple parents DNA, returning a new combined DNA
      * Allows for random mutations to occur, producing random bits instead.
-     * @param parents N different parent DNAs
+     * @param parentsDNA N different parent DNAs
      * @param genes start indicies of each gene.
      * First index should ALWAYS be 0. Using [0, 128] splits
      * the DNA into two genes of equal length
@@ -70,13 +70,13 @@ library RosalindDNA {
      * @return childDNA combined child DNA with mutations occuring.
      */
     function breedDNAWithMutations(
-        uint256[] calldata parents,
+        uint256[] memory parentsDNA,
         uint8[] memory genes,
         uint256 randomSeed,
         uint256[] memory mutationRates
     ) internal pure returns (uint256 childDNA) {
         // Breed normally
-        childDNA = breedDNASimple(parents, genes, randomSeed);
+        childDNA = breedDNASimple(parentsDNA, genes, randomSeed);
 
         // Add mutations
         childDNA = generateMutations(childDNA, genes, randomSeed, mutationRates);
@@ -112,6 +112,8 @@ library RosalindDNA {
         uint256 mutationMask;
 
         // Loop genes, create a mutation mask
+        // I.e. mutationMask = 11101011101011110000111
+        // Then once at the end: mutatedDNA = mutationMask & randomSeed
         for (uint256 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
             // Decide if we want to mutate
             uint256 geneMutationSeed = SourceRandom.getSeededRandom(randomSeed, geneIdx);
@@ -139,13 +141,13 @@ library RosalindDNA {
     /**
      * @dev Sets an offsprings generation (increases max parent +1)
      * @param child child dna
-     * @param parents array of parent dna
+     * @param parentsDNA array of parent dna
      */
-    function breedDNAGenCount(uint256 child, uint256[] calldata parents) internal pure returns (uint256) {
+    function setGenCount(uint256 child, uint256[] memory parentsDNA) internal pure returns (uint256) {
         // Discover oldest parent
         uint256 oldestParent;
-        for (uint256 i = 0; i < parents.length; i++) {
-            uint256 parentAge = uint8(parents[i] & GENERATION_MASK);
+        for (uint256 i = 0; i < parentsDNA.length; i++) {
+            uint256 parentAge = uint8(parentsDNA[i] & GENERATION_MASK);
             if (parentAge > oldestParent) oldestParent = parentAge;
         }
 
