@@ -29,7 +29,9 @@ enum TokenType {
     erc1155,
 }
 
-describe('CrafterTransfer.sol burn', function () {
+const ZERO_ADDR = '0x' + '0'.repeat(40);
+
+describe.only('CrafterTransfer.sol burn', function () {
     // Extra time
     this.timeout(10000);
 
@@ -97,6 +99,7 @@ describe('CrafterTransfer.sol burn', function () {
                             tokenIds: [],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -131,6 +134,7 @@ describe('CrafterTransfer.sol burn', function () {
                             tokenIds: [],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -273,6 +277,7 @@ describe('CrafterTransfer.sol burn', function () {
                             tokenIds: [1],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -307,6 +312,7 @@ describe('CrafterTransfer.sol burn', function () {
                             tokenIds: [1],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -483,6 +489,7 @@ describe('CrafterTransfer.sol burn', function () {
                             tokenIds: [outputId],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -517,6 +524,7 @@ describe('CrafterTransfer.sol burn', function () {
                             tokenIds: [outputId],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -705,6 +713,7 @@ describe('CrafterTransfer.sol burn', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -769,6 +778,7 @@ describe('CrafterTransfer.sol burn', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
+                    ZERO_ADDR, // forwarder addr
                 ],
                 ERC1167Factory,
             );
