@@ -17,34 +17,34 @@ contract ERC721OwlAttributes is ERC721Owl {
     bytes4 private constant ERC165TAG =
         bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlAttributes/', _version)));
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {}
-
     function initialize(
         address _admin,
         string calldata _name,
         string calldata _symbol,
-        string calldata baseURI_
+        string calldata baseURI_,
+        address _forwarder
     ) external virtual override initializer {
-        __ERC721OwlAttributes_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlAttributes_init(_admin, _name, _symbol, baseURI_, _forwarder);
     }
 
     function proxyInitialize(
         address _admin,
         string calldata _name,
         string calldata _symbol,
-        string calldata baseURI_
+        string calldata baseURI_,
+        address _forwarder
     ) external virtual override onlyInitializing {
-        __ERC721OwlAttributes_init(_admin, _name, _symbol, baseURI_);
+        __ERC721OwlAttributes_init(_admin, _name, _symbol, baseURI_, _forwarder);
     }
 
     function __ERC721OwlAttributes_init(
         address _admin,
         string memory _name,
         string memory _symbol,
-        string memory baseURI_
+        string memory baseURI_,
+        address _forwarder
     ) internal onlyInitializing {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_);
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder);
         __ERC721OwlAttributes_init_unchained(_admin);
     }
 
@@ -107,20 +107,6 @@ contract ERC721OwlAttributes is ERC721Owl {
     function updateDna(uint256 tokenId, uint256 dna) external onlyRole(DNA_ROLE) {
         require(_exists(tokenId), 'ERC721Metadata: URI query for nonexistent token');
         dnas[tokenId] = dna;
-    }
-
-    /**
-     * @dev Getter for dna of tokenId
-     * @param tokenId whose dna to change
-     * @return dna of tokenId
-     */
-    function getDna(uint256 tokenId) external view returns (uint256) {
-        require(_exists(tokenId), 'ERC721Metadata: URI query for nonexistent token');
-        return dnas[tokenId];
-    }
-
-    function version() public pure override returns (string memory) {
-        return _version;
     }
 
     /**
