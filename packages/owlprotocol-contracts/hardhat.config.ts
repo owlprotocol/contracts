@@ -36,20 +36,18 @@ const config: HardhatUserConfig = {
     },
     networks: {
         hardhat: {
-            from: process.env.PRIV_KEY,
-            chainId: 1337,
             accounts: [
                 //@ts-ignore
-                { balance: '1000000000000000000', privateKey: process.env.PRIV_KEY },
+                { balance: '1000000000000000000000', privateKey: process.env.PRIV_KEY },
                 //@ts-ignore
-                { balance: '1000000000000000000', privateKey: process.env.PROXY_PRIV_KEY },
-                { balance: '1000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32) },
-                { balance: '1000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(2), 32) },
-                { balance: '1000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32) },
+                { balance: '1000000000000000000000', privateKey: process.env.PROXY_PRIV_KEY },
+                { balance: '1000000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32) },
+                { balance: '1000000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(2), 32) },
+                { balance: '1000000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32) },
             ],
         },
-        ganache: {
-            chainId: 1337,
+        local: {
+            chainId: 31337,
             url: 'http://localhost:8545',
         },
         rinkeby: {
