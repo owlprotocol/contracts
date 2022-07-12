@@ -10,7 +10,7 @@ import './RandomBeacon.sol';
 import 'hardhat/console.sol';
 
 contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
-    event Fulfilled(uint256 indexed requestId, uint256 randomNumber);
+    event Fulfilled(uint256 indexed requestId, uint256 indexed randomNumber);
     event Requested(uint256 indexed requestId);
 
     VRFCoordinatorV2Interface COORDINATOR;
@@ -18,7 +18,6 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
 
     uint64 s_subscriptionId;
     uint32 callbackGasLimit;
-    uint16 requestConfirmations = 3;
     uint32 numWords = 1;
 
     mapping(uint256 => uint256) public blockNumberToRequestId;
@@ -55,6 +54,7 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
      * Requests randomness from a block hash
      */
     function requestRandomness(uint256 blockNumber) public returns (uint256) {
+        require(blockNumber > block.number, 'VRFBeacon: block is already past');
         // Max request per EPOCH
         uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
         require(blockNumberToRequestId[epochBlockNumber] == 0, 'VRFBeacon: Already requested!');
@@ -62,7 +62,7 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
         uint256 requestId = COORDINATOR.requestRandomWords(
             keyHash,
             s_subscriptionId,
-            requestConfirmations,
+            uint16(EPOCH_PERIOD - (blockNumber % EPOCH_PERIOD)),
             callbackGasLimit,
             numWords
         );

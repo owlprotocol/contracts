@@ -1,10 +1,9 @@
-import { ethers, network } from 'hardhat';
+import { ethers, web3, network } from 'hardhat';
 import { expect } from 'chai';
-import { VRFBeacon, VRFBeacon__factory } from '../../typechain';
+import { VRFBeacon, VRFBeacon__factory, VRFCoordinatorV2 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { IVRFCoordinatorV2 } from '../../typechain/IVRFCoordinatorV2';
+import { deployedBytecode as mockDeployedBytecode } from "../../artifacts/contracts/testing/VRFCoordinatorV2.sol/VRFCoordinatorV2.json"
 import { pick } from 'lodash';
-import { randomInt } from 'crypto';
 
 const coordinatorAddr = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
 const EPOCH_PERIOD = 10;
@@ -24,11 +23,12 @@ describe('VRFRandom beacon', () => {
                 {
                     forking: {
                         jsonRpcUrl: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-                        blockNumber: 11006010,
+                        blockNumber: 11011599,
                     },
                 },
             ],
         });
+
 
         const VRFBeaconFactory = (await ethers.getContractFactory('VRFBeacon')) as VRFBeacon__factory;
         VRFBeacon = (await VRFBeaconFactory.deploy(
@@ -41,7 +41,13 @@ describe('VRFRandom beacon', () => {
     });
 
     it('full test', async () => {
-        const coordinator = (await ethers.getContractAt('IVRFCoordinatorV2', coordinatorAddr)) as IVRFCoordinatorV2;
+
+        await network.provider.send("hardhat_setCode", [
+            coordinatorAddr,
+            mockDeployedBytecode,
+        ]);
+
+        const coordinator = (await ethers.getContractAt('VRFCoordinatorV2', coordinatorAddr)) as VRFCoordinatorV2;
         await coordinator.connect(signer1).addConsumer(subId, VRFBeacon.address);
 
         const blockNumber = await ethers.provider.getBlockNumber();
@@ -53,27 +59,23 @@ describe('VRFRandom beacon', () => {
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(reqId);
 
         const blockNumber2 = await ethers.provider.getBlockNumber();
-        //blockNumber2 = blockNumber + 1
+        // blockNumber2 = blockNumber + 1
         await expect(VRFBeacon.requestRandomness(blockNumber2)).to.be.revertedWith('VRFBeacon: Already requested!');
 
-        await network.provider.request({
-            method: 'hardhat_impersonateAccount',
-            params: [coordinatorAddr],
-        });
+        const tx = await coordinator.fulfillRandomWords(reqId, VRFBeacon.address)
+        const { events } = await tx.wait();
+        const fulfilledEvent = events ? events[0] : undefined;
 
-        await network.provider.send('hardhat_setBalance', [coordinatorAddr, '0xff000000000000']);
+        if (fulfilledEvent === undefined) return;
 
-        const coordinatorContr = await ethers.getSigner(coordinatorAddr);
-        const tx = await VRFBeacon.connect(coordinatorContr).rawFulfillRandomWords(reqId, [randomInt(10000000000)]);
-        const receipt = await tx.wait();
-        const { requestId, randomNumber } = pick(receipt.events?.find((e) => e.event === 'Fulfilled')?.args, [
-            'requestId',
-            'randomNumber',
-        ]);
+        // console.log(pick(VRFBeacon.interface.decodeEventLog("Fulfilled", fulfilledEvent.data, fulfilledEvent.topics), ['requestId', 'randomNumber']))
+
+        const { requestId, randomNumber } = pick(VRFBeacon.interface.decodeEventLog("Fulfilled", fulfilledEvent.data, fulfilledEvent.topics), ['requestId', 'randomNumber'])
 
         expect(requestId).to.equal(reqId);
         expect(await VRFBeacon.getRandomness(blockNumber)).to.equal(randomNumber);
-        console.log(randomNumber.toNumber());
+
+        console.log(randomNumber)
     });
 });
 
