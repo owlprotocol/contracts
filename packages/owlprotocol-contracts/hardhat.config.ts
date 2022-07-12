@@ -13,6 +13,7 @@ import '@nomiclabs/hardhat-etherscan';
 import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
+import { removeConsoleLog } from 'hardhat-preprocessor';
 import 'solidity-docgen';
 import 'solidity-coverage';
 
@@ -23,6 +24,9 @@ dotenv.config();
 // TODO - auto doc generation
 
 const config: HardhatUserConfig = {
+    preprocess: {
+        eachLine: removeConsoleLog((hre) => hre.network.name !== 'hardhat' && hre.network.name !== 'localhost'),
+    },
     solidity: {
         version: '0.8.9',
         settings: {
