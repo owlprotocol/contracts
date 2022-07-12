@@ -49,12 +49,17 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const EnglishAuctionData = EnglishAuctionImpl.interface.encodeFunctionData('proxyInitialize', [
         other,
-        nftForSaleAddr,
-        1,
+        {
+            token: 0,
+            contractAddr: acceptableTokenAddr,
+            tokenId: 1,
+        },
         acceptableTokenAddr,
+        1,
         10,
         10,
         1,
+        other,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory

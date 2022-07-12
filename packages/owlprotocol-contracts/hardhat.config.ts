@@ -1,5 +1,6 @@
-// @ts-nocheck
+//@ts-ignore
 /**
+ *
  * @type import('hardhat/config').HardhatUserConfig
  */
 
@@ -13,6 +14,7 @@ import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'solidity-docgen';
+import 'solidity-coverage';
 
 import { ethers } from 'ethers';
 
@@ -35,19 +37,40 @@ const config: HardhatUserConfig = {
         other: 1,
     },
     networks: {
+        localhost: {
+            from: process.env.PRIV_KEY,
+            url: 'http://127.0.0.1:8545/',
+            //@ts-ignore
+            accounts: [process.env.PRIV_KEY, process.env.PROXY_PRIV_KEY],
+        },
         hardhat: {
+            chainId: 1337,
+            forking: {
+                url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
+                enabled: false,
+                blockNumber: 11005998,
+            },
             accounts: [
                 //@ts-ignore
-                { balance: '1000000000000000000000', privateKey: process.env.PRIV_KEY },
+                { balance: '10000000000000000000000', privateKey: process.env.PRIV_KEY },
                 //@ts-ignore
-                { balance: '1000000000000000000000', privateKey: process.env.PROXY_PRIV_KEY },
-                { balance: '1000000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32) },
-                { balance: '1000000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(2), 32) },
-                { balance: '1000000000000000000000', privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32) },
+                { balance: '10000000000000000000000', privateKey: process.env.PROXY_PRIV_KEY },
+                {
+                    balance: '10000000000000000000000',
+                    privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32),
+                },
+                {
+                    balance: '10000000000000000000000',
+                    privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(2), 32),
+                },
+                {
+                    balance: '10000000000000000000000',
+                    privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32),
+                },
             ],
         },
         local: {
-            chainId: 31337,
+            chainId: 1337,
             url: 'http://localhost:8545',
         },
         rinkeby: {
@@ -154,16 +177,16 @@ const config: HardhatUserConfig = {
     },
     etherscan: {
         apiKey: {
-            mainnet: process.env.MAINNET_API_KEY,
-            polygon: process.env.POLYGON_API_KEY,
-            bsc: process.env.BINANCE_API_KEY,
-            arbitrumOne: process.env.ARBITRUM_API_KEY,
-            optimisticEthereum: process.env.OPTIMISM_API_KEY,
-            avalanche: process.env.AVAX_API_KEY,
-            opera: process.env.FANTOM_API_KEY,
-            aurora: process.env.AURORA_API_KEY,
-            moonriver: process.env.MOONRIVER_API_KEY,
-            moonbeam: process.env.MOONBEAM_API_KEY,
+            mainnet: process.env.MAINNET_API_KEY!,
+            polygon: process.env.POLYGON_API_KEY!,
+            bsc: process.env.BINANCE_API_KEY!,
+            arbitrumOne: process.env.ARBITRUM_API_KEY!,
+            optimisticEthereum: process.env.OPTIMISM_API_KEY!,
+            avalanche: process.env.AVAX_API_KEY!,
+            opera: process.env.FANTOM_API_KEY!,
+            aurora: process.env.AURORA_API_KEY!,
+            moonriver: process.env.MOONRIVER_API_KEY!,
+            moonbeam: process.env.MOONBEAM_API_KEY!,
         },
         //@ts-ignore
         customChains: [

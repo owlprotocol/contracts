@@ -12,7 +12,8 @@
     "scripts": {
         "hardhat:compile": "npx hardhat compile",
         "hardhat:node": "npx hardhat node",
-        "clean:types": "rimraf types typechain",
+        "clean:types": "rimraf types && npx hardhat clean",
+        "coverage": "npx hardhat coverage --solcoverjs .solcover.js --testfiles 'test/**/*.test.ts'",
         "test": "npx hardhat test",
         "compile": "npx hardhat clean && npx hardhat compile",
         "test:parallel": "npx hardhat test --parallel",
@@ -89,6 +90,7 @@
         "prettier": "^2.5.1",
         "rimraf": "^3.0.2",
         "solc-0.8": "npm:solc@^0.8.12",
+        "solidity-coverage": "^0.7.21",
         "solidity-docgen": "^0.6.0-beta.8",
         "ts-node": "^10.8.1",
         "typechain": "^5.2.0",
@@ -105,5 +107,9 @@
         "artifacts/contracts/**/*.json",
         "contracts/**/*.sol",
         "types"
-    ]
+    ],
+    "dependencies": {
+        "@chainlink/contracts": "^0.4.1",
+        "solidity-coverage": "^0.7.21"
+    }
 }

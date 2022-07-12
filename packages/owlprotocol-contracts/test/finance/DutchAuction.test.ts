@@ -671,7 +671,7 @@ describe('DutchAuction.sol 10% Fees', function () {
             await acceptableERC20Token.connect(bidder1).approve(owner.address, parseUnits('100.0', 18));
             await network.provider.send('evm_setAutomine', [false]);
 
-            await deployClone(
+            deployClone(
                 DutchAuctionImplementation,
                 [
                     seller.address,
@@ -694,17 +694,17 @@ describe('DutchAuction.sol 10% Fees', function () {
 
             auction2.connect(bidder1).bid();
 
+            await network.provider.send('evm_setAutomine', [true]);
             // // getting timestamp
-            // const blockNumBefore = await ethers.provider.getBlockNumber();
-            // const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-            // const timestampBefore = blockBefore.timestamp;
-            // console.log(timestampBefore);
+            const blockNumBefore = await ethers.provider.getBlockNumber();
+            const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+            const timestampBefore = blockBefore.timestamp;
+            console.log(timestampBefore);
 
-            // await network.provider.send('evm_mine');
-            // const blockNumBefore2 = await ethers.provider.getBlockNumber();
-            // const blockBefore2 = await ethers.provider.getBlock(blockNumBefore2);
-            // const timestampBefore2 = blockBefore2.timestamp;
-            // console.log(timestampBefore2);
+            const blockNumBefore2 = await ethers.provider.getBlockNumber();
+            const blockBefore2 = await ethers.provider.getBlock(blockNumBefore2);
+            const timestampBefore2 = blockBefore2.timestamp;
+            console.log(timestampBefore2);
         });
 
         it('simple auction - 1 bidder', async () => {

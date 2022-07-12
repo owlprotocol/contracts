@@ -50,13 +50,18 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const dutchAuctionData = dutchAuctionImpl.interface.encodeFunctionData('proxyInitialize', [
         other,
-        nftForSaleAddr,
-        2,
+        {
+            token: 0,
+            contractAddr: acceptableTokenAddr,
+            tokenId: 1,
+        },
         acceptableTokenAddr,
+        2,
         100,
         10,
-        300,
         false,
+        300,
+        other,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory

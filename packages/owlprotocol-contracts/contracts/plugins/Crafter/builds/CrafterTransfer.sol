@@ -13,9 +13,11 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 
 import '../ICrafter.sol';
 import '../../PluginsLib.sol';
+import 'hardhat/console.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
@@ -27,9 +29,11 @@ contract CrafterTransfer is
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
     OwnableUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    AccessControlUpgradeable
 {
     // Specification + ERC165
+    bytes32 internal constant FORWARDER_ROLE = keccak256('FORWARDER_ROLE');
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterTransfer/', version)));
 
@@ -66,7 +70,9 @@ contract CrafterTransfer is
     /**
      * @notice Create recipe
      * @dev Configures crafting recipe with inputs/outputs
+     * @param _admin owner, can control outputs on contract
      * @param _burnAddress Burn address for burn inputs
+     * @param _craftableAmount limit on the number of times this recipe can be crafted
      * @param _inputs inputs for recipe
      * @param _outputs outputs for recipe
      */
@@ -122,6 +128,15 @@ contract CrafterTransfer is
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids, _admin);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
+    }
+
+    /**
+     * @notice Must have owner role
+     * @dev Grants FORWARDER_ROLE to {a}
+     * @param to address to
+     */
+    function grantForwarder(address to) public onlyOwner {
+        _grantRole(FORWARDER_ROLE, to);
     }
 
     /**********************
@@ -320,13 +335,30 @@ contract CrafterTransfer is
         emit RecipeUpdate(craftableAmount);
     }
 
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
+        _craft(craftAmount, _inputERC721Ids, _msgSender());
+    }
+
+    function craft(
+        uint96 craftAmount,
+        uint256[][] calldata _inputERC721Ids,
+        address _crafter
+    ) external onlyRole(FORWARDER_ROLE) {
+        _craft(craftAmount, _inputERC721Ids, _crafter);
+    }
+
     /**
      * @notice Craft {craftAmount}
-     * @dev Used to craft. Consumes inputs and transfers outputs.
+     * @dev Used to craft. Consumes inputs and transfers outputs. Can only be called by forwarder contracts.
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
+     * @param _crafter the address of the client requesting to craft
      */
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) public {
+    function _craft(
+        uint96 craftAmount,
+        uint256[][] calldata _inputERC721Ids,
+        address _crafter
+    ) internal {
         // Requires
         require(craftAmount > 0, 'CrafterTransfer: craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'CrafterTransfer: Not enough resources to craft!');
@@ -346,14 +378,14 @@ contract CrafterTransfer is
                     //Transfer ERC20
                     SafeERC20Upgradeable.safeTransferFrom(
                         IERC20Upgradeable(ingredient.contractAddr),
-                        _msgSender(),
+                        _crafter,
                         burnAddress,
                         ingredient.amounts[0] * craftAmount
                     );
                 } else if (ingredient.consumableType == PluginsLib.ConsumableType.unaffected) {
                     //Check ERC20
                     require(
-                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_msgSender()) >=
+                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_crafter) >=
                             ingredient.amounts[0] * craftAmount,
                         'CrafterTransfer: User missing minimum token balance(s)!'
                     );
@@ -366,7 +398,7 @@ contract CrafterTransfer is
                     //Transfer ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                            _msgSender(),
+                            _crafter,
                             burnAddress,
                             currInputArr[j]
                         );
@@ -375,7 +407,7 @@ contract CrafterTransfer is
                     //Check ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _crafter,
                             'CrafterTransfer: User does not own token(s)!'
                         );
                         uint256 currTokenId = currInputArr[j];
@@ -396,7 +428,7 @@ contract CrafterTransfer is
                         amounts[j] = ingredient.amounts[j] * craftAmount;
                     }
                     IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                        _msgSender(),
+                        _crafter,
                         burnAddress,
                         ingredient.tokenIds,
                         amounts,
@@ -408,7 +440,7 @@ contract CrafterTransfer is
                     address[] memory accounts = new address[](ingredient.amounts.length);
                     for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                         amounts[j] = ingredient.amounts[j] * craftAmount;
-                        accounts[j] = _msgSender();
+                        accounts[j] = _crafter;
                     }
 
                     uint256[] memory balances = IERC1155Upgradeable(ingredient.contractAddr).balanceOfBatch(
@@ -428,7 +460,7 @@ contract CrafterTransfer is
                 //Transfer ERC20
                 SafeERC20Upgradeable.safeTransfer(
                     IERC20Upgradeable(ingredient.contractAddr),
-                    _msgSender(),
+                    _crafter,
                     ingredient.amounts[0] * craftAmount
                 );
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
@@ -436,7 +468,7 @@ contract CrafterTransfer is
                 for (uint256 j = 0; j < craftAmount; j++) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         address(this),
-                        _msgSender(),
+                        _crafter,
                         ingredient.tokenIds[ingredient.tokenIds.length - 1]
                     );
 
@@ -450,7 +482,7 @@ contract CrafterTransfer is
                 }
                 IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
                     address(this),
-                    _msgSender(),
+                    _crafter,
                     ingredient.tokenIds,
                     amounts,
                     new bytes(0)
@@ -458,7 +490,7 @@ contract CrafterTransfer is
             }
         }
 
-        emit RecipeCraft(craftAmount, craftableAmount, _msgSender());
+        emit RecipeCraft(craftAmount, craftableAmount, _crafter);
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
@@ -472,7 +504,13 @@ contract CrafterTransfer is
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        returns (bool)
+    {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }

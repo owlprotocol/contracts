@@ -17,7 +17,7 @@ describe('Contract Version Testing', async () => {
             'ERC20Owl',
             'ERC721Owl',
             'ERC721OwlAttributes',
-            // 'ERC721OwlExpiring',
+            'ERC721OwlExpiring',
             // 'Bundle',
             // 'DutchAuction',
             // 'EnglishAuction',
@@ -29,6 +29,7 @@ describe('Contract Version Testing', async () => {
             'MinterBreeding',
             'MinterRandom',
             'MinterSimple',
+            'Lootbox',
         ];
 
         const correctVersion = contracts.map((c) => assertCorrectVersion(c));
