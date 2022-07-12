@@ -12,7 +12,7 @@ import {
 } from '../../../typechain';
 import { deployClone } from '../../utils';
 
-describe.only('MinterRandom.sol', function () {
+describe('MinterRandom.sol', function () {
     let owner: SignerWithAddress;
     let burnAddress: SignerWithAddress;
 

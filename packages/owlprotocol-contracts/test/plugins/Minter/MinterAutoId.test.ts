@@ -11,7 +11,7 @@ import {
 
 import { deployClone } from '../../utils';
 
-describe.only('MinterAutoId.sol', function () {
+describe('MinterAutoId.sol', function () {
     let owner: SignerWithAddress;
     let burnAddress: SignerWithAddress;
 

@@ -12,7 +12,7 @@ import {
 } from '../../../typechain';
 const toBN = BN.from;
 
-describe.only('MinterBreeding.sol', function () {
+describe('MinterBreeding.sol', function () {
     let MinterBreederFactory: MinterBreeding__factory;
     let ERC721OwlAttributesFactory: ERC721OwlAttributes__factory;
     let FactoryERC20: FactoryERC20__factory;
@@ -65,7 +65,7 @@ describe.only('MinterBreeding.sol', function () {
     });
 
     describe('MinterBreeding.breed(...)', async () => {
-        it.only('Breed Specimen', async () => {
+        it('Breed Specimen', async () => {
             const minterBreeding = await setupBreederContract();
 
             // Breed our first specimen
@@ -86,13 +86,13 @@ describe.only('MinterBreeding.sol', function () {
                 );
         });
 
-        it.only('Fail on single parent', async () => {
+        it('Fail on single parent', async () => {
             const minterBreeding = await setupBreederContract();
 
             await expect(minterBreeding.breed([parentIds[0]])).to.be.revertedWith('Invalid number of parents!');
         });
 
-        it.only('Test Cooldown', async () => {
+        it('Test Cooldown', async () => {
             const minterBreeding = await setupBreederContract();
 
             // Breed our first specimen
@@ -103,7 +103,7 @@ describe.only('MinterBreeding.sol', function () {
             );
         });
 
-        it.only('Does not own parent NFT', async () => {
+        it('Does not own parent NFT', async () => {
             const minterBreeding = await setupBreederContract();
 
             await expect(minterBreeding.connect(user).breed([parentIds[2], encodedParents[3]])).to.be.revertedWith(
@@ -111,14 +111,14 @@ describe.only('MinterBreeding.sol', function () {
             );
         });
 
-        it.only('Set Required Parents', async () => {
+        it('Set Required Parents', async () => {
             const minterBreeding = await setupBreederContract();
             await minterBreeding.setBreedingRules(3, defaultGenerationMultiplier, 0, genes, []);
             // Breed w/ 3 parents
             await minterBreeding.breed([parentIds[0], parentIds[1], parentIds[2]]);
         });
 
-        it.only('Set breeding cooldown', async () => {
+        it('Set breeding cooldown', async () => {
             const minterBreeding = await setupBreederContract();
             const cooldownSeconds = 1;
             await minterBreeding.setBreedingRules(0, defaultGenerationMultiplier, cooldownSeconds, genes, []);
@@ -131,7 +131,7 @@ describe.only('MinterBreeding.sol', function () {
             await minterBreeding.breed([parentIds[0], parentIds[1]]);
         });
 
-        it.only('Breed with Mutations', async () => {
+        it('Breed with Mutations', async () => {
             const minterBreeding = await setupBreederContract();
             // Set mutation rules
             const mutationRates = [];
@@ -156,7 +156,7 @@ describe.only('MinterBreeding.sol', function () {
             );
         });
 
-        it.only('Enable generation counter', async () => {
+        it('Enable generation counter', async () => {
             const minterBreeding = await setupBreederContract();
 
             // Enable generation counting
@@ -178,7 +178,7 @@ describe.only('MinterBreeding.sol', function () {
             expect(newSpecimenDNA[0]).to.equal(6);
         });
 
-        it.only('Enable generational cooldowns', async () => {
+        it('Enable generational cooldowns', async () => {
             const minterBreeding = await setupBreederContract();
 
             // Enable generation counting
