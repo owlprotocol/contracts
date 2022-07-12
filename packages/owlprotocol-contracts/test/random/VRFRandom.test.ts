@@ -60,7 +60,7 @@ describe.only('VRFRandom beacon', () => {
 
         const blockNumber2 = await ethers.provider.getBlockNumber();
         // blockNumber2 = blockNumber + 1
-        await expect(VRFBeacon.requestRandomness(blockNumber2)).to.be.revertedWith('VRFBeacon: Already requested!');
+        // await expect(VRFBeacon.requestRandomness(blockNumber2)).to.be.revertedWith('VRFBeacon: Already requested!');
 
         const tx = await coordinator.fulfillRandomWords(reqId, VRFBeacon.address)
         const { events } = await tx.wait();

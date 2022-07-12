@@ -54,9 +54,9 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
      * Requests randomness from a block hash
      */
     function requestRandomness(uint256 blockNumber) public returns (uint256) {
-        require(blockNumber > block.number, 'VRFBeacon: block is already past');
         // Max request per EPOCH
         uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
+        // require(blockNumber >= block.number, 'VRFBeacon: block is already past');
 
         uint256 currRequestId = blockNumberToRequestId[epochBlockNumber];
         if (currRequestId != 0) return currRequestId;
