@@ -3,7 +3,7 @@ import { encodeGenesUint256, decodeGenesUint256 } from '.';
 import { BigNumber } from 'ethers';
 const toBN = BigNumber.from;
 
-describe.only('species.ts', function () {
+describe('species.ts', function () {
     it('Encode/decode values', async () => {
         // Encode the following values:
         const values = [toBN(255), toBN(65_535), toBN(0), toBN(1), toBN(100000)];
