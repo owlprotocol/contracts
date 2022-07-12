@@ -16,11 +16,11 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@opengsn/contracts/src/BaseRelayRecipient.sol';
 import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
-import '../plugins/Crafter/builds/CrafterTransfer.sol';
-import '../plugins/PluginsLib.sol';
+import '../Crafter/builds/CrafterTransfer.sol';
+import '../PluginsLib.sol';
 import './LootboxLib.sol';
-import '../utils/SourceRandom.sol';
-import '../utils/Probability.sol';
+import '../../utils/SourceRandom.sol';
+import '../../utils/Probability.sol';
 import 'hardhat/console.sol';
 
 contract Lootbox is
