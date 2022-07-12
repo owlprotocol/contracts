@@ -14,6 +14,8 @@ import {
     UpgradeableBeaconInitializable__factory,
 } from '../../typechain';
 import { deployClone } from '../utils';
+import { Web3Provider } from '@ethersproject/providers';
+import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
 
 const salt = ethers.utils.formatBytes32String('1');
 const expireTime = 500;
@@ -27,7 +29,20 @@ describe('ERC721Expiring.sol', () => {
 
     let ERC721OwlExpiringImpl: ERC721OwlExpiring;
     let contrInst: ERC721OwlExpiring;
+
+    let gsn: TestEnvironment;
+    let web3provider: Web3Provider;
+    let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
+
     beforeEach(async () => {
+        //Setup Test Environment
+        gsn = await GsnTestEnvironment.startGsn('http://localhost:8545');
+        const provider = gsn.relayProvider;
+
+        //@ts-ignore
+        web3provider = new ethers.providers.Web3Provider(provider);
+        gsnForwarderAddress = gsn.contractsDeployment.forwarderAddress as string;
+
         [signer1, signer2] = await ethers.getSigners();
         const ERC721OwlExpiringFactory = (await ethers.getContractFactory(
             'ERC721OwlExpiring',
@@ -38,11 +53,18 @@ describe('ERC721Expiring.sol', () => {
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
         const { address } = await deployClone(
             ERC721OwlExpiringImpl,
-            [signer1.address, 'n', 's', 'u'],
+            [signer1.address, 'n', 's', 'u', gsnForwarderAddress],
             ERC1167Factory,
             salt,
+            'initialize(address,string,string,string,address)', // must use full signature
+            signer2,
         );
         contrInst = (await ethers.getContractAt('ERC721OwlExpiring', address)) as ERC721OwlExpiring;
+    });
+
+    after(() => {
+        //Disconnect from relayer
+        gsn.relayProvider.disconnect();
     });
 
     describe('ownerOf()', async () => {
@@ -468,6 +490,7 @@ describe('ERC721Expiring.sol', () => {
         const name = 'name';
         const symbol = 'symbol';
         const uri = 'uri';
+        const forwarder = '0x00000000000000000001';
 
         const beaconFactory = (await ethers.getContractFactory(
             'UpgradeableBeaconInitializable',
@@ -482,10 +505,14 @@ describe('ERC721Expiring.sol', () => {
         const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, ERC721OwlExpiringImpl.address]);
         const data = contrInst.interface.encodeFunctionData('proxyInitialize', [
             signer1.address,
-            name,
-            symbol,
-            uri,
-            '0x' + '0'.repeat(40),
+            beaconAddr,
+            ERC721OwlExpiringImpl.interface.encodeFunctionData('proxyInitialize', [
+                signer1.address,
+                name,
+                symbol,
+                uri,
+                forwarder,
+            ]),
         ]);
         const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data]);
         contrInst = (await ethers.getContractAt('ERC721OwlExpiring', beaconProxyAddr)) as ERC721OwlExpiring;

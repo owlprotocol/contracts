@@ -15,6 +15,8 @@ import {
 
 import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../utils';
 import { BigNumber } from 'ethers';
+import { Web3Provider } from '@ethersproject/providers';
+import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
 
 enum TokenType {
     erc721,
@@ -34,7 +36,19 @@ describe('FixedPriceAuction.sol', function () {
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
 
+    let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
+    let gsn: TestEnvironment;
+    let web3provider: Web3Provider;
+
     before(async () => {
+        //Setup Test Environment
+        gsn = await GsnTestEnvironment.startGsn('http://localhost:8545');
+        const provider = gsn.relayProvider;
+
+        //@ts-ignore
+        web3provider = new ethers.providers.Web3Provider(provider);
+        gsnForwarderAddress = gsn.contractsDeployment.forwarderAddress as string;
+
         //launch Auction + implementation
         FixedPriceAuctionFactory = (await ethers.getContractFactory('FixedPriceAuction')) as FixedPriceAuction__factory;
         FixedPriceAuctionImplementation = await FixedPriceAuctionFactory.deploy();
@@ -47,6 +61,11 @@ describe('FixedPriceAuction.sol', function () {
 
         //get users (seller + bidder?)
         [seller, buyer, owner] = await ethers.getSigners();
+    });
+
+    after(() => {
+        //Disconnect from relayer
+        gsn.relayProvider.disconnect();
     });
 
     describe('No fee tests', () => {
@@ -85,6 +104,7 @@ describe('FixedPriceAuction.sol', function () {
                     300,
                     0,
                     owner.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
             );
@@ -124,6 +144,7 @@ describe('FixedPriceAuction.sol', function () {
                     300,
                     0,
                     owner.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
             );
@@ -210,6 +231,7 @@ describe('FixedPriceAuction.sol', function () {
                     300,
                     10,
                     owner.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
             );
@@ -248,6 +270,7 @@ describe('FixedPriceAuction.sol', function () {
                     300,
                     10,
                     owner.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
             );
