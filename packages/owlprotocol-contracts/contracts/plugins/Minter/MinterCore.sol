@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/utils/Counters.sol';
-import '@openzeppelin/contracts/utils/introspection/ERC165Storage.sol';
+import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
@@ -15,21 +15,11 @@ import '../../utils/ERC1820/ERC1820ImplementerAuthorizeAll.sol';
  * @dev Decentralized NFT Minter contract
  *
  */
-abstract contract MinterCore is Initializable, ERC165Storage, ERC1820ImplementerAuthorizeAll {
+abstract contract MinterCore is Initializable, ERC165, ERC1820ImplementerAuthorizeAll {
     address public mintFeeToken;
     address public mintFeeAddress;
     uint256 public mintFeeAmount;
     address public nftContractAddr;
-
-    // modifier mintAllowedMerkle(
-    //     uint256 speciesId,
-    //     bytes32 merkleRoot,
-    //     bytes32[] calldata merkleProof
-    // ) {
-    //     // Verify mint guard function (WITH merkle overload)
-    //     // _verifyMintGuard(speciesId, merkleRoot, merkleProof);
-    //     _;
-    // }
 
     function __MinterCore_init(
         address _mintFeeToken,
@@ -37,11 +27,6 @@ abstract contract MinterCore is Initializable, ERC165Storage, ERC1820Implementer
         uint256 _mintFeeAmount,
         address _nftContractAddr
     ) internal onlyInitializing {
-        // Register Private Name
-        bytes32 interfaceName = keccak256('OWLProtocol://MinterCore');
-        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-        // Register ERC165 Interface
-        ERC165Storage._registerInterface(type(MinterCore).interfaceId);
         __MinterCore_init_unchained(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
     }
 
@@ -96,19 +81,6 @@ abstract contract MinterCore is Initializable, ERC165Storage, ERC1820Implementer
         // Call minting operation
         ERC721Owl(nftContractAddr).safeMint(buyer, tokenId);
     }
-
-    // =================== Mint Guard =====================
-
-    // function _verifyMintGuard(bytes32 merkleRoot, bytes32[] calldata merkleProof) private {
-    //     // check mint guard
-    //     address mintGuard = species[speciesId].mintGuard;
-    //     if (mintGuard != address(0))
-    //         // Verify mint guard (merkle proof overload func)
-    //         require(
-    //             IMintGuard(mintGuard).allowMint(speciesId, msg.sender, merkleRoot, merkleProof) == true,
-    //             'Mint denied!'
-    //         );
-    // }
 
     uint256[46] private __gap;
 }

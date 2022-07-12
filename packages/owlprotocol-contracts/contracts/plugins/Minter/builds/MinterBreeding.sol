@@ -98,17 +98,10 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
         __MinterBreeding_init_unchained(_admin, breedingRules_, _forwarder);
     }
 
-    function __MinterBreeding_init_unchained(
-        address _admin,
-        BreedingRules calldata breedingRules_,
-        address _forwarder
-    ) internal onlyInitializing {
-        // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256('OWLProtocol://MinterBreeding');
-        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-        // Register ERC165 Interface
-        ERC165Storage._registerInterface(type(IMinterBreeding).interfaceId);
-
+    function __MinterBreeding_init_unchained(address _admin, BreedingRules calldata breedingRules_)
+        internal
+        onlyInitializing
+    {
         _breedingRules = breedingRules_;
 
         //set trusted forwarder for opengsn

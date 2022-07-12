@@ -1,24 +1,22 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
-
-import '../MinterCore.sol';
+import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
+import './MinterAutoId.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterSimpleMerkle is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUPSUpgradeable {
-    // @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
+contract MinterSimpleMerkle is MinterAutoId {
+    // Specification + ERC165
+    bytes4 private constant ERC165TAG =
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimpleMerkle/', version)));
+
+    // Merkle Root
+    bytes32 public merkleRoot;
+
+    event SetMerkleRoot(bytes32 merkleRoot);
 
     // Constructor
     function initialize(
@@ -27,9 +25,16 @@ contract MinterSimpleMerkle is BaseRelayRecipient, MinterCore, OwnableUpgradeabl
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        address _forwarder
+        bytes32 _merkleRoot
     ) external initializer {
-        __MinterSimpleMerkle_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterSimpleMerkle_init(
+            _admin,
+            _mintFeeToken,
+            _mintFeeAddress,
+            _mintFeeAmount,
+            _nftContractAddr,
+            _merkleRoot
+        );
     }
 
     function proxyInitialize(
@@ -38,9 +43,16 @@ contract MinterSimpleMerkle is BaseRelayRecipient, MinterCore, OwnableUpgradeabl
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        address _forwarder
+        bytes32 _merkleRoot
     ) external onlyInitializing {
-        __MinterSimpleMerkle_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterSimpleMerkle_init(
+            _admin,
+            _mintFeeToken,
+            _mintFeeAddress,
+            _mintFeeAmount,
+            _nftContractAddr,
+            _merkleRoot
+        );
     }
 
     function __MinterSimpleMerkle_init(
@@ -49,23 +61,25 @@ contract MinterSimpleMerkle is BaseRelayRecipient, MinterCore, OwnableUpgradeabl
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        address _forwarder
+        bytes32 _merkleRoot
     ) internal onlyInitializing {
-        __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterSimpleMerkle_init_unchained(_admin, _forwarder);
+        __MinterSimpleMerkle_init_unchained(_merkleRoot);
+        __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
     }
 
-    function __MinterSimpleMerkle_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256('OWLProtocol://MinterSimpleMerkle');
-        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-        // Register ERC165 Interface
-        ERC165Storage._registerInterface(type(IMinterSimpleMerkle).interfaceId);
+    function __MinterSimpleMerkle_init_unchained(bytes32 _merkleRoot) internal onlyInitializing {
+        merkleRoot = _merkleRoot;
+        emit SetMerkleRoot(merkleRoot);
+    }
 
-        //set trusted forwarder for open gsn
-        _setTrustedForwarder(_forwarder);
+    // Disable MinterAutoId.mint()
+    function mint(address buyer) public override returns (uint256) {
+        revert('Must include merkleProof');
+    }
 
-        _transferOwnership(_admin);
+    // Disable MinterAutoId.safeMint()
+    function safeMint(address buyer) public override returns (uint256) {
+        revert('Must include merkleProof');
     }
 
     /**
@@ -73,11 +87,12 @@ contract MinterSimpleMerkle is BaseRelayRecipient, MinterCore, OwnableUpgradeabl
      * @param tokenId minted token id
      */
     function mint(
+        address buyer,
         uint256 tokenId,
-        bytes32 merkleRoot,
         bytes32[] calldata merkleProof
     ) public {
-        MinterCore._mintForFee(msg.sender, tokenId);
+        require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
+        MinterAutoId.mint(buyer);
     }
 
     /**
@@ -85,36 +100,30 @@ contract MinterSimpleMerkle is BaseRelayRecipient, MinterCore, OwnableUpgradeabl
      * @param tokenId minted token id
      */
     function safeMint(
+        address buyer,
         uint256 tokenId,
-        bytes32 merkleRoot,
         bytes32[] calldata merkleProof
     ) public {
-        MinterCore._safeMintForFee(msg.sender, tokenId);
+        require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
+        MinterAutoId.mint(buyer);
     }
 
-    function hashKeccakUser() public view returns (bytes32) {
-        return keccak256(abi.encode(msg.sender));
+    function updateMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
+        merkleRoot = _merkleRoot;
+    }
+
+    function _verifyMerkle(bytes32[] calldata merkleProof) internal view returns (bool) {
+        bytes32 leaf = keccak256(abi.encode(msg.sender));
+        return MerkleProof.verify(merkleProof, merkleRoot, leaf);
     }
 
     /**
-     * @notice the following 3 functions are all required for OpenGSN integration
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
      */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
-    }
-
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
 

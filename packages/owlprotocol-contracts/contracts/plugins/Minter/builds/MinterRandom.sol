@@ -60,19 +60,9 @@ contract MinterRandom is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterRandom_init_unchained(_admin, _forwarder);
     }
 
-    function __MinterRandom_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256('OWLProtocol://MinterRandom');
-        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-        // Register ERC165 Interface
-        ERC165Storage._registerInterface(type(IMinterRandom).interfaceId);
-
-        //set trusted forwarder for open gsn
-        _setTrustedForwarder(_forwarder);
-
+    function __MinterRandom_init_unchained(address _admin) internal onlyInitializing {
         _transferOwnership(_admin);
     }
 

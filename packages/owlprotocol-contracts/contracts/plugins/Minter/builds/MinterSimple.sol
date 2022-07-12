@@ -19,8 +19,6 @@ contract MinterSimple is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimple/', version)));
 
-    // Events
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -58,19 +56,9 @@ contract MinterSimple is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterSimple_init_unchained(_admin, _forwarder);
     }
 
-    function __MinterSimple_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256('OWLProtocol://MinterSimple');
-        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-        // Register ERC165 Interface
-        ERC165Storage._registerInterface(type(IMinterSimple).interfaceId);
-
-        //set trusted forwarder for open gsn
-        _setTrustedForwarder(_forwarder);
-
+    function __MinterSimple_init_unchained(address _admin) internal onlyInitializing {
         _transferOwnership(_admin);
     }
 
