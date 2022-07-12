@@ -20,7 +20,7 @@ import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 import '../PluginsLib.sol';
 
 /**
- * @dev Pluggable Crafting Contract.
+ * @dev Pluggable Transformable Contract.
  * Players can interact with the contract to have
  * recipie outputs transferred from a deposit.
  */
@@ -206,7 +206,7 @@ contract Transformer is
         // transform DNA
         uint256 currDna = ERC721OwlAttributes(nftAddr).getDna(tokenId);
         uint256 newDna = PluginsLib.transform(currDna, genes, modifications);
-        ERC721OwlAttributes(nftAddr).updateDna(tokenId, newDna);
+        ERC721OwlAttributes(nftAddr).updateDna(tokenId, newDna); // this contract must have DNA_ROLE
 
         emit Transform(nftAddr, tokenId, currDna, newDna);
     }

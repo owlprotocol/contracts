@@ -105,6 +105,12 @@ library PluginsLib {
         }
     }
 
+    /**
+     * @dev validates outputs array of ingredients
+     * @param _outputs the output array of the Crafter initializer
+     * @param outputs storage array of outputs, copied from _outputs
+     * @param _craftableAmount the amount of times the recipe may be crafted
+     */
     function validateOutputs(
         Ingredient[] memory _outputs,
         Ingredient[] storage outputs,
@@ -146,6 +152,11 @@ library PluginsLib {
         return erc721Amount;
     }
 
+    /**
+     * @param _outputs the output array of the Crafter initializer
+     * @param _craftableAmount the amount of times the recipe may be crafted
+     * @param erc721Amount the number of erc721 tokens to be used as output
+     */
     function createOutputsArr(
         Ingredient[] memory _outputs,
         uint256 _craftableAmount,
@@ -167,6 +178,13 @@ library PluginsLib {
         return _outputsERC721Ids;
     }
 
+    /**
+     * @dev Generates a 256-bit bitmask from startBit:endBit
+     * @param currDna original DNA, represented in base 10
+     * @param genes array representing start indexes of genes within binary representation of currDna
+     * @param modifications array describing modifications to each gene
+     * @return newDna the transformed DNA
+     */
     function transform(
         uint256 currDna,
         uint8[] memory genes,
@@ -195,7 +213,9 @@ library PluginsLib {
                 if (prod > 2**maxBits - 1) gene = 2**maxBits - 1;
                 else gene = prod;
             } else if (currMod.geneTransformType == GeneTransformType.set) {
-                gene = currMod.value;
+                if (currMod.value <= 2**maxBits - 1 && currMod.value >= 0)
+                    //set must be in range, otherwise ignored
+                    gene = currMod.value;
             }
 
             gene = gene << geneStartIdx;
@@ -216,6 +236,12 @@ library PluginsLib {
         bitMask = bitMaskStart & bitMaskEnd;
     }
 
+    /**
+     * @dev Helper function checking if integer array contains integer
+     * @param _input array
+     * @param num integer to search for
+     * @return bool representing if the array contains num
+     */
     function arrayContains(uint256[] memory _input, uint256 num) internal returns (bool) {
         for (uint256 j = 0; j < _input.length; j++) if (_input[j] == num) return true;
         return false;
