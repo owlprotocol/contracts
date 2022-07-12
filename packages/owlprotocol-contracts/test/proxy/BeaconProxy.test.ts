@@ -73,6 +73,7 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
         );
 
         //Deploy BeaconProxy Instance with ProxyFactory
+        //@ts-ignore
         const ERC721Data = ERC721Owl.interface.encodeFunctionData('proxyInitialize', [
             owlAdmin.address,
             'CryptoOwls',

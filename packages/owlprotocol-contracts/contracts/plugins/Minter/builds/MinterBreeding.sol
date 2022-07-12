@@ -98,17 +98,10 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
         __MinterBreeding_init_unchained(_admin, breedingRules_, _forwarder);
     }
 
-    function __MinterBreeding_init_unchained(
-        address _admin,
-        BreedingRules calldata breedingRules_,
-        address _forwarder
-    ) internal onlyInitializing {
-        // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256('OWLProtocol://MinterBreeding');
-        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-        // Register ERC165 Interface
-        ERC165Storage._registerInterface(type(IMinterBreeding).interfaceId);
-
+    function __MinterBreeding_init_unchained(address _admin, BreedingRules calldata breedingRules_, address _forwarder)
+        internal
+        onlyInitializing
+    {
         _breedingRules = breedingRules_;
 
         //set trusted forwarder for opengsn
@@ -120,32 +113,23 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
     /**
      * @dev Create a new type of species and define attributes.
      */
-    function breed(uint256[] calldata parents) public returns (uint256 tokenId) {
-        // Check if user enabled generational species
-        bool gensEnabled = (_breedingRules.generationCooldownMultiplier != 0);
-
+    function breed(uint256[] calldata parents) public returns (uint256 dna) {
         // Breed species
-        // TODO - fix generations, this won't work as expected (-Corban)
-        if (gensEnabled) tokenId = RosalindDNA.breedDNAGenCount(tokenId, parents);
-        else tokenId = _breedSpecies(parents, msg.sender);
+        dna = _breedSpecies(parents, msg.sender);
 
         // Mint Operation
-        MinterCore._mintForFee(msg.sender, tokenId);
+        MinterCore._mintForFee(msg.sender, dna);
     }
 
     /**
      * @dev Create a new type of species and define attributes.
      */
-    function safeBreed(uint256[] calldata parents) public returns (uint256 tokenId) {
-        // Check if user enabled generational species
-        bool gensEnabled = (_breedingRules.generationCooldownMultiplier != 0);
-
+    function safeBreed(uint256[] calldata parents) public returns (uint256 dna) {
         // Breed species
-        if (gensEnabled) tokenId = RosalindDNA.breedDNAGenCount(tokenId, parents);
-        else tokenId = _breedSpecies(parents, msg.sender);
+        dna = _breedSpecies(parents, msg.sender);
 
         // Mint Operation
-        MinterCore._safeMintForFee(msg.sender, tokenId);
+        MinterCore._safeMintForFee(msg.sender, dna);
     }
 
     /**
@@ -200,7 +184,7 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
      * @param parents parents to use for breeding
      * @param caller owner of parent NFTs (this will be verified)
      */
-    function _breedSpecies(uint256[] calldata parents, address caller) internal returns (uint256 tokenId) {
+    function _breedSpecies(uint256[] calldata parents, address caller) internal returns (uint256 dna) {
         // Fetch breeding rules
         uint8 requiredParents;
         uint8[] memory genes;
@@ -229,12 +213,20 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
             require(caller == nft.ownerOf(parents[i]), 'You must own all parents!');
         }
 
-        // Breed the NFT
+        // Get Parent DNA
+        uint256[] memory parentsDNA = new uint256[](parents.length);
+        for (uint256 i = 0; i < parents.length; i++)
+            parentsDNA[i] = IERC721OwlAttributes(nftContractAddr).getDna(parents[i]);
 
-        // Generate random seed
+        // Generate random seed and breed
         uint256 randomSeed = SourceRandom.getRandomDebug();
-        if (mutationRates.length == 0) tokenId = RosalindDNA.breedDNASimple(parents, genes, randomSeed);
-        else tokenId = RosalindDNA.breedDNAWithMutations(parents, genes, randomSeed, mutationRates);
+        if (mutationRates.length == 0) dna = RosalindDNA.breedDNASimple(parentsDNA, genes, randomSeed);
+        else dna = RosalindDNA.breedDNAWithMutations(parentsDNA, genes, randomSeed, mutationRates);
+
+        // Generation Counting
+        if (generationCooldownMultiplier != 0) dna = RosalindDNA.setGenCount(dna, parentsDNA);
+
+        return dna;
     }
 
     /**
@@ -350,4 +342,13 @@ interface IMinterBreeding is IERC165Upgradeable {
             uint8[] memory genes,
             uint256[] memory mutationRates
         );
+}
+
+interface IERC721OwlAttributes {
+    /**
+     * @dev Getter for dna of tokenId
+     * @param tokenId whose dna to change
+     * @return dna of tokenId
+     */
+    function getDna(uint256 tokenId) external view returns (uint256);
 }

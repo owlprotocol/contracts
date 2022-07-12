@@ -19,8 +19,6 @@ contract MinterSimple is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimple/', version)));
 
-    // Events
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -62,34 +60,26 @@ contract MinterSimple is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
     }
 
     function __MinterSimple_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        // Register ERC1820 Private Interface
-        bytes32 interfaceName = keccak256('OWLProtocol://MinterSimple');
-        ERC1820ImplementerAuthorizeAll._registerInterfaceForAddress(interfaceName);
-        // Register ERC165 Interface
-        ERC165Storage._registerInterface(type(IMinterSimple).interfaceId);
-
-        //set trusted forwarder for open gsn
-        _setTrustedForwarder(_forwarder);
-
         _transferOwnership(_admin);
+        _setTrustedForwarder(_forwarder);
     }
 
     /**
      * @dev
      * @param tokenId minted token id
      */
-    function mint(uint256 tokenId) public {
+    function mint(address buyer, uint256 tokenId) public {
         // Mint Operation
-        MinterCore._mintForFee(msg.sender, tokenId);
+        MinterCore._mintForFee(buyer, tokenId);
     }
 
     /**
      * @dev
      * @param tokenId minted token id
      */
-    function safeMint(uint256 tokenId) public {
+    function safeMint(address buyer, uint256 tokenId) public {
         // Mint Operation
-        MinterCore._safeMintForFee(msg.sender, tokenId);
+        MinterCore._safeMintForFee(buyer, tokenId);
     }
 
     /**
