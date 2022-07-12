@@ -98,7 +98,7 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
         __MinterBreeding_init_unchained(_admin, breedingRules_, _forwarder);
     }
 
-    function __MinterBreeding_init_unchained(address _admin, BreedingRules calldata breedingRules_)
+    function __MinterBreeding_init_unchained(address _admin, BreedingRules calldata breedingRules_, address _forwarder)
         internal
         onlyInitializing
     {

@@ -25,7 +25,8 @@ contract MinterSimpleMerkle is MinterAutoId {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        bytes32 _merkleRoot
+        bytes32 _merkleRoot,
+        address _forwarder
     ) external initializer {
         __MinterSimpleMerkle_init(
             _admin,
@@ -33,7 +34,8 @@ contract MinterSimpleMerkle is MinterAutoId {
             _mintFeeAddress,
             _mintFeeAmount,
             _nftContractAddr,
-            _merkleRoot
+            _merkleRoot,
+            _forwarder
         );
     }
 
@@ -43,7 +45,8 @@ contract MinterSimpleMerkle is MinterAutoId {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        bytes32 _merkleRoot
+        bytes32 _merkleRoot,
+        address _forwarder
     ) external onlyInitializing {
         __MinterSimpleMerkle_init(
             _admin,
@@ -51,7 +54,8 @@ contract MinterSimpleMerkle is MinterAutoId {
             _mintFeeAddress,
             _mintFeeAmount,
             _nftContractAddr,
-            _merkleRoot
+            _merkleRoot,
+            _forwarder
         );
     }
 
@@ -61,10 +65,11 @@ contract MinterSimpleMerkle is MinterAutoId {
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
         address _nftContractAddr,
-        bytes32 _merkleRoot
+        bytes32 _merkleRoot,
+        address _forwarder
     ) internal onlyInitializing {
+        __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
         __MinterSimpleMerkle_init_unchained(_merkleRoot);
-        __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
     }
 
     function __MinterSimpleMerkle_init_unchained(bytes32 _merkleRoot) internal onlyInitializing {
@@ -84,11 +89,9 @@ contract MinterSimpleMerkle is MinterAutoId {
 
     /**
      * @dev Create a new type of species and define attributes.
-     * @param tokenId minted token id
      */
     function mint(
         address buyer,
-        uint256 tokenId,
         bytes32[] calldata merkleProof
     ) public {
         require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
@@ -97,11 +100,9 @@ contract MinterSimpleMerkle is MinterAutoId {
 
     /**
      * @dev Create a new type of species and define attributes.
-     * @param tokenId minted token id
      */
     function safeMint(
         address buyer,
-        uint256 tokenId,
         bytes32[] calldata merkleProof
     ) public {
         require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');

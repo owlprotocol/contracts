@@ -59,6 +59,8 @@ contract MinterAutoId is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+        __MinterAutoId_init_unchained(_admin);
+        _setTrustedForwarder(_forwarder);
     }
 
     function __MinterAutoId_init_unchained(address _admin) internal onlyInitializing {

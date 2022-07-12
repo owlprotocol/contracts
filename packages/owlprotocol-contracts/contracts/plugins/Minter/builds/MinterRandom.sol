@@ -60,10 +60,12 @@ contract MinterRandom is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
+        __MinterRandom_init_unchained(_admin, _forwarder);
     }
 
-    function __MinterRandom_init_unchained(address _admin) internal onlyInitializing {
+    function __MinterRandom_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
         _transferOwnership(_admin);
+        _setTrustedForwarder(_forwarder);
     }
 
     /**
