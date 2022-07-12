@@ -256,7 +256,7 @@ contract CrafterMint is
                 for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
                     require(
                         !ERC721Owl(ingredient.contractAddr).exists(_outputsERC721Ids[erc721Outputs][j]),
-                        'tokenId already minted'
+                        'CrafterMint: tokenId already minted'
                     );
                     //Update ingredient, push additional ERC721 tokenId
                     ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);

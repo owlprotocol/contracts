@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import './IRandomBeacon.sol';
 
 abstract contract RandomBeacon is IRandomBeacon {
-    uint256 public override EPOCH_PERIOD; //make this a uint16?
+    uint8 public override EPOCH_PERIOD;
 
-    constructor(uint256 epochPeriod) {
+    constructor(uint8 epochPeriod) {
         EPOCH_PERIOD = epochPeriod;
     }
 

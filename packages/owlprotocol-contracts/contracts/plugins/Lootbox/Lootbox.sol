@@ -15,7 +15,9 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '@opengsn/contracts/src/BaseRelayRecipient.sol';
 import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
+import '../../random/VRFBeacon.sol';
 import '../Crafter/builds/CrafterTransfer.sol';
 import '../PluginsLib.sol';
 import './LootboxLib.sol';
@@ -25,6 +27,7 @@ import 'hardhat/console.sol';
 
 contract Lootbox is
     BaseRelayRecipient,
+    KeeperCompatibleInterface,
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
     OwnableUpgradeable,
@@ -37,11 +40,15 @@ contract Lootbox is
     /**********************
              Types
     **********************/
-    event Unlock();
 
     address public admin;
     address[] public crafterContracts;
     uint256[] public probabilities;
+    address public vrfBeacon;
+
+    mapping(uint256 => uint256) lootboxIdToEpochBlock;
+    uint256 queueIndex;
+    uint256[] private upkeepQueue; //array of lootboxIds
 
     /**********************
         Initialization
@@ -63,36 +70,40 @@ contract Lootbox is
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities,
+        address _vrfBeacon,
         address _forwarder
     ) external initializer {
-        __Lootbox_init(_admin, _crafterContracts, _probabilities, _forwarder);
+        __Lootbox_init(_admin, _crafterContracts, _probabilities, _vrfBeacon, _forwarder);
     }
 
     function proxyInitialize(
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities,
+        address _vrfBeacon,
         address _forwarder
     ) external onlyInitializing {
-        __Lootbox_init(_admin, _crafterContracts, _probabilities, _forwarder);
+        __Lootbox_init(_admin, _crafterContracts, _probabilities, _vrfBeacon, _forwarder);
     }
 
     function __Lootbox_init(
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities,
+        address _vrfBeacon,
         address _forwarder
     ) internal onlyInitializing {
         __Ownable_init();
         _transferOwnership(_admin);
 
-        __Lootbox_init_unchained(_admin, _crafterContracts, _probabilities, _forwarder);
+        __Lootbox_init_unchained(_admin, _crafterContracts, _probabilities, _vrfBeacon, _forwarder);
     }
 
     function __Lootbox_init_unchained(
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities,
+        address _vrfBeacon,
         address _forwarder
     ) internal onlyInitializing {
         require(
@@ -103,6 +114,7 @@ contract Lootbox is
         admin = _admin;
         crafterContracts = _crafterContracts;
         probabilities = _probabilities;
+        vrfBeacon = _vrfBeacon;
 
         //set trusted forwarder for open gsn
         _setTrustedForwarder(_forwarder);
@@ -112,26 +124,59 @@ contract Lootbox is
          Interaction
     **********************/
 
-    function unlock(uint256 lootboxId) external {
-        //randomly choose the crafter transfer contract to call
-        uint256 randomSeed = SourceRandom.getRandomDebug(); //1 to 100
-        uint256 selectedContract = Probability.probabilityDistribution(randomSeed, probabilities);
+    function requestUnlock(uint256 lootboxId) external returns (uint256 requestId, uint256 blockNumber) {
+        (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
+        uint256 currEntry = lootboxIdToEpochBlock[lootboxId];
+        if (currEntry != 0) return (requestId, blockNumber); //Each lootbox can only be redeemed once
+        lootboxIdToEpochBlock[lootboxId] = blockNumber;
+        upkeepQueue.push(lootboxId);
+    }
 
-        //check lootbox is owned by msgSender
-        (, , address contractAddr, , ) = CrafterTransfer(crafterContracts[selectedContract]).getInputIngredient(0);
-        require(
-            IERC721Upgradeable(contractAddr).ownerOf(lootboxId) == _msgSender(),
-            'Lootbox: you do not own this lootbox!'
-        );
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    )
+        external
+        view
+        override
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */
+        )
+    {
+        // upkeepQueue[queueIndex] returns 0 if there is nothing up
+        // next in the queue. This will conflict with lootboxId 0
+        // use keccak256(abi.encode(0)) to represent 0
+        uint256 randomness = VRFBeacon(vrfBeacon).getRandomness(lootboxIdToEpochBlock[upkeepQueue[queueIndex]]);
+        if (randomness != 0) return (true, abi.encode(randomness, queueIndex));
+        return (false, '0x');
+    }
+
+    function performUpkeep(bytes calldata performData) external override {
+        (uint256 randomness, uint256 queueIndexRequest) = abi.decode(performData, (uint256, uint256));
+
+        //make sure that checkUpKeep hasn't run twice on the same queueIndex
+        require(queueIndexRequest == queueIndex, 'queueIndex already processed');
+
+        _unlock(upkeepQueue[queueIndex], randomness);
+
+        queueIndex++;
+    }
+
+    function _unlock(uint256 lootboxId, uint256 randomSeed) internal {
+        //randomly choose the crafter transfer contract to call
+        uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, lootboxId);
+        uint256 selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
 
         //craft outputs to msgSender
         uint256[][] memory inputERC721Id = new uint256[][](1);
         for (uint256 i = 0; i < 1; i++) {
             inputERC721Id[i] = new uint256[](1);
             inputERC721Id[0][0] = lootboxId;
-            CrafterTransfer(crafterContracts[selectedContract]).craft(1, inputERC721Id, _msgSender()); //craft amount set to one, assuming recipes made for 1 lootbox
         }
-        emit Unlock();
+
+        CrafterTransfer selectedCrafter = CrafterTransfer(crafterContracts[selectedContract]);
+
+        try selectedCrafter.craft(1, inputERC721Id, _msgSender()) {} catch {} //craft
     }
 
     /**
