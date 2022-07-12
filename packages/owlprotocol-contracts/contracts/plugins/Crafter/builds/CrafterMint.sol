@@ -241,7 +241,7 @@ contract CrafterMint is
      */
     function _deposit(uint96 depositAmount, uint256[][] memory _outputsERC721Ids) internal {
         //Requires
-        require(depositAmount > 0, 'CrafterTransfer: depositAmount cannot be 0!');
+        require(depositAmount > 0, 'CrafterMint: depositAmount cannot be 0!');
 
         uint256 erc721Outputs = 0;
 
@@ -277,8 +277,8 @@ contract CrafterMint is
      */
     function withdraw(uint96 withdrawAmount) external onlyOwner {
         // Requires
-        require(withdrawAmount > 0, 'CrafterTransfer: withdrawAmount cannot be 0!');
-        require(withdrawAmount <= craftableAmount, 'CrafterTransfer: Not enough resources!');
+        require(withdrawAmount > 0, 'CrafterMint: withdrawAmount cannot be 0!');
+        require(withdrawAmount <= craftableAmount, 'CrafterMint: Not enough resources!');
 
         // Decrease craftableAmount (check-effects)
         craftableAmount -= withdrawAmount;
@@ -318,8 +318,8 @@ contract CrafterMint is
         address _crafter
     ) internal {
         // Requires
-        require(craftAmount > 0, 'CrafterTransfer: craftAmount cannot be 0!');
-        require(craftAmount <= craftableAmount, 'CrafterTransfer: Not enough resources to craft!');
+        require(craftAmount > 0, 'CrafterMint: craftAmount cannot be 0!');
+        require(craftAmount <= craftableAmount, 'CrafterMint: Not enough resources to craft!');
 
         // Update crafting stats (check-effects)
         craftableAmount -= craftAmount;
@@ -345,7 +345,7 @@ contract CrafterMint is
                     require(
                         IERC20Upgradeable(ingredient.contractAddr).balanceOf(_crafter) >=
                             ingredient.amounts[0] * craftAmount,
-                        'CrafterTransfer: User missing minimum token balance(s)!'
+                        'CrafterMint: User missing minimum token balance(s)!'
                     );
                 }
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
@@ -406,7 +406,7 @@ contract CrafterMint is
                         ingredient.tokenIds
                     );
                     for (uint256 j = 0; j < balances.length; j++) {
-                        require(balances[j] >= amounts[j], 'CrafterTransfer: User missing minimum token balance(s)!');
+                        require(balances[j] >= amounts[j], 'CrafterMint: User missing minimum token balance(s)!');
                     }
                 }
             }

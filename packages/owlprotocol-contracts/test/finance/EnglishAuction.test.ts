@@ -14,7 +14,7 @@ import {
     ERC1155,
 } from '../../typechain';
 
-import { createERC20, createERC721, createERC1155 } from '../utils';
+import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../utils';
 import { BigNumber } from 'ethers';
 
 enum TokenType {
@@ -66,43 +66,35 @@ describe('EnglishAuction.sol No Fee', function () {
             [acceptableERC20Token] = await createERC20(1); //mints 1,000,000,000 by default
             [testNFT] = await createERC721(1, 1); //minting one token
 
-            //EnglishAuction Data
-            const EnglishAuctionData = EnglishAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //NFT
-                //ERC20 Contract address (acceptable token)
-                //starting bid
-                //auction duration
-                //reset time
-                //sale fee
-                //sale fee address
-                seller.address,
-                {
-                    token: TokenType.erc721,
-                    contractAddr: testNFT.address,
-                    tokenId: 1,
-                },
-                acceptableERC20Token.address,
-                2,
-                86400,
-                3600,
-                0,
-                owner.address,
-            ]);
-
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            EnglishAuctionAddress = await ERC1167Factory.predictDeterministicAddress(
-                EnglishAuctionImplementation.address,
-                salt,
-                EnglishAuctionData,
+            //predict deployment address
+            EnglishAuctionAddress = await predictDeployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    0,
+                    owner.address,
+                ],
+                ERC1167Factory,
             );
 
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
-
             //Set Approval ERC721 for sale
-
             await testNFT.connect(seller).approve(EnglishAuctionAddress, 1);
             await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);
             await acceptableERC20Token.connect(bidder2).approve(EnglishAuctionAddress, 100);
@@ -116,9 +108,33 @@ describe('EnglishAuction.sol No Fee', function () {
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(300));
 
             //deploy auction
-            //check balances
-            ///clone deterministic
-            await ERC1167Factory.cloneDeterministic(EnglishAuctionImplementation.address, salt, EnglishAuctionData);
+
+            await deployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    0,
+                    owner.address,
+                ],
+                ERC1167Factory,
+            );
             auction = (await ethers.getContractAt('EnglishAuction', EnglishAuctionAddress)) as EnglishAuction;
 
             //assert initial token amounts
@@ -295,38 +311,31 @@ describe('EnglishAuction.sol No Fee', function () {
             [acceptableERC20Token] = await createERC20(1); //mints 1,000,000,000 by default
             [testNFT] = await createERC1155(1); //minting tokenIds 0-9; 100
 
-            //EnglishAuction Data
-            const EnglishAuctionData = EnglishAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //NFT
-                //ERC20 Contract address (acceptable token)
-                //starting bid
-                //auction duration
-                //reset time
-                seller.address,
-                {
-                    token: TokenType.erc1155,
-                    contractAddr: testNFT.address,
-                    tokenId: 1,
-                },
-                acceptableERC20Token.address,
-                2,
-                86400,
-                3600,
-                0,
-                owner.address,
-            ]);
-
-            //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            EnglishAuctionAddress = await ERC1167Factory.predictDeterministicAddress(
-                EnglishAuctionImplementation.address,
-                salt,
-                EnglishAuctionData,
+            //predict deployment address
+            EnglishAuctionAddress = await predictDeployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    seller.address,
+                    {
+                        token: TokenType.erc1155,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    0,
+                    owner.address,
+                ],
+                ERC1167Factory,
             );
-
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
 
             //Set Approval ERC1155 for sale
 
@@ -343,15 +352,34 @@ describe('EnglishAuction.sol No Fee', function () {
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(300));
 
             //deploy auction
-            //check balances
-            ///clone deterministic
-            await ERC1167Factory.cloneDeterministic(EnglishAuctionImplementation.address, salt, EnglishAuctionData);
+            await deployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    seller.address,
+                    {
+                        token: TokenType.erc1155,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    0,
+                    owner.address,
+                ],
+                ERC1167Factory,
+            );
             auction = (await ethers.getContractAt('EnglishAuction', EnglishAuctionAddress)) as EnglishAuction;
 
             //assert initial token amounts
-
             originalERC20Balance = 100;
-
             expect(await testNFT.balanceOf(seller.address, 1)).to.equal(99); //used to be 100 but is now 99
             expect(await testNFT.balanceOf(EnglishAuctionAddress, 1)).to.equal(1);
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(originalERC20Balance);
@@ -554,43 +582,35 @@ describe('EnglishAuction.sol 20% Fee', function () {
             [acceptableERC20Token] = await createERC20(1); //mints 1,000,000,000 by default
             [testNFT] = await createERC721(1, 1); //minting one token
 
-            //EnglishAuction Data
-            const EnglishAuctionData = EnglishAuctionImplementation.interface.encodeFunctionData('initialize', [
-                //seller address
-                //NFT
-                //ERC20 Contract address (acceptable token)
-                //starting bid
-                //auction duration
-                //reset time
-                //sale fee
-                //sale fee address
-                seller.address,
-                {
-                    token: TokenType.erc721,
-                    contractAddr: testNFT.address,
-                    tokenId: 1,
-                },
-                acceptableERC20Token.address,
-                2,
-                86400,
-                3600,
-                20,
-                owner.address,
-            ]);
-
             //Predict address
-            const salt = ethers.utils.formatBytes32String('1');
-            EnglishAuctionAddress = await ERC1167Factory.predictDeterministicAddress(
-                EnglishAuctionImplementation.address,
-                salt,
-                EnglishAuctionData,
+            EnglishAuctionAddress = await predictDeployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    20,
+                    owner.address,
+                ],
+                ERC1167Factory,
             );
 
-            //need to look at three things now: seller, the contract, and the bidder
-            //as well as two assets: the NFT, and the ERC 20 token
-
             //Set Approval ERC721 for sale
-
             await testNFT.connect(seller).approve(EnglishAuctionAddress, 1);
             await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);
             await acceptableERC20Token.connect(bidder2).approve(EnglishAuctionAddress, 100);
@@ -604,9 +624,33 @@ describe('EnglishAuction.sol 20% Fee', function () {
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(300));
 
             //deploy auction
-            //check balances
-            ///clone deterministic
-            await ERC1167Factory.cloneDeterministic(EnglishAuctionImplementation.address, salt, EnglishAuctionData);
+
+            await deployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: 1,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    20,
+                    owner.address,
+                ],
+                ERC1167Factory,
+            );
             auction = (await ethers.getContractAt('EnglishAuction', EnglishAuctionAddress)) as EnglishAuction;
 
             //assert initial token amounts
