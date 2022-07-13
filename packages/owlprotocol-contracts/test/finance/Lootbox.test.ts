@@ -46,7 +46,7 @@ enum ConsumableType {
     NTime
 }
 
-describe('Lootbox.sol', () => {
+describe.only('Lootbox.sol', () => {
     let VRFBeacon: VRFBeacon;
     let lootbox: Lootbox;
 
