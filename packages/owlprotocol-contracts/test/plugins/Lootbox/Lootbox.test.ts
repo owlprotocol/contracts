@@ -1,36 +1,26 @@
 import { ethers, network } from 'hardhat';
 import { time, setCode, mineUpTo } from "@nomicfoundation/hardhat-network-helpers";
-const { utils, constants } = ethers;
-const { AddressZero } = constants
-const { parseUnits, keccak256, hexlify, hexZeroPad } = utils;
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
     Lootbox,
     Lootbox__factory,
-    FactoryERC20,
     ERC1167Factory,
-    ERC1167Factory__factory,
-    ERC721,
-    ERC1155,
-    CrafterTransfer,
-    CrafterTransfer__factory,
     CrafterMint,
-    CrafterMint__factory,
     VRFBeacon,
     VRFBeacon__factory,
     VRFCoordinatorV2,
     FactoryERC721,
-} from '../../typechain';
+    UpgradeableBeaconInitializable__factory,
+    UpgradeableBeaconInitializable,
+    BeaconProxyInitializable__factory,
+    BeaconProxyInitializable,
+} from '../../../typechain';
 import { pick } from 'lodash';
-import { deployedBytecode as mockDeployedBytecode } from "../../artifacts/contracts/testing/VRFCoordinatorV2.sol/VRFCoordinatorV2.json"
+import { deployedBytecode as mockDeployedBytecode } from "../../../artifacts/contracts/testing/VRFCoordinatorV2.sol/VRFCoordinatorV2.json"
 
-import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone, getTime } from '../utils';
+import { createERC721, deployClone } from '../../utils';
 import { BigNumber } from 'ethers';
-import { ERC721Owl__factory } from '../../typechain';
-import { ERC721Owl } from '../../typechain';
-import { isTopic } from 'web3-utils';
-import { stat } from 'fs';
 
 const coordinatorAddr = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
 const EPOCH_PERIOD = 10;
@@ -51,6 +41,8 @@ enum ConsumableType {
 describe.only('Lootbox.sol', () => {
     let VRFBeacon: VRFBeacon;
     let lootbox: Lootbox;
+    let lootboxImpl: Lootbox;
+    let lootboxArgs: (string | number[] | string[])[];
 
     let signer1: SignerWithAddress;
     let burn: SignerWithAddress;
@@ -68,8 +60,6 @@ describe.only('Lootbox.sol', () => {
     const lootboxToUnlock3 = 9;
 
     let coordinator: VRFCoordinatorV2;
-    let requestId: BigNumber;
-    let blockNumber: BigNumber
 
     beforeEach(async () => {
         [signer1, burn, forwarder] = await ethers.getSigners();
@@ -150,14 +140,17 @@ describe.only('Lootbox.sol', () => {
 
         // lootbox contract
         const lootboxFactory = (await ethers.getContractFactory("Lootbox")) as Lootbox__factory
-        const lootboxImpl = await lootboxFactory.deploy()
+        lootboxImpl = await lootboxFactory.deploy()
 
-        const { address: lootboxInstAddr } = await deployClone(lootboxImpl, [
+        lootboxArgs = [
             signer1.address,
             [crafterMintAddr1, crafterMintAddr2, crafterMintAddr3],
             [10, 20, 100],
             VRFBeacon.address,
-            forwarder.address])
+            forwarder.address]
+
+        const { address: lootboxInstAddr } = await deployClone(lootboxImpl, [...lootboxArgs])
+
 
         await expect(
             deployClone(lootboxImpl, [
@@ -517,6 +510,29 @@ describe.only('Lootbox.sol', () => {
         //performUpkeep with same performData (should fail)
         await expect(lootbox.performUpkeep(performData)).to.be.revertedWith('Lootbox: queueIndex already processed')
 
+    })
+
+    it('beacon proxy initialization', async () => {
+
+        const beaconFactory = (await ethers.getContractFactory(
+            'UpgradeableBeaconInitializable',
+        )) as UpgradeableBeaconInitializable__factory;
+        const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+        const beaconProxyFactory = (await ethers.getContractFactory(
+            'BeaconProxyInitializable',
+        )) as BeaconProxyInitializable__factory;
+        const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+        const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, lootboxImpl.address, forwarder.address]);
+        //@ts-ignore
+        const data = lootboxImpl.interface.encodeFunctionData('proxyInitialize',
+            [...lootboxArgs]
+        );
+        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data, forwarder.address]);
+        const contrInst = (await ethers.getContractAt('Lootbox', beaconProxyAddr)) as Lootbox;
+
+        await contrInst.requestUnlock(0);
     })
 
 });
