@@ -8,16 +8,13 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
-
 /**
  * @dev This contract is used in conjunction with one or more instances of {BeaconProxy} to determine their
  * implementation contract, which is where they will delegate all function calls.
  *
  * An owner is able to change the implementation the beacon points to, thus upgrading the proxies that use this beacon.
  */
-contract UpgradeableBeaconInitializable is BaseRelayRecipient, Initializable, IBeacon, OwnableUpgradeable {
+contract UpgradeableBeaconInitializable is Initializable, IBeacon, OwnableUpgradeable {
     address private _implementation;
 
     /**
@@ -31,17 +28,11 @@ contract UpgradeableBeaconInitializable is BaseRelayRecipient, Initializable, IB
      */
     constructor() {}
 
-    function initialize(
-        address _admin,
-        address implementation_,
-        address _forwarder
-    ) public initializer {
+    function initialize(address _admin, address implementation_) public initializer {
         _setImplementation(implementation_);
 
         __Ownable_init();
         _transferOwnership(_admin);
-
-        _setTrustedForwarder(_forwarder);
     }
 
     /**
@@ -76,20 +67,5 @@ contract UpgradeableBeaconInitializable is BaseRelayRecipient, Initializable, IB
     function _setImplementation(address newImplementation) private {
         require(Address.isContract(newImplementation), 'UpgradeableBeacon: implementation is not a contract');
         _implementation = newImplementation;
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
     }
 }
