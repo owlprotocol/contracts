@@ -54,13 +54,9 @@ describe.only('VRFRandom beacon', () => {
         expect(await VRFBeacon.epochBlock(blockNumber)).equals(getEpochBlockNumber(blockNumber));
         expect(await VRFBeacon.epochBlockLatest()).equals(getEpochBlockNumber(blockNumber));
 
-        const reqId = await VRFBeacon.callStatic.requestRandomness(blockNumber);
-        await VRFBeacon.requestRandomness(blockNumber);
+        const [reqId] = await VRFBeacon.callStatic.requestRandomness();
+        await VRFBeacon.requestRandomness();
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(reqId);
-
-        const blockNumber2 = await ethers.provider.getBlockNumber();
-        // blockNumber2 = blockNumber + 1
-        // await expect(VRFBeacon.requestRandomness(blockNumber2)).to.be.revertedWith('VRFBeacon: Already requested!');
 
         const tx = await coordinator.fulfillRandomWords(reqId, VRFBeacon.address)
         const { events } = await tx.wait();
@@ -68,7 +64,6 @@ describe.only('VRFRandom beacon', () => {
 
         if (fulfilledEvent === undefined) return;
 
-        // console.log(pick(VRFBeacon.interface.decodeEventLog("Fulfilled", fulfilledEvent.data, fulfilledEvent.topics), ['requestId', 'randomNumber']))
 
         const { requestId, randomNumber } = pick(VRFBeacon.interface.decodeEventLog("Fulfilled", fulfilledEvent.data, fulfilledEvent.topics), ['requestId', 'randomNumber'])
 
