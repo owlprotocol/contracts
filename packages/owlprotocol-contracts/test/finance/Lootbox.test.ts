@@ -256,10 +256,10 @@ describe('Lootbox.sol', () => {
         await mineUpTo(getEpochBlockNumber(blockNumber.toNumber()));
         await coordinatorRespond();
 
+        const prevQueueIndex = await lootbox.queueIndex();
         const { randomness } = await simulateKeeper();
 
         const randContract1 = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
-        const randContract2 = await lootbox.getRandomContract(lootboxToUnlock2, randomness);
 
         const tokenToMint = outputTokenIds[outputTokenIds.length - 1]
 
@@ -283,6 +283,15 @@ describe('Lootbox.sol', () => {
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         }
 
+
+        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        expect(await lootbox.queueIndex()).equals(prevQueueIndex.add(1));
+
+
+        const { randomness: randomness2 } = await simulateKeeper();
+
+        const randContract2 = await lootbox.getRandomContract(lootboxToUnlock2, randomness2);
+
         const tokenToMint2 = outputTokenIds[outputTokenIds.length - 2]
 
         if (randContract2.eq(0)) {
@@ -302,8 +311,25 @@ describe('Lootbox.sol', () => {
             expect(await lootboxNFT.ownerOf(lootboxToUnlock2)).to.equal(burn.address);
         }
         // after completion
-        // expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false)
+        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false);
     })
+
+    it('3 Lootboxes, all in same epoch, one in different', async () => {
+        ({ requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber']));
+        await lootbox.requestUnlock(lootboxToUnlock2);
+        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+
+        ({ requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock3), ['requestId', 'blockNumber']));
+        await lootbox.requestUnlock(lootboxToUnlock3);
+        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+
+        //check that all requestUnlocks are in the same epoch on VRFBeacon 
+        expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
+        expect(await lootbox.getEpochBlock(lootboxToUnlock2)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock3));
+
+        await mineUpTo(getEpochBlockNumber(blockNumber.toNumber()));
+        await coordinatorRespond();
+    });
 
 });
 
