@@ -61,8 +61,6 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
         uint256 currRequestId = blockNumberToRequestId[epochBlockNumber];
         if (currRequestId != 0) return (currRequestId, epochBlockNumber);
 
-        console.log(uint16(uint256(EPOCH_PERIOD) - (block.number % uint256(EPOCH_PERIOD))));
-
         uint256 requestId = COORDINATOR.requestRandomWords(
             keyHash,
             s_subscriptionId,

@@ -47,7 +47,7 @@ contract Lootbox is
     address public vrfBeacon;
 
     mapping(uint256 => uint256) lootboxIdToEpochBlock;
-    uint256 queueIndex;
+    uint256 public queueIndex;
     uint256[] private upkeepQueue; //array of lootboxIds
 
     /**********************
@@ -127,26 +127,21 @@ contract Lootbox is
     function requestUnlock(uint256 lootboxId) external returns (uint256 requestId, uint256 blockNumber) {
         (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
         uint256 currEntry = lootboxIdToEpochBlock[lootboxId];
-        if (currEntry != 0) return (requestId, blockNumber); //Each lootbox can only be redeemed once
+
+        if (currEntry != 0) return (requestId, currEntry); //Each lootbox can only be redeemed once
+
         lootboxIdToEpochBlock[lootboxId] = blockNumber;
         upkeepQueue.push(lootboxId);
     }
 
     function checkUpkeep(
         bytes calldata /* checkData */
-    )
-        external
-        view
-        override
-        returns (
-            bool upkeepNeeded,
-            bytes memory /* performData */
-        )
-    {
-        // upkeepQueue[queueIndex] returns 0 if there is nothing up
-        // next in the queue. This will conflict with lootboxId 0
-        // use keccak256(abi.encode(0)) to represent 0
+    ) external view override returns (bool upkeepNeeded, bytes memory performData) {
+        assert(queueIndex <= upkeepQueue.length);
+        if (upkeepQueue.length == queueIndex) return (false, '0x');
+
         uint256 randomness = VRFBeacon(vrfBeacon).getRandomness(lootboxIdToEpochBlock[upkeepQueue[queueIndex]]);
+
         if (randomness != 0) return (true, abi.encode(randomness, queueIndex));
         return (false, '0x');
     }
@@ -155,7 +150,7 @@ contract Lootbox is
         (uint256 randomness, uint256 queueIndexRequest) = abi.decode(performData, (uint256, uint256));
 
         //make sure that checkUpKeep hasn't run twice on the same queueIndex
-        require(queueIndexRequest == queueIndex, 'queueIndex already processed');
+        require(queueIndexRequest == queueIndex, 'Lootbox: queueIndex already processed');
 
         _unlock(upkeepQueue[queueIndex], randomness);
 
@@ -176,12 +171,28 @@ contract Lootbox is
 
         CrafterTransfer selectedCrafter = CrafterTransfer(crafterContracts[selectedContract]);
 
-        try selectedCrafter.craft(1, inputERC721Id, _msgSender()) {} catch {} //craft
+        // try catch to prevent revert loop. queueIndex will not
+        // increment and checkUpKeep will be endlessly called,
+        // not allowing upkeepQueue to make progress
+
+        /*
+        try selectedCrafter.craft(1, inputERC721Id, _msgSender()) {} catch {}
+        */
+        selectedCrafter.craft(1, inputERC721Id, _msgSender());
     }
 
     /**
     Getters
     */
+    function getEpochBlock(uint256 lootboxId) public view returns (uint256) {
+        return lootboxIdToEpochBlock[lootboxId];
+    }
+
+    // used for testing
+    function getRandomContract(uint256 lootboxId, uint256 randomSeed) external view returns (uint256 selectedContract) {
+        uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, lootboxId);
+        selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
+    }
 
     /**
     Upgradeable functions

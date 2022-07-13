@@ -14,9 +14,7 @@ library Probability {
         returns (uint256 index)
     {
         uint256 seedMod = (seed % distribution[distribution.length - 1]) + 1;
-        for (uint256 j = 0; j < distribution.length; j++) {
-            if (seedMod <= distribution[j]) return j;
-        }
+        for (uint256 j = 0; j < distribution.length; j++) if (seedMod <= distribution[j]) return j;
 
         return 0;
     }
