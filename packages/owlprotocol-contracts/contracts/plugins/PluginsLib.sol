@@ -89,7 +89,7 @@ library PluginsLib {
                     );
 
                     nUse[i] = _inputs[i].amounts[0];
-                } else require(_inputs[i].amounts.length == 0, 'PluginsLib: amounts.length != 1 or 0');
+                } else require(_inputs[i].amounts.length == 0, 'PluginsLib: amounts.length != 0');
             } else if (_inputs[i].token == PluginsLib.TokenType.erc1155) {
                 require(
                     _inputs[i].tokenIds.length == _inputs[i].amounts.length,

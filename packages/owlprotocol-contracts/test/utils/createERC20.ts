@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ethers } from 'hardhat';
-import { ERC20 } from '../../typechain';
+import { FactoryERC20 } from '../../typechain';
 
 // Creates + returns dummy ERC20 tokens for use in testing
 export async function createERC20(tokens = 1, signer?: SignerWithAddress) {
@@ -12,8 +12,8 @@ export async function createERC20(tokens = 1, signer?: SignerWithAddress) {
     const contracts = [];
     for (let i = 0; i < tokens; i++) {
         if (signer)
-            contracts.push(FactoryERC20.connect(signer).deploy(mintAmount, coinName, coinTicker) as Promise<ERC20>);
-        else contracts.push(FactoryERC20.deploy(mintAmount, coinName, coinTicker) as Promise<ERC20>);
+            contracts.push(FactoryERC20.connect(signer).deploy(mintAmount, coinName, coinTicker) as Promise<FactoryERC20>);
+        else contracts.push(FactoryERC20.deploy(mintAmount, coinName, coinTicker) as Promise<FactoryERC20>);
     }
     const deployedContracts = await Promise.all(contracts);
     // Assert all deployed

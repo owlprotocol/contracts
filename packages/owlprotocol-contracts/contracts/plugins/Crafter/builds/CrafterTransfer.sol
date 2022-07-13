@@ -37,7 +37,7 @@ contract CrafterTransfer is
     AccessControlUpgradeable
 {
     // Specification + ERC165
-    bytes32 internal constant FORWARDER_ROLE = keccak256('FORWARDER_ROLE');
+    bytes32 internal constant ROUTER_ROLE = keccak256('ROUTER_ROLE');
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterTransfer/', version)));
 
@@ -144,11 +144,11 @@ contract CrafterTransfer is
 
     /**
      * @notice Must have owner role
-     * @dev Grants FORWARDER_ROLE to {a}
+     * @dev Grants ROUTER_ROLE to {a}
      * @param to address to
      */
-    function grantForwarder(address to) public onlyOwner {
-        _grantRole(FORWARDER_ROLE, to);
+    function grantRouter(address to) public onlyOwner {
+        _grantRole(ROUTER_ROLE, to);
     }
 
     /**********************
@@ -355,7 +355,7 @@ contract CrafterTransfer is
         uint96 craftAmount,
         uint256[][] calldata _inputERC721Ids,
         address _crafter
-    ) external onlyRole(FORWARDER_ROLE) {
+    ) external onlyRole(ROUTER_ROLE) {
         _craft(craftAmount, _inputERC721Ids, _crafter);
     }
 
