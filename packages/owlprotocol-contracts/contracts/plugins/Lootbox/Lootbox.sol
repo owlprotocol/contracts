@@ -9,30 +9,17 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
+import '../../OwlBase.sol';
 import '../../random/VRFBeacon.sol';
 import '../Crafter/builds/CrafterTransfer.sol';
 import '../PluginsLib.sol';
 import './LootboxLib.sol';
 import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
-import 'hardhat/console.sol';
 
-contract Lootbox is
-    BaseRelayRecipient,
-    KeeperCompatibleInterface,
-    ERC721HolderUpgradeable,
-    ERC1155HolderUpgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable
-{
+contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Lootbox/', version)));
@@ -195,35 +182,17 @@ contract Lootbox is
     }
 
     /**
-    Upgradeable functions
-    */
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
-    }
-
-    /**
      * @dev ERC165 Support
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1155ReceiverUpgradeable, OwlBase)
+        returns (bool)
+    {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
     }
 }

@@ -13,9 +13,10 @@ import {
 import { deployClone } from '../utils';
 import { expect } from 'chai';
 
-describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async () => {
+describe.only('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async () => {
     let owlAdmin: SignerWithAddress;
     let gameDev: SignerWithAddress;
+    let forwarder: SignerWithAddress;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
@@ -55,19 +56,20 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
         await ERC721Owl.deployed();
 
         // Get users
-        [owlAdmin, gameDev] = await ethers.getSigners();
+        [owlAdmin, gameDev, forwarder] = await ethers.getSigners();
     });
 
     it('deployment', async () => {
         //Deploy Beacon Instance with ProxyFactory
         const { address: beaconAddr } = await deployClone(
             Beacon,
-            [owlAdmin.address, ERC721Owl.address],
+            [owlAdmin.address, ERC721Owl.address, forwarder.address],
             ERC1167Factory,
+
         );
         const { address: beaconAddr2 } = await deployClone(
             Beacon,
-            [owlAdmin.address, ERC721Owl.address],
+            [owlAdmin.address, ERC721Owl.address, forwarder.address],
             ERC1167Factory,
             ethers.utils.formatBytes32String('2'),
         );
@@ -79,10 +81,12 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
             'CryptoOwls',
             'OWL',
             'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
+            forwarder.address
+
         ]);
         const { address: beaconProxyAddr } = await deployClone(
             BeaconProxy,
-            [gameDev.address, beaconAddr, ERC721Data],
+            [gameDev.address, beaconAddr, ERC721Data, forwarder.address],
             ERC1167Factory,
         );
 
@@ -98,7 +102,7 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
     });
 
     it('upgrade beacon', async () => {
-        const { address } = await deployClone(Beacon, [owlAdmin.address, ERC721Owl.address], ERC1167Factory);
+        const { address } = await deployClone(Beacon, [owlAdmin.address, ERC721Owl.address, forwarder.address], ERC1167Factory);
 
         const beaconInst = (await ethers.getContractAt(
             'UpgradeableBeaconInitializable',
