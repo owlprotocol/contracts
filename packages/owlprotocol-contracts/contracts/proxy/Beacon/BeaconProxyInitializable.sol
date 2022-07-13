@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 
 import './IBeacon.sol';
 import '../ProxyUpgradeable.sol';
-import '../ERC1967/ERC1967UpgradeUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
@@ -24,7 +24,7 @@ contract BeaconProxyInitializable is
     BaseRelayRecipient,
     Initializable,
     ProxyUpgradeable,
-    ERC1967Upgrade,
+    ERC1967UpgradeUpgradeable,
     OwnableUpgradeable
 {
     /**

@@ -9,7 +9,6 @@ import {
     ERC721,
     ERC721OwlAttributes,
     ERC721OwlAttributes__factory,
-    FactoryERC20,
     Transformer,
     Transformer__factory,
 } from '../../../typechain';
@@ -26,8 +25,6 @@ enum GeneTransformType {
     sub,
     mult,
     set,
-    // ,
-    // random
 }
 
 enum ConsumableType {
@@ -39,7 +36,7 @@ enum ConsumableType {
 const vals = [1, 1, 1];
 const genes = [250, 252, 254];
 
-describe('Transformer.sol; genes [2, 4, 6]', () => {
+describe.only('Transformer.sol; genes [2, 4, 6]', () => {
     let adminAddress: string;
     let burnAddress: string;
     let inputERC20: ERC20;
@@ -49,6 +46,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
     let signer1: SignerWithAddress;
     let signer2: SignerWithAddress;
     let burnSigner: SignerWithAddress;
+    let forwarder: SignerWithAddress;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
@@ -56,7 +54,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
     let transformerImpl: Transformer;
     let ERC721Inst: ERC721OwlAttributes;
     beforeEach(async () => {
-        [signer1, signer2, burnSigner] = await ethers.getSigners();
+        [signer1, signer2, burnSigner, forwarder] = await ethers.getSigners();
         adminAddress = signer1.address;
         burnAddress = burnSigner.address;
 
@@ -73,7 +71,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
 
         ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
-        const { address } = await deployClone(ERC721OwlAttributes, [adminAddress, 'n', 's', 'u'], ERC1167Factory, salt);
+        const { address } = await deployClone(ERC721OwlAttributes, [adminAddress, 'n', 's', 'u', forwarder.address], ERC1167Factory, salt);
 
         ERC721Inst = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
         ERC721Inst.connect(signer1).mint(signer1.address, encodeGenesUint256(vals, genes));
@@ -115,6 +113,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    forwarder.address
                 ],
                 ERC1167Factory,
                 salt,
@@ -179,6 +178,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    forwarder.address
                 ],
                 ERC1167Factory,
                 salt,
@@ -263,6 +263,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    forwarder.address
                 ],
                 ERC1167Factory,
                 salt,
@@ -342,6 +343,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    forwarder.address
                 ],
                 ERC1167Factory,
                 salt,
@@ -431,6 +433,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    forwarder.address
                 ],
                 ERC1167Factory,
                 salt,
@@ -494,6 +497,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    forwarder.address
                 ],
                 ERC1167Factory,
                 salt,
@@ -557,6 +561,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    forwarder.address
                 ],
                 ERC1167Factory,
                 salt,
