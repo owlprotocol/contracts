@@ -38,6 +38,16 @@ describe.only('VRFRandom beacon', () => {
             50000, //gas limit
             EPOCH_PERIOD,
         )) as VRFBeacon;
+
+        await expect(
+            VRFBeaconFactory.deploy(
+                subId,
+                coordinatorAddr,
+                '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc',
+                50000, //gas limit
+                1,
+            )
+        ).to.be.revertedWith('VRFBeaocn: invalid number for _epoch period')
     });
 
     it('full test', async () => {
@@ -57,6 +67,12 @@ describe.only('VRFRandom beacon', () => {
         const [reqId] = await VRFBeacon.callStatic.requestRandomness();
         await VRFBeacon.requestRandomness();
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(reqId);
+
+        const blockNumber2 = await ethers.provider.getBlockNumber()
+        const [reqId2] = await VRFBeacon.callStatic.requestRandomness();
+        await VRFBeacon.requestRandomness();
+        expect(reqId2).to.equal(reqId)
+        expect(await VRFBeacon.getRequestId(blockNumber2)).to.equal(reqId2);
 
         const tx = await coordinator.fulfillRandomWords(reqId, VRFBeacon.address)
         const { events } = await tx.wait();
