@@ -17,9 +17,5 @@
     "@typechain/hardhat": "^2.3.1",
     "hardhat": "^2.9.1"
   },
-  "files": [
-    "artifacts/contracts/**/*.json",
-    "contracts/**/*.sol",
-    "types"
-  ]
+  "files": []
 }

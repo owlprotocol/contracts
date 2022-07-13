@@ -1,5 +1,5 @@
 import { Network } from 'hardhat/types/runtime';
-import { mainnet } from "./configs";
+import { mainnet } from "../configs";
 
 export default function getGSNConfig(network: Network) {
 
