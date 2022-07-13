@@ -20,6 +20,8 @@ import { createERC1155, createERC20, createERC721, deployClone, encodeGenesUint2
 import { pick } from 'lodash';
 import { BigNumber } from 'ethers';
 import { parseUnits } from 'ethers/lib/utils';
+import { Web3Provider } from '@ethersproject/providers';
+import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
 
 const salt = ethers.utils.formatBytes32String('1');
 
@@ -63,8 +65,21 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
 
     let transformerImpl: Transformer;
     let ERC721Inst: ERC721OwlAttributes;
+
+    let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
+    let gsn: TestEnvironment;
+    let web3provider: Web3Provider;
+
     beforeEach(async () => {
-        [signer1, signer2, burnSigner, forwarder] = await ethers.getSigners();
+        //Setup Test Environment
+        gsn = await GsnTestEnvironment.startGsn('http://localhost:8545');
+        const provider = gsn.relayProvider;
+
+        //@ts-ignore
+        web3provider = new ethers.providers.Web3Provider(provider);
+        gsnForwarderAddress = gsn.contractsDeployment.forwarderAddress as string;
+
+        [signer1, signer2, burnSigner] = await ethers.getSigners();
         adminAddress = signer1.address;
         burnAddress = burnSigner.address;
 
@@ -81,11 +96,26 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
 
         ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
-        const { address } = await deployClone(ERC721OwlAttributes, [adminAddress, 'n', 's', 'u', forwarder.address], ERC1167Factory, salt);
+        const { address } = await deployClone(
+            ERC721OwlAttributes,
+            [adminAddress, 'n', 's', 'u', gsnForwarderAddress],
+            ERC1167Factory,
+            salt,
+        );
+
+        console.log('1');
 
         ERC721Inst = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
+
+        console.log('2');
+
         ERC721Inst.connect(signer1).mint(signer1.address, encodeGenesUint256(vals, genes));
+
+        console.log('3');
+
         expect(await ERC721Inst.ownerOf(0)).to.equal(signer1.address);
+        console.log('4');
+
         //await expect(ERC721Inst.ownerOf(63)).to.be.revertedWith('ERC721: owner query for nonexistent token');
     });
 
@@ -123,11 +153,12 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
             );
+
             await ERC721Inst.grantDna(address);
 
             transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
@@ -188,7 +219,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -273,7 +304,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -353,7 +384,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -443,7 +474,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -507,7 +538,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -636,7 +667,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
