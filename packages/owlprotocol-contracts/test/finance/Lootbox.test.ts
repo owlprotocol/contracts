@@ -29,6 +29,8 @@ import { createERC20, createERC721, createERC1155, deployClone, predictDeployClo
 import { BigNumber } from 'ethers';
 import { ERC721Owl__factory } from '../../typechain';
 import { ERC721Owl } from '../../typechain';
+import { isTopic } from 'web3-utils';
+import { stat } from 'fs';
 
 const coordinatorAddr = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
 const EPOCH_PERIOD = 10;
@@ -79,7 +81,7 @@ describe.only('Lootbox.sol', () => {
                 {
                     forking: {
                         jsonRpcUrl: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-                        blockNumber: 11017060,
+                        blockNumber: 11017810,
                     },
                 },
             ],
@@ -157,6 +159,15 @@ describe.only('Lootbox.sol', () => {
             VRFBeacon.address,
             forwarder.address])
 
+        await expect(
+            deployClone(lootboxImpl, [
+                signer1.address,
+                [crafterMintAddr1, crafterMintAddr2, crafterMintAddr3],
+                [10, 20, 100, 120],
+                VRFBeacon.address,
+                forwarder.address])
+        ).to.be.revertedWith('Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!')
+
         lootbox = (await ethers.getContractAt("Lootbox", lootboxInstAddr)) as Lootbox;
 
         await setCode(coordinatorAddr, mockDeployedBytecode);
@@ -176,15 +187,13 @@ describe.only('Lootbox.sol', () => {
         await crafterMint2.grantRouter(lootbox.address);
         await crafterMint3.grantRouter(lootbox.address);
 
-        ({ requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']));
-        await lootbox.requestUnlock(lootboxToUnlock1);
-        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+
 
     });
 
-    async function coordinatorRespond() {
+    async function coordinatorRespond(reqId: BigNumber, blockNum: BigNumber) {
         //simulating coordiantor response
-        const tx = await coordinator.fulfillRandomWords(requestId, VRFBeacon.address)
+        const tx = await coordinator.fulfillRandomWords(reqId, VRFBeacon.address)
         const { events } = await tx.wait();
         const fulfilledEvent = events ? events[0] : undefined;
 
@@ -192,50 +201,89 @@ describe.only('Lootbox.sol', () => {
 
         const { requestId: requestIdFulfilled, randomNumber } = pick(VRFBeacon.interface.decodeEventLog("Fulfilled", fulfilledEvent.data, fulfilledEvent.topics), ['requestId', 'randomNumber'])
 
-        expect(requestIdFulfilled).to.equal(requestId);
-        expect(await VRFBeacon.getRandomness(blockNumber)).to.equal(randomNumber);
+        expect(requestIdFulfilled).to.equal(reqId);
+        expect(await VRFBeacon.getRandomness(blockNum)).to.equal(randomNumber);
     }
 
-    async function simulateKeeper() {
+    async function simulateKeeper(epochBlock: BigNumber) {
         //simulating keeper
         //checkUpkeep
         const { upkeepNeeded, performData } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(true);
         const { randomness, queueIndex } = ethers.utils.defaultAbiCoder.decode(['uint256 randomness', 'uint256 queueIndex'], performData);
-        expect(await VRFBeacon.getRandomness(await lootbox.getEpochBlock(lootboxToUnlock1))).to.equal(randomness)
+
+        expect(await VRFBeacon.getRandomness(epochBlock)).to.equal(randomness)
         expect(await lootbox.queueIndex()).to.equal(queueIndex);
 
         //performUpkeep
-        await lootbox.performUpkeep(performData);
-        return { randomness }
+        const tx = await lootbox.performUpkeep(performData);
+        const receipt = await tx.wait();
+        return { randomness, receipt }
     }
 
+    async function stateChecks(tokenId: number, epochBlock: BigNumber) {
+        const { randomness: randomness, receipt: receipt } = await simulateKeeper(epochBlock);
+        const { events } = receipt;
+        const transferEvent = events ? events[2] : undefined;
+
+        if (transferEvent === undefined) return;
+
+        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
+
+        const randContract = await lootbox.getRandomContract(tokenId, randomness);
+
+        if (randContract.eq(0)) {
+            expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+
+            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
+        } else if (randContract.eq(1)) {
+            expect(await reward2.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+
+            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
+        } else if (randContract.eq(2)) {
+            expect(await reward3.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+
+            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
+        }
+    }
+
+
     it('1 Lootbox', async () => {
+        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        await lootbox.requestUnlock(lootboxToUnlock1);
+        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+
+        const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
+        expect(upkeepNeeded).to.equal(false);
 
         await mineUpTo(getEpochBlockNumber(await time.latestBlock()));
-        await coordinatorRespond();
+        await coordinatorRespond(requestId, blockNumber);
 
-        const { randomness } = await simulateKeeper();
+        const { randomness, receipt } = await simulateKeeper(blockNumber);
+        const { events } = receipt;
+        const transferEvent = events ? events[2] : undefined;
 
-        const tokenToMint = outputTokenIds[outputTokenIds.length - 1]
+        if (transferEvent === undefined) return;
+
+        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
 
         const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
         if (randContract.eq(0)) {
-            expect(await reward1.ownerOf(tokenToMint)).to.equal(signer1.address);
-            expect(await reward2.exists(tokenToMint)).to.equal(false);
-            expect(await reward3.exists(tokenToMint)).to.equal(false);
+            expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+            expect(await reward2.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward3.exists(tokenIdMinted)).to.equal(false);
 
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         } else if (randContract.eq(1)) {
-            expect(await reward1.exists(tokenToMint)).to.equal(false);
-            expect(await reward2.ownerOf(tokenToMint)).to.equal(signer1.address);
-            expect(await reward3.exists(tokenToMint)).to.equal(false);
+            expect(await reward1.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward2.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+            expect(await reward3.exists(tokenIdMinted)).to.equal(false);
 
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         } else if (randContract.eq(2)) {
-            expect(await reward1.exists(tokenToMint)).to.equal(false);
-            expect(await reward2.exists(tokenToMint)).to.equal(false);
-            expect(await reward3.ownerOf(tokenToMint)).to.equal(signer1.address);
+            expect(await reward1.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward2.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward3.ownerOf(tokenIdMinted)).to.equal(signer1.address);
 
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         }
@@ -246,7 +294,14 @@ describe.only('Lootbox.sol', () => {
 
     it('2 Lootboxes, same EPOCH_PERIOD', async () => {
 
-        ({ requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber']));
+        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        await lootbox.requestUnlock(lootboxToUnlock1);
+        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+
+        const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
+        expect(upkeepNeeded).to.equal(false);
+
+        await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber']
         await lootbox.requestUnlock(lootboxToUnlock2);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
@@ -254,72 +309,60 @@ describe.only('Lootbox.sol', () => {
         expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
 
         await mineUpTo(getEpochBlockNumber(blockNumber.toNumber()));
-        await coordinatorRespond();
+        await coordinatorRespond(requestId, blockNumber);
 
-        const prevQueueIndex = await lootbox.queueIndex();
-        const { randomness } = await simulateKeeper();
+        //state checks
+        const { randomness: randomness, receipt: receipt } = await simulateKeeper(blockNumber);
+        const { events } = receipt;
+        const transferEvent = events ? events[2] : undefined;
 
-        const randContract1 = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
+        if (transferEvent === undefined) return;
 
-        const tokenToMint = outputTokenIds[outputTokenIds.length - 1]
+        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
 
-        if (randContract1.eq(0)) {
-            expect(await reward1.ownerOf(tokenToMint)).to.equal(signer1.address);
-            expect(await reward2.exists(tokenToMint)).to.equal(false);
-            expect(await reward3.exists(tokenToMint)).to.equal(false);
+        const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
+
+
+        if (randContract.eq(0)) {
+            expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+            expect(await reward2.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward3.exists(tokenIdMinted)).to.equal(false);
 
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
-        } else if (randContract1.eq(1)) {
-            expect(await reward1.exists(tokenToMint)).to.equal(false);
-            expect(await reward2.ownerOf(tokenToMint)).to.equal(signer1.address);
-            expect(await reward3.exists(tokenToMint)).to.equal(false);
+        } else if (randContract.eq(1)) {
+            expect(await reward1.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward2.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+            expect(await reward3.exists(tokenIdMinted)).to.equal(false);
 
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
-        } else if (randContract1.eq(2)) {
-            expect(await reward1.exists(tokenToMint)).to.equal(false);
-            expect(await reward2.exists(tokenToMint)).to.equal(false);
-            expect(await reward3.ownerOf(tokenToMint)).to.equal(signer1.address);
+        } else if (randContract.eq(2)) {
+            expect(await reward1.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward2.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward3.ownerOf(tokenIdMinted)).to.equal(signer1.address);
 
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         }
-
 
         expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
-        expect(await lootbox.queueIndex()).equals(prevQueueIndex.add(1));
-
-
-        const { randomness: randomness2 } = await simulateKeeper();
-
-        const randContract2 = await lootbox.getRandomContract(lootboxToUnlock2, randomness2);
-
-        const tokenToMint2 = outputTokenIds[outputTokenIds.length - 2]
-
-        if (randContract2.eq(0)) {
-            if (randContract1.eq(0))
-                expect(await reward1.ownerOf(tokenToMint2)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(lootboxToUnlock2)).to.equal(burn.address);
-        } else if (randContract2.eq(1)) {
-            if (randContract1.eq(1))
-                expect(await reward2.ownerOf(tokenToMint2)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(lootboxToUnlock2)).to.equal(burn.address);
-        } else if (randContract2.eq(2)) {
-            if (randContract1.eq(2))
-                expect(await reward3.ownerOf(tokenToMint2)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(lootboxToUnlock2)).to.equal(burn.address);
-        }
-        // after completion
+        await stateChecks(lootboxToUnlock2, blockNumber);
         expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false);
     })
 
-    it('3 Lootboxes, all in same epoch, one in different', async () => {
-        ({ requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber']));
+    it('3 Lootboxes, all in same epoch', async () => {
+
+        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        await lootbox.requestUnlock(lootboxToUnlock1);
+        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+
+
+        const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
+        expect(upkeepNeeded).to.equal(false);
+
+        await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber'];
         await lootbox.requestUnlock(lootboxToUnlock2);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
-        ({ requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock3), ['requestId', 'blockNumber']));
+        await lootbox.callStatic.requestUnlock(lootboxToUnlock3), ['requestId', 'blockNumber']
         await lootbox.requestUnlock(lootboxToUnlock3);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
@@ -328,8 +371,153 @@ describe.only('Lootbox.sol', () => {
         expect(await lootbox.getEpochBlock(lootboxToUnlock2)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock3));
 
         await mineUpTo(getEpochBlockNumber(blockNumber.toNumber()));
-        await coordinatorRespond();
+        await coordinatorRespond(requestId, blockNumber);
+
+        //state checks
+        const { randomness: randomness, receipt: receipt } = await simulateKeeper(blockNumber);
+        const { events } = receipt;
+        const transferEvent = events ? events[2] : undefined;
+
+        if (transferEvent === undefined) return;
+
+        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
+
+        const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
+
+
+        if (randContract.eq(0)) {
+            expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+            expect(await reward2.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward3.exists(tokenIdMinted)).to.equal(false);
+
+            expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
+        } else if (randContract.eq(1)) {
+            expect(await reward1.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward2.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+            expect(await reward3.exists(tokenIdMinted)).to.equal(false);
+
+            expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
+        } else if (randContract.eq(2)) {
+            expect(await reward1.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward2.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward3.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+
+            expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
+        }
+
+        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        await stateChecks(lootboxToUnlock2, blockNumber);
+        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        await stateChecks(lootboxToUnlock3, blockNumber);
+        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false);
     });
+
+    it('3 Lootboxes, two in same epoch, one in different', async () => {
+
+        const { requestId: reqId1, blockNumber: blockNumber1 } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        await lootbox.requestUnlock(lootboxToUnlock1);
+        expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
+
+        const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
+        expect(upkeepNeeded).to.equal(false);
+
+        await lootbox.callStatic.requestUnlock(lootboxToUnlock2);
+        await lootbox.requestUnlock(lootboxToUnlock2);
+        expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
+
+        //check that both requestUnlocks are in the same epoch on VRFBeacon 
+        expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
+
+        await mineUpTo(getEpochBlockNumber(blockNumber1.toNumber()));
+
+        const { blockNumber: blockNumber2, requestId: reqId2 } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock3), ['requestId', 'blockNumber']);
+        await lootbox.requestUnlock(lootboxToUnlock3);
+
+        await coordinatorRespond(reqId1, blockNumber1);
+        await mineUpTo(getEpochBlockNumber(blockNumber2.toNumber()));
+        await coordinatorRespond(reqId2, blockNumber2);
+
+        //state checks
+        const { randomness: randomness, receipt: receipt } = await simulateKeeper(blockNumber1);
+        const { events } = receipt;
+        const transferEvent = events ? events[2] : undefined;
+
+        if (transferEvent === undefined) return;
+
+        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
+
+        const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
+
+
+        if (randContract.eq(0)) {
+            expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+            expect(await reward2.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward3.exists(tokenIdMinted)).to.equal(false);
+
+            expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
+        } else if (randContract.eq(1)) {
+            expect(await reward1.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward2.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+            expect(await reward3.exists(tokenIdMinted)).to.equal(false);
+
+            expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
+        } else if (randContract.eq(2)) {
+            expect(await reward1.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward2.exists(tokenIdMinted)).to.equal(false);
+            expect(await reward3.ownerOf(tokenIdMinted)).to.equal(signer1.address);
+
+            expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
+        }
+
+        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        await stateChecks(lootboxToUnlock2, blockNumber1);
+        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        await stateChecks(lootboxToUnlock3, blockNumber2);
+        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false);
+
+    });
+
+    it('Request unlock multiple times', async () => {
+        const { requestId: reqId1, blockNumber: blockNumber1 } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        await lootbox.requestUnlock(lootboxToUnlock1);
+        expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
+
+        const { requestId: reqId2, blockNumber: blockNumber2 } = await lootbox.callStatic.requestUnlock(lootboxToUnlock1);
+        await lootbox.requestUnlock(lootboxToUnlock1);
+        expect(await VRFBeacon.getRequestId(blockNumber2)).to.equal(reqId2);
+
+        expect(reqId1).to.equal(reqId2)
+
+    });
+
+    it('Multiple performUpkeep() calls with same queueIndex should fail', async () => {
+
+        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        await lootbox.requestUnlock(lootboxToUnlock1);
+        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+
+        let { upkeepNeeded, performData } = await lootbox.checkUpkeep('0x');
+        expect(upkeepNeeded).to.equal(false);
+
+        await mineUpTo(getEpochBlockNumber(await time.latestBlock()));
+        await coordinatorRespond(requestId, blockNumber);
+
+        //simulating keeper
+        //checkUpkeep
+        ({ upkeepNeeded, performData } = await lootbox.checkUpkeep('0x'));
+        expect(upkeepNeeded).to.equal(true);
+        const { randomness, queueIndex } = ethers.utils.defaultAbiCoder.decode(['uint256 randomness', 'uint256 queueIndex'], performData);
+
+        expect(await VRFBeacon.getRandomness(blockNumber)).to.equal(randomness)
+        expect(await lootbox.queueIndex()).to.equal(queueIndex);
+
+        //performUpkeep (real)
+        await lootbox.performUpkeep(performData);
+
+        //performUpkeep with same performData (should fail)
+        await expect(lootbox.performUpkeep(performData)).to.be.revertedWith('Lootbox: queueIndex already processed')
+
+    })
 
 });
 

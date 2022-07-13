@@ -125,10 +125,10 @@ contract Lootbox is
     **********************/
 
     function requestUnlock(uint256 lootboxId) external returns (uint256 requestId, uint256 blockNumber) {
-        (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
         uint256 currEntry = lootboxIdToEpochBlock[lootboxId];
+        if (currEntry != 0) return (VRFBeacon(vrfBeacon).getRequestId(currEntry), currEntry); //Each lootbox can only be redeemed once
 
-        if (currEntry != 0) return (requestId, currEntry); //Each lootbox can only be redeemed once
+        (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
 
         lootboxIdToEpochBlock[lootboxId] = blockNumber;
         upkeepQueue.push(lootboxId);
