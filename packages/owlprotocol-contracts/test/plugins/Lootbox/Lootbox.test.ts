@@ -1,4 +1,4 @@
-import { ethers, network } from 'hardhat';
+import { ethers, network, web3 } from 'hardhat';
 import { time, setCode, mineUpTo } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -122,19 +122,16 @@ describe.only('Lootbox.sol', () => {
         const crafterMintFactory = await ethers.getContractFactory("CrafterMint")
         const crafterMintImpl = await crafterMintFactory.deploy()
 
-        console.log('hi1');
         const { address: crafterMintAddr1 } = await deployClone(crafterMintImpl, [
             ...crafterArgsCommon,
             [{ ...crafterOutputCommon, contractAddr: reward1.address, },],
             forwarder.address, // forwarder addr
         ], ERC1167Factory)
 
-        console.log('hi2');
         const { address: crafterMintAddr2 } = await deployClone(crafterMintImpl, [
             ...crafterArgsCommon, [{ ...crafterOutputCommon, contractAddr: reward2.address }], forwarder.address
         ], ERC1167Factory)
 
-        console.log('hi3');
         const { address: crafterMintAddr3 } = await deployClone(crafterMintImpl, [
             ...crafterArgsCommon, [{ ...crafterOutputCommon, contractAddr: reward3.address }], forwarder.address
         ], ERC1167Factory)
