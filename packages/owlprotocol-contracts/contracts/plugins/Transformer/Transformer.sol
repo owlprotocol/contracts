@@ -89,7 +89,7 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
         require(_burnAddress != address(0), 'Transformer: burn address must not be 0');
         require(_inputs.length > 0, 'Transformer: A crafting input must be given!');
 
-        _transferOwnership(_admin);
+        __OwlBase_init(_admin);
         __Transformer_init_unchained(_burnAddress, _inputs, _genes, _modifications, _nftAddr, _forwarder);
     }
 
@@ -213,7 +213,7 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
         public
         view
         virtual
-        override(ERC1155ReceiverUpgradeable, OwlBase)
+        override(ERC1155ReceiverUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

@@ -174,7 +174,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft1', async () => {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await expect(crafter['craft(uint96,uint256[][])'](1, [[1]])).to.be.revertedWith('Used over the limit of n');
+            await expect(crafter.craft(1, [[1]])).to.be.revertedWith('Used over the limit of n');
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
             //Check balances
@@ -204,7 +204,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft2', async () => {
             //Craft 2
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await expect(crafter['craft(uint96,uint256[][])'](1, [[1]])).to.be.revertedWith('Used over the limit of n');
+            await expect(crafter.craft(1, [[1]])).to.be.revertedWith('Used over the limit of n');
 
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
@@ -236,7 +236,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft3', async () => {
             //Craft 3
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await expect(crafter['craft(uint96,uint256[][])'](1, [[1]])).to.be.revertedWith('Used over the limit of n');
+            await expect(crafter.craft(1, [[1]])).to.be.revertedWith('Used over the limit of n');
 
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
@@ -385,7 +385,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft1', async () => {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
+            await crafter.craft(1, [[1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
             //Check balances
@@ -415,8 +415,8 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft2', async () => {
             //Craft 2
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
-            await expect(crafter['craft(uint96,uint256[][])'](1, [[1]])).to.be.revertedWith('Used over the limit of n');
+            await crafter.craft(1, [[1]]);
+            await expect(crafter.craft(1, [[1]])).to.be.revertedWith('Used over the limit of n');
 
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
@@ -448,9 +448,9 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft3', async () => {
             //Craft 3
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
-            await expect(crafter['craft(uint96,uint256[][])'](1, [[1]])).to.be.revertedWith('Used over the limit of n');
-            await expect(crafter['craft(uint96,uint256[][])'](1, [[1]])).to.be.revertedWith('Used over the limit of n');
+            await crafter.craft(1, [[1]]);
+            await expect(crafter.craft(1, [[1]])).to.be.revertedWith('Used over the limit of n');
+            await expect(crafter.craft(1, [[1]])).to.be.revertedWith('Used over the limit of n');
 
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
@@ -597,7 +597,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft1', async () => {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
+            await crafter.craft(1, [[1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
             //Check balances
@@ -627,7 +627,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft2', async () => {
             //Craft 2
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](2, [[1, 1]]);
+            await crafter.craft(2, [[1, 1]]);
 
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
@@ -659,7 +659,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft3', async () => {
             //Craft 3
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await expect(crafter['craft(uint96,uint256[][])'](3, [[1, 1, 1]])).to.be.revertedWith(
+            await expect(crafter.craft(3, [[1, 1, 1]])).to.be.revertedWith(
                 'Not enough resources to craft!',
             );
 
@@ -869,7 +869,7 @@ describe('CrafterTransfer.sol NTime', function () {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
             await input2ERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[1], [1]]);
+            await crafter.craft(1, [[1], [1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
             //Check balances
@@ -925,7 +925,7 @@ describe('CrafterTransfer.sol NTime', function () {
             //Craft 2
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
             await input2ERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](2, [
+            await crafter.craft(2, [
                 [1, 2],
                 [1, 2],
             ]);
@@ -989,7 +989,7 @@ describe('CrafterTransfer.sol NTime', function () {
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
             await input2ERC721.connect(owner).approve(CrafterTransferAddress, 1);
             await expect(
-                crafter['craft(uint96,uint256[][])'](4, [
+                crafter.craft(4, [
                     [1, 2, 3, 4],
                     [1, 2, 3, 4],
                 ]),
@@ -1003,7 +1003,7 @@ describe('CrafterTransfer.sol NTime', function () {
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
             await input2ERC721.connect(owner).approve(CrafterTransferAddress, 1);
             await expect(
-                crafter['craft(uint96,uint256[][])'](3, [
+                crafter.craft(3, [
                     [1, 1, 1],
                     [1, 2, 3],
                 ]),
@@ -1127,7 +1127,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft', async () => {
             //Craft 1
             await inputERC20.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[]]);
+            await crafter.craft(1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -1164,7 +1164,7 @@ describe('CrafterTransfer.sol NTime', function () {
 
             //Craft 1
             await inputERC20.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[]]);
+            await crafter.craft(1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -1305,7 +1305,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft', async () => {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
+            await crafter.craft(1, [[1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -1388,7 +1388,7 @@ describe('CrafterTransfer.sol NTime', function () {
             });
             //Craft 1
             await inputERC721.connect(owner).setApprovalForAll(CrafterTransferAddress, true);
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
+            await crafter.craft(1, [[1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -1518,7 +1518,7 @@ describe('CrafterTransfer.sol NTime', function () {
         it('craft', async () => {
             //Craft 1
             await inputERC1155.connect(owner).setApprovalForAll(CrafterTransferAddress, true);
-            await crafter['craft(uint96,uint256[][])'](1, [[]]);
+            await crafter.craft(1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -1549,7 +1549,7 @@ describe('CrafterTransfer.sol NTime', function () {
             expect(await outputERC1155.balanceOf(crafter.address, outputId)).to.equal(outputAmount.toNumber() * 2);
             //Craft 1
             await inputERC1155.connect(owner).setApprovalForAll(CrafterTransferAddress, true);
-            await crafter['craft(uint96,uint256[][])'](1, [[]]);
+            await crafter.craft(1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -1820,7 +1820,7 @@ describe('CrafterTransfer.sol NTime', function () {
 
         it('craft', async () => {
             //Craft 1
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
+            await crafter.craft(1, [[1]]);
 
             //Check balances
             expect(await inputERC20.balanceOf(burnAddress)).to.equal(1);

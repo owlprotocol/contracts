@@ -18,6 +18,7 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
 import '@opengsn/contracts/src/BaseRelayRecipient.sol';
 import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
+import '../../../OwlBase.sol';
 import '../../../assets/ERC20/ERC20Owl.sol';
 import '../../../assets/ERC721/ERC721Owl.sol';
 import '../../../assets/ERC1155/ERC1155Owl.sol';
@@ -32,17 +33,8 @@ import 'hardhat/console.sol';
  * Players can interact with the contract to have
  * recipie outputs minted.
  */
-contract CrafterMint is
-    ICrafter,
-    BaseRelayRecipient,
-    ERC721HolderUpgradeable,
-    ERC1155HolderUpgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable,
-    AccessControlUpgradeable
-{
+contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
-    bytes32 internal constant ROUTER_ROLE = keccak256('ROUTER_ROLE');
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterMint/', version)));
 
@@ -91,7 +83,7 @@ contract CrafterMint is
         PluginsLib.Ingredient[] calldata _inputs,
         PluginsLib.Ingredient[] calldata _outputs,
         address _forwarder
-    ) public initializer {
+    ) external initializer {
         __CrafterMint_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
@@ -102,7 +94,7 @@ contract CrafterMint is
         PluginsLib.Ingredient[] calldata _inputs,
         PluginsLib.Ingredient[] calldata _outputs,
         address _forwarder
-    ) public onlyInitializing {
+    ) external onlyInitializing {
         __CrafterMint_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
@@ -113,12 +105,13 @@ contract CrafterMint is
         PluginsLib.Ingredient[] calldata _inputs,
         PluginsLib.Ingredient[] calldata _outputs,
         address _forwarder
-    ) public onlyInitializing {
+    ) internal onlyInitializing {
         require(_burnAddress != address(0), 'CrafterMint: burn address must not be 0');
         require(_inputs.length > 0, 'CrafterMint: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterMint: A crafting output must be given!');
 
-        _transferOwnership(_admin);
+        __OwlBase_init(_admin);
+
         __CrafterMint_init_unchained(_burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
@@ -128,7 +121,7 @@ contract CrafterMint is
         PluginsLib.Ingredient[] calldata _inputs,
         PluginsLib.Ingredient[] calldata _outputs,
         address _forwarder
-    ) public onlyInitializing {
+    ) internal onlyInitializing {
         burnAddress = _burnAddress;
 
         PluginsLib.validateInputs(_inputs, inputs, nUse);
@@ -142,15 +135,6 @@ contract CrafterMint is
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
-    }
-
-    /**
-     * @notice Must have owner role
-     * @dev Grants ROUTER_ROLE to {a}
-     * @param to address to
-     */
-    function grantRouter(address to) public onlyOwner {
-        _grantRole(ROUTER_ROLE, to);
     }
 
     /**********************
@@ -231,7 +215,7 @@ contract CrafterMint is
      * @param depositAmount How many times the recipe should be craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
      */
-    function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
+    function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _deposit(depositAmount, _outputsERC721Ids);
     }
 
@@ -277,7 +261,7 @@ contract CrafterMint is
      * @dev Used to withdraw recipe outputs. Reverse logic as deposit().
      * @param withdrawAmount How many times the craft outputs should be withdrawn
      */
-    function withdraw(uint96 withdrawAmount) external onlyOwner {
+    function withdraw(uint96 withdrawAmount) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // Requires
         require(withdrawAmount > 0, 'CrafterMint: withdrawAmount cannot be 0!');
         require(withdrawAmount <= craftableAmount, 'CrafterMint: Not enough resources!');
@@ -296,29 +280,13 @@ contract CrafterMint is
         emit RecipeUpdate(craftableAmount);
     }
 
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
-        _craft(craftAmount, _inputERC721Ids, _msgSender());
-    }
-
-    function craft(
-        uint96 craftAmount,
-        uint256[][] calldata _inputERC721Ids,
-        address _crafter
-    ) external onlyRole(ROUTER_ROLE) {
-        _craft(craftAmount, _inputERC721Ids, _crafter);
-    }
-
     /**
      * @notice Craft {craftAmount}
      * @dev Used to craft. Consumes inputs and transfers outputs.
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function _craft(
-        uint96 craftAmount,
-        uint256[][] calldata _inputERC721Ids,
-        address _crafter
-    ) internal {
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
         // Requires
         require(craftAmount > 0, 'CrafterMint: craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'CrafterMint: Not enough resources to craft!');
@@ -338,7 +306,7 @@ contract CrafterMint is
                     //Transfer ERC20
                     SafeERC20Upgradeable.safeTransferFrom(
                         IERC20Upgradeable(ingredient.contractAddr),
-                        _crafter,
+                        _msgSender(),
                         burnAddress,
                         ingredient.amounts[0] * craftAmount
                     );
@@ -346,7 +314,7 @@ contract CrafterMint is
                     //this is unaffected consumable type, as ensured by input validations
                     //Check ERC20
                     require(
-                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_crafter) >=
+                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_msgSender()) >=
                             ingredient.amounts[0] * craftAmount,
                         'CrafterMint: User missing minimum token balance(s)!'
                     );
@@ -359,7 +327,7 @@ contract CrafterMint is
                     //Transfer ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                            _crafter,
+                            _msgSender(),
                             burnAddress,
                             currInputArr[j]
                         );
@@ -369,7 +337,7 @@ contract CrafterMint is
                     //Check ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _crafter,
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
                             'CrafterMint: User does not own token(s)!'
                         );
                         uint256 currTokenId = currInputArr[j];
@@ -391,7 +359,7 @@ contract CrafterMint is
                         amounts[j] = ingredient.amounts[j] * craftAmount;
                     }
                     IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                        _crafter,
+                        _msgSender(),
                         burnAddress,
                         ingredient.tokenIds,
                         amounts,
@@ -404,7 +372,7 @@ contract CrafterMint is
                     address[] memory accounts = new address[](ingredient.amounts.length);
                     for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                         amounts[j] = ingredient.amounts[j] * craftAmount;
-                        accounts[j] = _crafter;
+                        accounts[j] = _msgSender();
                     }
 
                     uint256[] memory balances = IERC1155Upgradeable(ingredient.contractAddr).balanceOfBatch(
@@ -422,12 +390,12 @@ contract CrafterMint is
             PluginsLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == PluginsLib.TokenType.erc20) {
                 //Transfer ERC20
-                ERC20Owl(ingredient.contractAddr).mint(_crafter, ingredient.amounts[0] * craftAmount);
+                ERC20Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.amounts[0] * craftAmount);
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
                 //Pop token ids from storage
                 for (uint256 j = 0; j < craftAmount; j++) {
                     ERC721Owl(ingredient.contractAddr).mint(
-                        _crafter,
+                        _msgSender(),
                         ingredient.tokenIds[ingredient.tokenIds.length - 1]
                     );
 
@@ -440,32 +408,11 @@ contract CrafterMint is
                 for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                     amounts[j] = ingredient.amounts[j] * craftAmount;
                 }
-                ERC1155Owl(ingredient.contractAddr).mintBatch(_crafter, ingredient.tokenIds, amounts, new bytes(0));
+                ERC1155Owl(ingredient.contractAddr).mintBatch(_msgSender(), ingredient.tokenIds, amounts, new bytes(0));
             }
         }
 
-        emit RecipeCraft(craftAmount, craftableAmount, _crafter);
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
-    }
-
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
+        emit RecipeCraft(craftAmount, craftableAmount, _msgSender());
     }
 
     /**
