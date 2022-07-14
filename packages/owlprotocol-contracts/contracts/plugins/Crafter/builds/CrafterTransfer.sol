@@ -317,30 +317,13 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
         emit RecipeUpdate(craftableAmount);
     }
 
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
-        _craft(craftAmount, _inputERC721Ids, _msgSender());
-    }
-
-    function craft(
-        uint96 craftAmount,
-        uint256[][] calldata _inputERC721Ids,
-        address _crafter
-    ) external onlyRole(ROUTER_ROLE) {
-        _craft(craftAmount, _inputERC721Ids, _crafter);
-    }
-
     /**
      * @notice Craft {craftAmount}
      * @dev Used to craft. Consumes inputs and transfers outputs. Can only be called by forwarder contracts.
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
-     * @param _crafter the address of the client requesting to craft
      */
-    function _craft(
-        uint96 craftAmount,
-        uint256[][] calldata _inputERC721Ids,
-        address _crafter
-    ) internal {
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
         // Requires
         require(craftAmount > 0, 'CrafterTransfer: craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'CrafterTransfer: Not enough resources to craft!');
@@ -360,7 +343,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                     //Transfer ERC20
                     SafeERC20Upgradeable.safeTransferFrom(
                         IERC20Upgradeable(ingredient.contractAddr),
-                        _crafter,
+                        _msgSender(),
                         burnAddress,
                         ingredient.amounts[0] * craftAmount
                     );
@@ -368,7 +351,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                     // this is unaffected, as ensured by input validations
                     //Check ERC20
                     require(
-                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_crafter) >=
+                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_msgSender()) >=
                             ingredient.amounts[0] * craftAmount,
                         'CrafterTransfer: User missing minimum token balance(s)!'
                     );
@@ -381,7 +364,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                     //Transfer ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                            _crafter,
+                            _msgSender(),
                             burnAddress,
                             currInputArr[j]
                         );
@@ -391,7 +374,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                     //Check ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _crafter,
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
                             'CrafterTransfer: User does not own token(s)!'
                         );
                         uint256 currTokenId = currInputArr[j];
@@ -413,7 +396,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                         amounts[j] = ingredient.amounts[j] * craftAmount;
                     }
                     IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                        _crafter,
+                        _msgSender(),
                         burnAddress,
                         ingredient.tokenIds,
                         amounts,
@@ -426,7 +409,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                     address[] memory accounts = new address[](ingredient.amounts.length);
                     for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                         amounts[j] = ingredient.amounts[j] * craftAmount;
-                        accounts[j] = _crafter;
+                        accounts[j] = _msgSender();
                     }
 
                     uint256[] memory balances = IERC1155Upgradeable(ingredient.contractAddr).balanceOfBatch(
@@ -446,7 +429,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                 //Transfer ERC20
                 SafeERC20Upgradeable.safeTransfer(
                     IERC20Upgradeable(ingredient.contractAddr),
-                    _crafter,
+                    _msgSender(),
                     ingredient.amounts[0] * craftAmount
                 );
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
@@ -454,7 +437,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                 for (uint256 j = 0; j < craftAmount; j++) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                         address(this),
-                        _crafter,
+                        _msgSender(),
                         ingredient.tokenIds[ingredient.tokenIds.length - 1]
                     );
 
@@ -468,7 +451,7 @@ contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155H
                 }
                 IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
                     address(this),
-                    _crafter,
+                    _msgSender(),
                     ingredient.tokenIds,
                     amounts,
                     new bytes(0)
