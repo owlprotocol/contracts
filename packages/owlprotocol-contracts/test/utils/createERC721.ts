@@ -1,6 +1,6 @@
 import { TestingSigner, loadSignersSmart, loadForwarder } from '@owlprotocol/contract-helpers-opengsn/src';
 import { ethers } from 'hardhat';
-import { FactoryERC721 } from '../../typechain';
+import { FactoryERC721, ERC721 } from '../../typechain';
 
 // Creates + returns dummy ERC721 tokens for use in testing
 export async function createERC721(tokens = 1, mintAmount = 10, signer?: TestingSigner) {
