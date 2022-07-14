@@ -15,7 +15,6 @@ import {
 
 import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone, deployCloneWrap } from '../utils';
 import { BigNumber } from 'ethers';
-import { Web3Provider } from '@ethersproject/providers';
 import {
     itGSN,
     itNoGSN,
@@ -44,7 +43,7 @@ describe('EnglishAuction.sol No Fee', function () {
     let ERC1167Factory: ERC1167Factory;
 
     let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
-    let web3provider: Web3Provider;
+    const tokenId = 0;
 
     before(async () => {
         //Setup Test Environment
@@ -97,7 +96,7 @@ describe('EnglishAuction.sol No Fee', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     2,
@@ -111,11 +110,10 @@ describe('EnglishAuction.sol No Fee', function () {
             );
 
             //Set Approval ERC721 for sale
-            await testNFT.connect(seller).approve(EnglishAuctionAddress, 1);
+            await testNFT.connect(seller).approve(EnglishAuctionAddress, tokenId);
             await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);
             await acceptableERC20Token.connect(bidder2).approve(EnglishAuctionAddress, 100);
             await acceptableERC20Token.connect(bidder3).approve(EnglishAuctionAddress, 100);
-
             // Transfer ERC20s to bidders
             await acceptableERC20Token.connect(seller).transfer(bidder1.address, 100);
             await acceptableERC20Token.connect(seller).transfer(bidder2.address, 100);
@@ -141,7 +139,7 @@ describe('EnglishAuction.sol No Fee', function () {
                         {
                             token: TokenType.erc721,
                             contractAddr: testNFT.address,
-                            tokenId: 1,
+                            tokenId,
                         },
                         acceptableERC20Token.address,
                         2,
@@ -625,6 +623,7 @@ describe('EnglishAuction.sol 20% Fee', function () {
         //define setup
 
         let testNFT: ERC721;
+        const tokenId = 0;
         let acceptableERC20Token: ERC20;
         let EnglishAuctionAddress: string;
         let auction: EnglishAuction;
@@ -652,7 +651,7 @@ describe('EnglishAuction.sol 20% Fee', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     2,
@@ -666,7 +665,7 @@ describe('EnglishAuction.sol 20% Fee', function () {
             );
 
             //Set Approval ERC721 for sale
-            await testNFT.connect(seller).approve(EnglishAuctionAddress, 1);
+            await testNFT.connect(seller).approve(EnglishAuctionAddress, tokenId);
             await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);
             await acceptableERC20Token.connect(bidder2).approve(EnglishAuctionAddress, 100);
             await acceptableERC20Token.connect(bidder3).approve(EnglishAuctionAddress, 100);
@@ -695,7 +694,7 @@ describe('EnglishAuction.sol 20% Fee', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     2,

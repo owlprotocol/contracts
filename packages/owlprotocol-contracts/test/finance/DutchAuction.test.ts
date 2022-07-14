@@ -14,9 +14,7 @@ import {
 } from '../../typechain';
 
 import { createERC20, createERC721, createERC1155, deployCloneWrap, predictDeployClone } from '../utils';
-import { BigNumber, ContractTransaction } from 'ethers';
-import { Web3Provider } from '@ethersproject/providers';
-import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
+import { BigNumber } from 'ethers';
 import {
     loadSignersSmart,
     loadEnvironment,
@@ -29,7 +27,7 @@ enum TokenType {
     erc1155,
 }
 
-describe.skip('DutchAuction.sol No Fees', function () {
+describe('DutchAuction.sol No Fees', function () {
     //Extra time
     this.timeout(100000);
     let seller: TestingSigner;
@@ -63,6 +61,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
     describeNoGSN('Linear Auction Tests - No GSN', () => {
         //define setup
         let testNFT: ERC721;
+        const tokenId = 0;
         let acceptableERC20Token: ERC20;
         let DutchAuctionAddress: string;
 
@@ -92,7 +91,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     100, //in "eth"
@@ -107,7 +106,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
             );
 
             //Set Approval ERC721 for sale
-            await testNFT.connect(seller).approve(DutchAuctionAddress, 1);
+            await testNFT.connect(seller).approve(DutchAuctionAddress, tokenId);
 
             await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('100.0', 18));
             await acceptableERC20Token.connect(bidder1).approve(seller.address, parseUnits('100.0', 18));
@@ -133,7 +132,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
                         {
                             token: TokenType.erc721,
                             contractAddr: testNFT.address,
-                            tokenId: 1,
+                            tokenId,
                         },
                         acceptableERC20Token.address,
                         100, //in "eth"
@@ -253,6 +252,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
     describe('Nonlinear Auction Tests', () => {
         //define setup
         let testNFT: ERC721;
+        const tokenId = 0;
         let acceptableERC20Token: ERC20;
         let DutchAuctionAddress: string;
         let auction: DutchAuction;
@@ -281,7 +281,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     100, //in "eth"
@@ -296,7 +296,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
             );
 
             //Set Approval ERC721 for sale
-            await testNFT.connect(seller).approve(DutchAuctionAddress, 1);
+            await testNFT.connect(seller).approve(DutchAuctionAddress, tokenId);
             await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('100.0', 18));
             await acceptableERC20Token.connect(bidder1).approve(seller.address, parseUnits('100.0', 18));
             await acceptableERC20Token.connect(bidder1).approve(owner.address, parseUnits('100.0', 18));
@@ -320,7 +320,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     100, //in "eth"
@@ -577,7 +577,7 @@ describe.skip('DutchAuction.sol No Fees', function () {
     });
 });
 
-describe.skip('DutchAuction.sol 10% Fees', function () {
+describe.skip('TODO - IM BROKEN PLEASE FIX ME -------- HELLLLPPPPPPPPP - DutchAuction.sol 10% Fees', function () {
     //Extra time
     this.timeout(100000);
     let seller: TestingSigner;
@@ -611,6 +611,7 @@ describe.skip('DutchAuction.sol 10% Fees', function () {
     describe('Linear Auction Tests', () => {
         //define setup
         let testNFT: ERC721;
+        const tokenId = 0;
         let acceptableERC20Token: ERC20;
         let DutchAuctionAddress: string;
         let auction: DutchAuction;
@@ -641,7 +642,7 @@ describe.skip('DutchAuction.sol 10% Fees', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     100, //in "eth"
@@ -656,7 +657,7 @@ describe.skip('DutchAuction.sol 10% Fees', function () {
             );
 
             //Set Approval ERC721 for sale
-            await testNFT.connect(seller).approve(DutchAuctionAddress, 1);
+            await testNFT.connect(seller).approve(DutchAuctionAddress, tokenId);
             await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('100.0', 18));
             await acceptableERC20Token.connect(bidder1).approve(seller.address, parseUnits('100.0', 18));
             await acceptableERC20Token.connect(bidder1).approve(owner.address, parseUnits('100.0', 18));
@@ -678,7 +679,7 @@ describe.skip('DutchAuction.sol 10% Fees', function () {
                         {
                             token: TokenType.erc721,
                             contractAddr: testNFT.address,
-                            tokenId: 1,
+                            tokenId,
                         },
                         acceptableERC20Token.address,
                         100, //in "eth"
@@ -718,7 +719,7 @@ describe.skip('DutchAuction.sol 10% Fees', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     90, //in "eth"
@@ -732,7 +733,7 @@ describe.skip('DutchAuction.sol 10% Fees', function () {
                 ERC1167Factory,
             );
 
-            await testNFT.connect(seller).approve(DutchAuctionAddress, 1);
+            await testNFT.connect(seller).approve(DutchAuctionAddress, tokenId);
             await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('100.0', 18));
             await acceptableERC20Token.connect(bidder1).approve(seller.address, parseUnits('100.0', 18));
             await acceptableERC20Token.connect(bidder1).approve(owner.address, parseUnits('100.0', 18));
@@ -745,7 +746,7 @@ describe.skip('DutchAuction.sol 10% Fees', function () {
                     {
                         token: TokenType.erc721,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId,
                     },
                     acceptableERC20Token.address,
                     90, //in "eth"

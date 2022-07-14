@@ -13,7 +13,7 @@ import {
 import { deployClone } from '../utils';
 import { expect } from 'chai';
 
-describe.only('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async () => {
+describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async () => {
     let owlAdmin: SignerWithAddress;
     let gameDev: SignerWithAddress;
     let forwarder: SignerWithAddress;
@@ -102,7 +102,7 @@ describe.only('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', as
     });
 
     it('upgrade beacon', async () => {
-        const { address } = await deployClone(Beacon, [owlAdmin.address, ERC721Owl.address, forwarder.address], ERC1167Factory);
+        const { address } = await deployClone(Beacon, [owlAdmin.address, ERC721Owl.address], ERC1167Factory);
 
         const beaconInst = (await ethers.getContractAt(
             'UpgradeableBeaconInitializable',
