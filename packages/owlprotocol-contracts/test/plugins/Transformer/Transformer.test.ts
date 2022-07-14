@@ -42,7 +42,7 @@ enum ConsumableType {
 enum TokenType {
     erc20,
     erc721,
-    erc1155
+    erc1155,
 }
 
 const vals = [1, 1, 1];
@@ -98,12 +98,10 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
         const { address } = await deployClone(
             ERC721OwlAttributes,
-            [adminAddress, 'n', 's', 'u', gsnForwarderAddress],
+            [adminAddress, 'n', 's', 'u', forwarder.address],
             ERC1167Factory,
             salt,
         );
-
-        console.log('1');
 
         ERC721Inst = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
 
@@ -603,7 +601,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    forwarder.address,
                 ],
                 ERC1167Factory,
                 salt,
@@ -725,108 +723,113 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
 
     describe('Check reverts', async () => {
         it('burn address is zero address', async () => {
-            await expect(deployClone(
-                transformerImpl,
-                [
-                    adminAddress,
-                    ethers.constants.AddressZero,
+            await expect(
+                deployClone(
+                    transformerImpl,
                     [
-                        {
-                            token: TokenType.erc721,
-                            consumableType: ConsumableType.NTime,
-                            contractAddr: inputERC721.address,
-                            amounts: [2],
-                            tokenIds: [],
-                        },
+                        adminAddress,
+                        ethers.constants.AddressZero,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.NTime,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        forwarder.address,
                     ],
-                    [250, 252, 254],
-                    [
-                        {
-                            geneTransformType: GeneTransformType.add, //add
-                            value: 1,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 0,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.set,
-                            value: 1,
-                        },
-                    ],
-                    ERC721Inst.address,
-                    forwarder.address
-                ],
-                ERC1167Factory,
-                salt,
-            )).to.be.revertedWith('Transformer: burn address must not be 0');
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: burn address must not be 0');
         });
         it('inputs length is empty', async () => {
-            await expect(deployClone(
-                transformerImpl,
-                [
-                    adminAddress,
-                    burnAddress,
+            await expect(
+                deployClone(
+                    transformerImpl,
                     [
+                        adminAddress,
+                        burnAddress,
+                        [],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        forwarder.address,
                     ],
-                    [250, 252, 254],
-                    [
-                        {
-                            geneTransformType: GeneTransformType.add, //add
-                            value: 1,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 0,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.set,
-                            value: 1,
-                        },
-                    ],
-                    ERC721Inst.address,
-                    forwarder.address
-                ],
-                ERC1167Factory,
-                salt,
-            )).to.be.revertedWith('Transformer: A crafting input must be given!');
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: A crafting input must be given!');
         });
         it('genes length different from modifications length', async () => {
-            await expect(deployClone(
-                transformerImpl,
-                [
-                    adminAddress,
-                    burnAddress,
+            await expect(
+                deployClone(
+                    transformerImpl,
                     [
-                        {
-                            token: TokenType.erc721,
-                            consumableType: ConsumableType.NTime,
-                            contractAddr: inputERC721.address,
-                            amounts: [2],
-                            tokenIds: [],
-                        },
+                        adminAddress,
+                        burnAddress,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.NTime,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [210, 250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        forwarder.address,
                     ],
-                    [210, 250, 252, 254],
-                    [
-                        {
-                            geneTransformType: GeneTransformType.add, //add
-                            value: 1,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 0,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.set,
-                            value: 1,
-                        },
-                    ],
-                    ERC721Inst.address,
-                    forwarder.address
-                ],
-                ERC1167Factory,
-                salt,
-            )).to.be.revertedWith('Transformer: length of genes must be the same as length of modifications');
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: length of genes must be the same as length of modifications');
         });
 
         it('caller of unlock not owner of tokenid', async () => {
@@ -860,7 +863,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    forwarder.address,
                 ],
                 ERC1167Factory,
                 salt,
@@ -868,45 +871,49 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
 
             const transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
 
-            await expect(transformerInst.connect(signer2).transform(0, [[]])).to.be.revertedWith('Transformer: you are not the owner of that ID!');
+            await expect(transformerInst.connect(signer2).transform(0, [[]])).to.be.revertedWith(
+                'Transformer: you are not the owner of that ID!',
+            );
         });
 
         it('input ingredient ERC721 with consumable type undefined', async () => {
-            await expect(deployClone(
-                transformerImpl,
-                [
-                    adminAddress,
-                    burnAddress,
+            await expect(
+                deployClone(
+                    transformerImpl,
                     [
-                        {
-                            token: TokenType.erc721,
-                            consumableType: ConsumableType.unaffected,
-                            contractAddr: inputERC721.address,
-                            amounts: [2],
-                            tokenIds: [],
-                        },
+                        adminAddress,
+                        burnAddress,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.unaffected,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        forwarder.address,
                     ],
-                    [250, 252, 254],
-                    [
-                        {
-                            geneTransformType: GeneTransformType.add, //add
-                            value: 1,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 0,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.set,
-                            value: 1,
-                        },
-                    ],
-                    ERC721Inst.address,
-                    forwarder.address
-                ],
-                ERC1167Factory,
-                salt,
-            )).to.be.revertedWith('PluginsLib: ERC721 consumableType not burned or NTime');
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('PluginsLib: ERC721 consumableType not burned or NTime');
         });
         it('user doesnt have NTime token', async () => {
             ERC721Inst.transferFrom(signer1.address, signer2.address, 0);
@@ -940,18 +947,19 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    forwarder.address,
                 ],
                 ERC1167Factory,
                 salt,
             );
 
             const transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
-            await expect(transformerInst.connect(signer2).transform(0, [[0]])).to.be.revertedWith('Transformer: User does not own token(s)!');
+            await expect(transformerInst.connect(signer2).transform(0, [[0]])).to.be.revertedWith(
+                'Transformer: User does not own token(s)!',
+            );
         });
     });
     it('beacon proxy initialization', async () => {
-
         const beaconFactory = (await ethers.getContractFactory(
             'UpgradeableBeaconInitializable',
         )) as UpgradeableBeaconInitializable__factory;
@@ -962,45 +970,53 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
         )) as BeaconProxyInitializable__factory;
         const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
 
-        const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, transformerImpl.address, forwarder.address]);
+        const { address: beaconAddr } = await deployClone(beaconImpl, [
+            signer1.address,
+            transformerImpl.address,
+            forwarder.address,
+        ]);
         //@ts-ignore
-        const data = transformerImpl.interface.encodeFunctionData('proxyInitialize',
+        const data = transformerImpl.interface.encodeFunctionData('proxyInitialize', [
+            adminAddress,
+            burnAddress,
             [
-                adminAddress,
-                burnAddress,
-                [
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.NTime,
-                        contractAddr: inputERC721.address,
-                        amounts: [2],
-                        tokenIds: [],
-                    },
-                ],
-                [250, 252, 254],
-                [
-                    {
-                        geneTransformType: GeneTransformType.add, //add
-                        value: 1,
-                    },
-                    {
-                        geneTransformType: GeneTransformType.mult,
-                        value: 0,
-                    },
-                    {
-                        geneTransformType: GeneTransformType.set,
-                        value: 1,
-                    },
-                ],
-                ERC721Inst.address,
-                forwarder.address
+                {
+                    token: TokenType.erc721,
+                    consumableType: ConsumableType.NTime,
+                    contractAddr: inputERC721.address,
+                    amounts: [2],
+                    tokenIds: [],
+                },
             ],
-        );
-        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data, forwarder.address]);
+            [250, 252, 254],
+            [
+                {
+                    geneTransformType: GeneTransformType.add, //add
+                    value: 1,
+                },
+                {
+                    geneTransformType: GeneTransformType.mult,
+                    value: 0,
+                },
+                {
+                    geneTransformType: GeneTransformType.set,
+                    value: 1,
+                },
+            ],
+            ERC721Inst.address,
+            forwarder.address,
+        ]);
+        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [
+            signer1.address,
+            beaconAddr,
+            data,
+            forwarder.address,
+        ]);
         const contrInst = (await ethers.getContractAt('Transformer', beaconProxyAddr)) as Transformer;
 
         //transformer doesn't have only dna role
-        await expect(contrInst.transform(0, [[]])).to.be.revertedWith(`AccessControl: account ${beaconProxyAddr.toLowerCase()} is missing role 0xd81e3d287dc343b6afbd738eeed3ca0a2b77921a595a475a4e43ed25b38ceb2f`);
-    })
-
+        await expect(contrInst.transform(0, [[]])).to.be.revertedWith(
+            `AccessControl: account ${beaconProxyAddr.toLowerCase()} is missing role 0xd81e3d287dc343b6afbd738eeed3ca0a2b77921a595a475a4e43ed25b38ceb2f`,
+        );
+    });
 });
