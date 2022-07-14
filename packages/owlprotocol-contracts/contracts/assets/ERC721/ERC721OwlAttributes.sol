@@ -45,12 +45,12 @@ contract ERC721OwlAttributes is ERC721Owl {
         address _forwarder
     ) internal onlyInitializing {
         __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder);
-        __ERC721OwlAttributes_init_unchained(_admin);
+        _grantRole(DNA_ROLE, _admin);
+
+        __ERC721OwlAttributes_init_unchained();
     }
 
-    function __ERC721OwlAttributes_init_unchained(address _admin) internal onlyInitializing {
-        _grantRole(DNA_ROLE, _admin);
-    }
+    function __ERC721OwlAttributes_init_unchained() internal onlyInitializing {}
 
     /**
      * @notice Must have DEFAULT_ADMIN_ROLE
