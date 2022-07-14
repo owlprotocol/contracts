@@ -3,11 +3,10 @@ pragma solidity ^0.8.4;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
-contract ERC20Owl is BaseRelayRecipient, ERC20Upgradeable, ERC20BurnableUpgradeable, AccessControlUpgradeable {
+import '../../OwlBase.sol';
+
+contract ERC20Owl is OwlBase, ERC20BurnableUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
     // Specification + ERC165
@@ -47,14 +46,12 @@ contract ERC20Owl is BaseRelayRecipient, ERC20Upgradeable, ERC20BurnableUpgradea
     ) internal onlyInitializing {
         __ERC20Burnable_init();
         __AccessControl_init();
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(MINTER_ROLE, _admin);
         __ERC20Owl_init_unchained(_admin, _forwarder);
     }
 
-    function __ERC20Owl_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(MINTER_ROLE, _admin);
-        _setTrustedForwarder(_forwarder);
-    }
+    function __ERC20Owl_init_unchained(address _admin, address _forwarder) internal onlyInitializing {}
 
     /**
      * @notice Must have DEFAULT_ADMIN_ROLE
@@ -85,18 +82,11 @@ contract ERC20Owl is BaseRelayRecipient, ERC20Upgradeable, ERC20BurnableUpgradea
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
+    function _msgSender() internal view override(OwlBase, ContextUpgradeable) returns (address) {
+        return OwlBase._msgSender();
     }
 
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
+    function _msgData() internal view virtual override(OwlBase, ContextUpgradeable) returns (bytes calldata) {
+        return OwlBase._msgData();
     }
 }

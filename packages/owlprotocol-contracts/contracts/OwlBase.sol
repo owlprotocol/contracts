@@ -3,11 +3,12 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
 /**
  * @dev Base for all OWLPROTOCOL contracts
  */
-abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
+abstract contract OwlBase is UUPSUpgradeable, ContextUpgradeable, AccessControlUpgradeable {
     bytes32 internal constant ROUTER_ROLE = keccak256('ROUTER_ROLE');
 
     function __OwlBase_init(address _admin, address _forwarder) internal onlyInitializing {
