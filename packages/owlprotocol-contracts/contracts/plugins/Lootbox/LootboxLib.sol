@@ -6,7 +6,6 @@ pragma solidity ^0.8.0;
  *
  */
 library LootboxLib {
-    // Token Types
     enum TokenType {
         erc20,
         erc721,
@@ -17,6 +16,6 @@ library LootboxLib {
         TokenType token;
         address contractAddr;
         uint256 tokenId;
-        uint256 amount; //erc 20 and 1155 
+        uint256 amount; //erc 20 and 1155
     }
 }

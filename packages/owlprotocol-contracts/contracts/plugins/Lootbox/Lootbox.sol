@@ -28,7 +28,6 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
              Types
     **********************/
 
-    address public admin;
     address[] public crafterContracts;
     uint256[] public probabilities;
     address public vrfBeacon;
@@ -80,31 +79,25 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
         address _vrfBeacon,
         address _forwarder
     ) internal onlyInitializing {
-        __Ownable_init();
-        _transferOwnership(_admin);
+        __OwlBase_init(_admin, _forwarder);
 
-        __Lootbox_init_unchained(_admin, _crafterContracts, _probabilities, _vrfBeacon, _forwarder);
+        __Lootbox_init_unchained(_admin, _crafterContracts, _probabilities, _vrfBeacon);
     }
 
     function __Lootbox_init_unchained(
         address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities,
-        address _vrfBeacon,
-        address _forwarder
+        address _vrfBeacon
     ) internal onlyInitializing {
         require(
             _probabilities.length == _crafterContracts.length,
             'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!'
         );
 
-        admin = _admin;
         crafterContracts = _crafterContracts;
         probabilities = _probabilities;
         vrfBeacon = _vrfBeacon;
-
-        //set trusted forwarder for open gsn
-        _setTrustedForwarder(_forwarder);
     }
 
     /**********************
@@ -190,7 +183,7 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
         public
         view
         virtual
-        override(ERC1155ReceiverUpgradeable, OwlBase)
+        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
