@@ -26,7 +26,7 @@ contract FactoryERC721 is BaseRelayRecipient, ERC721 {
     function mintTokens(uint256 count) public {
         // Loop and assign tokens
         for (uint256 i = 0; i < count; i++) {
-            _mint(_msgSender(), ++lastTokenId);
+            _mint(_msgSender(), lastTokenId++);
         }
     }
 

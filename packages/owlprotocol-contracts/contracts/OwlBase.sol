@@ -20,6 +20,14 @@ abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
     function __OwlBase_init_unchained(address _admin, address _forwarder) internal onlyInitializing {}
 
     /**
+     * @notice **REQUIRED FOR GSN**
+     * @dev Return trusted forwarder status.
+     */
+    function isTrustedForwarder(address forwarder) public view returns (bool) {
+        return hasRole(ROUTER_ROLE, forwarder);
+    }
+
+    /**
      * @notice Must have owner role
      * @dev Grants ROUTER_ROLE to {a}
      * @param to address to

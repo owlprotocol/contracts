@@ -17,7 +17,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
  *
  * _Available since v3.4._
  */
-contract BeaconProxyInitializable is Initializable, ProxyUpgradeable, ERC1967UpgradeUpgradeable, OwnableUpgradeable {
+contract BeaconProxyInitializable is ProxyUpgradeable, ERC1967UpgradeUpgradeable, OwnableUpgradeable {
     /**
      * @dev Initializes the proxy with `beacon`.
      *
