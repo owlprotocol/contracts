@@ -2,12 +2,13 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@opengsn/contracts/src/BaseRelayRecipient.sol';
 
 /**
  * @dev **INTERNAL TOOL**
  * Used to factory ERC721 NFTs for unit testing
  */
-contract FactoryERC721 is ERC721 {
+contract FactoryERC721 is BaseRelayRecipient, ERC721 {
     // ID Tracking
     uint256 lastTokenId = 0;
 
@@ -25,7 +26,7 @@ contract FactoryERC721 is ERC721 {
     function mintTokens(uint256 count) public {
         // Loop and assign tokens
         for (uint256 i = 0; i < count; i++) {
-            _mint(msg.sender, lastTokenId++);
+            _mint(_msgSender(), lastTokenId++);
         }
     }
 
@@ -51,5 +52,25 @@ contract FactoryERC721 is ERC721 {
 
     function exists(uint256 tokenId) external view returns (bool) {
         return _exists(tokenId);
+    }
+
+    // Used for testing ONLY
+    function setTrustedForwarder(address forwarder) public {
+        _setTrustedForwarder(forwarder);
+    }
+
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(BaseRelayRecipient, Context) returns (address sender) {
+        sender = BaseRelayRecipient._msgSender();
+    }
+
+    function _msgData() internal view override(BaseRelayRecipient, Context) returns (bytes calldata) {
+        return BaseRelayRecipient._msgData();
+    }
+
+    function versionRecipient() external pure override returns (string memory) {
+        return '2.2.6';
     }
 }

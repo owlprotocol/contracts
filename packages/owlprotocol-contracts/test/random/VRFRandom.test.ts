@@ -9,7 +9,7 @@ const coordinatorAddr = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
 const EPOCH_PERIOD = 10;
 const subId = 8101;
 
-describe.only('VRFRandom beacon', () => {
+describe('VRFRandom beacon', () => {
     let VRFBeacon: VRFBeacon;
     let signer1: SignerWithAddress;
 

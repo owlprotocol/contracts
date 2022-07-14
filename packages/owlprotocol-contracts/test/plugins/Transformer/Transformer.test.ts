@@ -1,4 +1,3 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import {
@@ -20,6 +19,7 @@ import { createERC1155, createERC20, createERC721, deployClone, encodeGenesUint2
 import { pick } from 'lodash';
 import { BigNumber } from 'ethers';
 import { parseUnits } from 'ethers/lib/utils';
+import { loadSignersSmart, loadForwarder, TestingSigner } from '@owlprotocol/contract-helpers-opengsn/src';
 
 const salt = ethers.utils.formatBytes32String('1');
 
@@ -40,31 +40,37 @@ enum ConsumableType {
 enum TokenType {
     erc20,
     erc721,
-    erc1155
+    erc1155,
 }
 
 const vals = [1, 1, 1];
 const genes = [250, 252, 254];
 
-describe.only('Transformer.sol; genes [2, 4, 6]', () => {
+describe('Transformer.sol; genes [2, 4, 6]', () => {
     let adminAddress: string;
     let burnAddress: string;
     let inputERC20: FactoryERC20;
     let inputERC721: FactoryERC721;
     let inputERC1155: FactoryERC1155;
 
-    let signer1: SignerWithAddress;
-    let signer2: SignerWithAddress;
-    let burnSigner: SignerWithAddress;
-    let forwarder: SignerWithAddress;
+    let signer1: TestingSigner;
+    let signer2: TestingSigner;
+    let burnSigner: TestingSigner;
+    let forwarder: TestingSigner;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
 
     let transformerImpl: Transformer;
     let ERC721Inst: ERC721OwlAttributes;
+
+    let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
+
     beforeEach(async () => {
-        [signer1, signer2, burnSigner, forwarder] = await ethers.getSigners();
+        //Setup Test Environment
+        gsnForwarderAddress = await loadForwarder(ethers);
+
+        [signer1, signer2, burnSigner] = await loadSignersSmart(ethers);
         adminAddress = signer1.address;
         burnAddress = burnSigner.address;
 
@@ -81,11 +87,19 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
 
         ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
-        const { address } = await deployClone(ERC721OwlAttributes, [adminAddress, 'n', 's', 'u', forwarder.address], ERC1167Factory, salt);
+        const { address } = await deployClone(
+            ERC721OwlAttributes,
+            [adminAddress, 'n', 's', 'u', gsnForwarderAddress],
+            ERC1167Factory,
+            salt,
+        );
 
         ERC721Inst = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
-        ERC721Inst.connect(signer1).mint(signer1.address, encodeGenesUint256(vals, genes));
+
+        await ERC721Inst.connect(signer1).mint(signer1.address, encodeGenesUint256(vals, genes));
+
         expect(await ERC721Inst.ownerOf(0)).to.equal(signer1.address);
+
         //await expect(ERC721Inst.ownerOf(63)).to.be.revertedWith('ERC721: owner query for nonexistent token');
     });
 
@@ -123,11 +137,12 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
             );
+
             await ERC721Inst.grantDna(address);
 
             transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
@@ -188,7 +203,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -273,7 +288,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -353,7 +368,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -443,7 +458,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -507,7 +522,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -572,7 +587,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -636,7 +651,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -694,108 +709,113 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
 
     describe('Check reverts', async () => {
         it('burn address is zero address', async () => {
-            await expect(deployClone(
-                transformerImpl,
-                [
-                    adminAddress,
-                    ethers.constants.AddressZero,
+            await expect(
+                deployClone(
+                    transformerImpl,
                     [
-                        {
-                            token: TokenType.erc721,
-                            consumableType: ConsumableType.NTime,
-                            contractAddr: inputERC721.address,
-                            amounts: [2],
-                            tokenIds: [],
-                        },
+                        adminAddress,
+                        ethers.constants.AddressZero,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.NTime,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        gsnForwarderAddress,
                     ],
-                    [250, 252, 254],
-                    [
-                        {
-                            geneTransformType: GeneTransformType.add, //add
-                            value: 1,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 0,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.set,
-                            value: 1,
-                        },
-                    ],
-                    ERC721Inst.address,
-                    forwarder.address
-                ],
-                ERC1167Factory,
-                salt,
-            )).to.be.revertedWith('Transformer: burn address must not be 0');
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: burn address must not be 0');
         });
         it('inputs length is empty', async () => {
-            await expect(deployClone(
-                transformerImpl,
-                [
-                    adminAddress,
-                    burnAddress,
+            await expect(
+                deployClone(
+                    transformerImpl,
                     [
+                        adminAddress,
+                        burnAddress,
+                        [],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        gsnForwarderAddress,
                     ],
-                    [250, 252, 254],
-                    [
-                        {
-                            geneTransformType: GeneTransformType.add, //add
-                            value: 1,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 0,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.set,
-                            value: 1,
-                        },
-                    ],
-                    ERC721Inst.address,
-                    forwarder.address
-                ],
-                ERC1167Factory,
-                salt,
-            )).to.be.revertedWith('Transformer: A crafting input must be given!');
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: A crafting input must be given!');
         });
         it('genes length different from modifications length', async () => {
-            await expect(deployClone(
-                transformerImpl,
-                [
-                    adminAddress,
-                    burnAddress,
+            await expect(
+                deployClone(
+                    transformerImpl,
                     [
-                        {
-                            token: TokenType.erc721,
-                            consumableType: ConsumableType.NTime,
-                            contractAddr: inputERC721.address,
-                            amounts: [2],
-                            tokenIds: [],
-                        },
+                        adminAddress,
+                        burnAddress,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.NTime,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [210, 250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        gsnForwarderAddress,
                     ],
-                    [210, 250, 252, 254],
-                    [
-                        {
-                            geneTransformType: GeneTransformType.add, //add
-                            value: 1,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 0,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.set,
-                            value: 1,
-                        },
-                    ],
-                    ERC721Inst.address,
-                    forwarder.address
-                ],
-                ERC1167Factory,
-                salt,
-            )).to.be.revertedWith('Transformer: length of genes must be the same as length of modifications');
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: length of genes must be the same as length of modifications');
         });
 
         it('caller of unlock not owner of tokenid', async () => {
@@ -829,7 +849,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -837,45 +857,49 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
 
             const transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
 
-            await expect(transformerInst.connect(signer2).transform(0, [[]])).to.be.revertedWith('Transformer: you are not the owner of that ID!');
+            await expect(transformerInst.connect(signer2).transform(0, [[]])).to.be.revertedWith(
+                'Transformer: you are not the owner of that ID!',
+            );
         });
 
         it('input ingredient ERC721 with consumable type undefined', async () => {
-            await expect(deployClone(
-                transformerImpl,
-                [
-                    adminAddress,
-                    burnAddress,
+            await expect(
+                deployClone(
+                    transformerImpl,
                     [
-                        {
-                            token: TokenType.erc721,
-                            consumableType: ConsumableType.unaffected,
-                            contractAddr: inputERC721.address,
-                            amounts: [2],
-                            tokenIds: [],
-                        },
+                        adminAddress,
+                        burnAddress,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.unaffected,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        gsnForwarderAddress,
                     ],
-                    [250, 252, 254],
-                    [
-                        {
-                            geneTransformType: GeneTransformType.add, //add
-                            value: 1,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.mult,
-                            value: 0,
-                        },
-                        {
-                            geneTransformType: GeneTransformType.set,
-                            value: 1,
-                        },
-                    ],
-                    ERC721Inst.address,
-                    forwarder.address
-                ],
-                ERC1167Factory,
-                salt,
-            )).to.be.revertedWith('PluginsLib: ERC721 consumableType not burned or NTime');
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('PluginsLib: ERC721 consumableType not burned or NTime');
         });
         it('user doesnt have NTime token', async () => {
             ERC721Inst.transferFrom(signer1.address, signer2.address, 0);
@@ -909,18 +933,19 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
-                    forwarder.address
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
             );
 
             const transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
-            await expect(transformerInst.connect(signer2).transform(0, [[0]])).to.be.revertedWith('Transformer: User does not own token(s)!');
+            await expect(transformerInst.connect(signer2).transform(0, [[0]])).to.be.revertedWith(
+                'Transformer: User does not own token(s)!',
+            );
         });
     });
     it('beacon proxy initialization', async () => {
-
         const beaconFactory = (await ethers.getContractFactory(
             'UpgradeableBeaconInitializable',
         )) as UpgradeableBeaconInitializable__factory;
@@ -931,45 +956,44 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
         )) as BeaconProxyInitializable__factory;
         const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
 
-        const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, transformerImpl.address, forwarder.address]);
+        const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, transformerImpl.address]);
         //@ts-ignore
-        const data = transformerImpl.interface.encodeFunctionData('proxyInitialize',
+        const data = transformerImpl.interface.encodeFunctionData('proxyInitialize', [
+            adminAddress,
+            burnAddress,
             [
-                adminAddress,
-                burnAddress,
-                [
-                    {
-                        token: TokenType.erc721,
-                        consumableType: ConsumableType.NTime,
-                        contractAddr: inputERC721.address,
-                        amounts: [2],
-                        tokenIds: [],
-                    },
-                ],
-                [250, 252, 254],
-                [
-                    {
-                        geneTransformType: GeneTransformType.add, //add
-                        value: 1,
-                    },
-                    {
-                        geneTransformType: GeneTransformType.mult,
-                        value: 0,
-                    },
-                    {
-                        geneTransformType: GeneTransformType.set,
-                        value: 1,
-                    },
-                ],
-                ERC721Inst.address,
-                forwarder.address
+                {
+                    token: TokenType.erc721,
+                    consumableType: ConsumableType.NTime,
+                    contractAddr: inputERC721.address,
+                    amounts: [2],
+                    tokenIds: [],
+                },
             ],
-        );
-        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data, forwarder.address]);
+            [250, 252, 254],
+            [
+                {
+                    geneTransformType: GeneTransformType.add, //add
+                    value: 1,
+                },
+                {
+                    geneTransformType: GeneTransformType.mult,
+                    value: 0,
+                },
+                {
+                    geneTransformType: GeneTransformType.set,
+                    value: 1,
+                },
+            ],
+            ERC721Inst.address,
+            gsnForwarderAddress,
+        ]);
+        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data]);
         const contrInst = (await ethers.getContractAt('Transformer', beaconProxyAddr)) as Transformer;
 
         //transformer doesn't have only dna role
-        await expect(contrInst.transform(0, [[]])).to.be.revertedWith(`AccessControl: account ${beaconProxyAddr.toLowerCase()} is missing role 0xd81e3d287dc343b6afbd738eeed3ca0a2b77921a595a475a4e43ed25b38ceb2f`);
-    })
-
+        await expect(contrInst.transform(0, [[]])).to.be.revertedWith(
+            `AccessControl: account ${beaconProxyAddr.toLowerCase()} is missing role 0xd81e3d287dc343b6afbd738eeed3ca0a2b77921a595a475a4e43ed25b38ceb2f`,
+        );
+    });
 });

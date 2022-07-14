@@ -17,6 +17,8 @@ import {
 
 import { createERC20, createERC721, deployClone, predictDeployClone } from '../utils';
 import { BigNumber } from 'ethers';
+import { Web3Provider } from '@ethersproject/providers';
+import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
 
 describe('Rent.sol', function () {
     //Extra time
@@ -37,7 +39,19 @@ describe('Rent.sol', function () {
 
     let rentable: ERC721OwlExpiring;
 
+    let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
+    let gsn: TestEnvironment;
+    let web3provider: Web3Provider;
+
     before(async () => {
+        //Setup Test Environment
+        gsn = await GsnTestEnvironment.startGsn('http://localhost:8545');
+        const provider = gsn.relayProvider;
+
+        //@ts-ignore
+        web3provider = new ethers.providers.Web3Provider(provider);
+        gsnForwarderAddress = gsn.contractsDeployment.forwarderAddress as string;
+
         let name = '';
         let symbol = '';
         let baseURI = '';
@@ -70,6 +84,7 @@ describe('Rent.sol', function () {
                 name,
                 symbol,
                 baseURI,
+                gsnForwarderAddress,
             ],
             ERC1167Factory,
         );
@@ -94,7 +109,7 @@ describe('Rent.sol', function () {
             // predict address
             RentAddress = await predictDeployClone(
                 RentImplementation,
-                [admin.address, acceptableERC20Token.address, testNFT.address, shadowAddress],
+                [admin.address, acceptableERC20Token.address, testNFT.address, shadowAddress, gsnForwarderAddress],
                 ERC1167Factory,
             );
 
@@ -115,7 +130,7 @@ describe('Rent.sol', function () {
             //deploy rent
             await deployClone(
                 RentImplementation,
-                [admin.address, acceptableERC20Token.address, testNFT.address, shadowAddress],
+                [admin.address, acceptableERC20Token.address, testNFT.address, shadowAddress, gsnForwarderAddress],
                 ERC1167Factory,
             );
 

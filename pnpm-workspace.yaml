@@ -4,3 +4,4 @@ packages:
   - "packages/owlprotocol-contracts"
   - "packages/owlprotocol-contracts-docs"
   - "packages/owlprotocol-contract-helpers/opengsn"
+  - "packages/owlprotocol-contract-helpers/cloudtrees"

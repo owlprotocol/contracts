@@ -14,11 +14,9 @@ import {
     ERC1155,
 } from '../../../typechain';
 import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../../utils';
+import { loadSignersSmart, TestingSigner, loadForwarder } from '@owlprotocol/contract-helpers-opengsn/src';
 
 import { BigNumber } from 'ethers';
-import { deploy } from '@openzeppelin/hardhat-upgrades/dist/utils';
-
-const ZERO_ADDR = '0x' + '0'.repeat(40);
 
 enum ConsumableType {
     unaffected,
@@ -32,17 +30,19 @@ enum TokenType {
     erc1155,
 }
 
-describe.only('CrafterTransfer.sol', function () {
+describe('CrafterTransfer.sol', function () {
     // Extra time
     this.timeout(10000);
 
-    let owner: SignerWithAddress;
+    let owner: TestingSigner;
 
     let CrafterTransferFactory: CrafterTransfer__factory;
     let CrafterTransferImplementation: CrafterTransfer;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
+
+    let gsnForwarderAddress: string;
 
     before(async () => {
         // Launch Crafter + implementation
@@ -56,7 +56,8 @@ describe.only('CrafterTransfer.sol', function () {
         await Promise.all([ERC1167Factory.deployed(), CrafterTransferImplementation.deployed()]);
 
         // Get users
-        [owner] = await ethers.getSigners();
+        gsnForwarderAddress = await loadForwarder(ethers);
+        [owner] = await loadSignersSmart(ethers);
     });
 
     describe('1 ERC20 -> 1 ERC20', () => {
@@ -104,7 +105,7 @@ describe.only('CrafterTransfer.sol', function () {
                             tokenIds: [],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -141,7 +142,7 @@ describe.only('CrafterTransfer.sol', function () {
                             tokenIds: [],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -290,7 +291,7 @@ describe.only('CrafterTransfer.sol', function () {
                             tokenIds: [1],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -328,7 +329,7 @@ describe.only('CrafterTransfer.sol', function () {
                             tokenIds: [1],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -724,7 +725,7 @@ describe.only('CrafterTransfer.sol', function () {
                             tokenIds: [outputId],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -759,7 +760,7 @@ describe.only('CrafterTransfer.sol', function () {
                             tokenIds: [outputId],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -948,7 +949,7 @@ describe.only('CrafterTransfer.sol', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1013,7 +1014,7 @@ describe.only('CrafterTransfer.sol', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );

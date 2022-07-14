@@ -1,5 +1,5 @@
 {
-  "name": "@owlprotocol/contract-helpers-opengsn",
+  "name": "@owlprotocol/contract-helpers-cloudtrees",
   "version": "0.1.0",
   "private": false,
   "repository": {
@@ -13,13 +13,6 @@
   "peerDependencies": {
     "typechain": "^5.1.2"
   },
-  "devDependencies": {
-    "@ethersproject/providers": "^5.5.2",
-    "@nomiclabs/hardhat-ethers": "^2.0.5",
-    "@opengsn/dev": "^2.2.6",
-    "@typechain/hardhat": "^2.3.1",
-    "hardhat": "^2.9.1",
-    "signers": "link:@nomiclabs/hardhat-ethers/signers"
-  },
+  "devDependencies": {},
   "files": []
 }
