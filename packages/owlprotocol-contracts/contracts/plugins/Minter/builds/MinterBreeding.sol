@@ -17,7 +17,7 @@ import '../../../utils/RosalindDNA.sol';
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUPSUpgradeable {
+contract MinterBreeding is MinterCore {
     uint8 public constant defaultGenesNum = 8;
     uint8 public constant defaultRequiredParents = 2;
     uint256 public constant defaultBreedingCooldownSeconds = 604800; // 7 days
@@ -94,20 +94,12 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
         BreedingRules calldata breedingRules_,
         address _forwarder
     ) internal onlyInitializing {
-        __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterBreeding_init_unchained(_admin, breedingRules_, _forwarder);
+        __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterBreeding_init_unchained(breedingRules_);
     }
 
-    function __MinterBreeding_init_unchained(address _admin, BreedingRules calldata breedingRules_, address _forwarder)
-        internal
-        onlyInitializing
-    {
+    function __MinterBreeding_init_unchained(BreedingRules calldata breedingRules_) internal onlyInitializing {
         _breedingRules = breedingRules_;
-
-        //set trusted forwarder for opengsn
-        _setTrustedForwarder(_forwarder);
-
-        _transferOwnership(_admin);
     }
 
     /**
@@ -141,7 +133,7 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
         uint256 breedCooldownSeconds,
         uint8[] memory genes,
         uint256[] memory mutationRates
-    ) public onlyOwner {
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         // Breed species
         BreedingRules storage r = _breedingRules;
 
@@ -274,27 +266,6 @@ contract MinterBreeding is BaseRelayRecipient, MinterCore, OwnableUpgradeable, U
             // Copy over mutation data
             for (uint256 i = 0; i < mutationRates.length; i++) mutationRates[i] = rules.mutationRates[i];
         }
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
-    }
-
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
     }
 
     /**

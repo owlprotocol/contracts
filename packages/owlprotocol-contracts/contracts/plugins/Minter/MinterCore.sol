@@ -10,23 +10,27 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 // import './modules/MintGuard/IMintGuard.sol';
 import '../../assets/ERC721/ERC721Owl.sol';
 import '../../utils/ERC1820/ERC1820ImplementerAuthorizeAll.sol';
+import '../../OwlBase.sol';
 
 /**
  * @dev Decentralized NFT Minter contract
  *
  */
-abstract contract MinterCore is Initializable, ERC165, ERC1820ImplementerAuthorizeAll {
+abstract contract MinterCore is OwlBase {
     address public mintFeeToken;
     address public mintFeeAddress;
     uint256 public mintFeeAmount;
     address public nftContractAddr;
 
     function __MinterCore_init(
+        address _admin,
         address _mintFeeToken,
         address _mintFeeAddress,
         uint256 _mintFeeAmount,
-        address _nftContractAddr
+        address _nftContractAddr,
+        address _forwarder
     ) internal onlyInitializing {
+        __OwlBase_init(_admin, _forwarder);
         __MinterCore_init_unchained(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
     }
 
