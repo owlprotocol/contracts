@@ -9,13 +9,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
-
+import '../OwlBase.sol';
 import '../assets/ERC721/ERC721OwlExpiring.sol';
 
 /**
@@ -27,7 +21,7 @@ import '../assets/ERC721/ERC721OwlExpiring.sol';
  * is great for allowing owners of NFTs to earn income by renting out their assets and incentivizes renters to get a
  * chance to temporarily own a cool NFT.
  */
-contract Rent is BaseRelayRecipient, ERC721HolderUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract Rent is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Rent/', version)));
@@ -112,24 +106,21 @@ contract Rent is BaseRelayRecipient, ERC721HolderUpgradeable, OwnableUpgradeable
         address _shadowAddr,
         address _forwarder
     ) internal onlyInitializing {
-        _transferOwnership(_admin);
-        __Rent_init_unchained(_admin, _acceptableToken, _contractAddr, _shadowAddr, _forwarder);
+        __OwlBase_init(_admin, _forwarder);
+
+        __Rent_init_unchained(_admin, _acceptableToken, _contractAddr, _shadowAddr);
     }
 
     function __Rent_init_unchained(
         address _admin,
         address _acceptableToken,
         address _contractAddr,
-        address _shadowAddr,
-        address _forwarder
+        address _shadowAddr
     ) internal onlyInitializing {
         acceptableToken = _acceptableToken;
         contractAddr = _contractAddr;
         shadowAddr = _shadowAddr;
         numRentals = 0;
-
-        //sets trusted forwarder for openGSN
-        _setTrustedForwarder(_forwarder);
     }
 
     /**********************
@@ -298,35 +289,17 @@ contract Rent is BaseRelayRecipient, ERC721HolderUpgradeable, OwnableUpgradeable
     }
 
     /**
-    Upgradeable functions
-    */
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
-    }
-
-    /**
      * @dev ERC165 Support
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
-        return interfaceId == ERC165TAG;
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        returns (bool)
+    {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
