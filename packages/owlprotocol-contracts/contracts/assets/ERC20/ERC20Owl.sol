@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol';
 
 import '../../OwlBase.sol';
@@ -9,11 +8,9 @@ import '../../OwlBase.sol';
 contract ERC20Owl is OwlBase, ERC20BurnableUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
-    // Specification + ERC165
+
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC20Owl/', version)));
-
-    string public baseURI;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -44,10 +41,10 @@ contract ERC20Owl is OwlBase, ERC20BurnableUpgradeable {
         string calldata _symbol,
         address _forwarder
     ) internal onlyInitializing {
-        __ERC20Burnable_init();
-        __AccessControl_init();
+        __ERC20_init(_name, _symbol);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
+
         __ERC20Owl_init_unchained(_admin, _forwarder);
     }
 
@@ -73,6 +70,14 @@ contract ERC20Owl is OwlBase, ERC20BurnableUpgradeable {
         _mint(to, amount);
     }
 
+    function _msgSender() internal view override(OwlBase, ContextUpgradeable) returns (address) {
+        return OwlBase._msgSender();
+    }
+
+    function _msgData() internal view virtual override(OwlBase, ContextUpgradeable) returns (bytes calldata) {
+        return OwlBase._msgData();
+    }
+
     /**
      * @dev ERC165 Support
      * @param interfaceId hash of the interface testing for
@@ -80,13 +85,5 @@ contract ERC20Owl is OwlBase, ERC20BurnableUpgradeable {
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
-    }
-
-    function _msgSender() internal view override(OwlBase, ContextUpgradeable) returns (address) {
-        return OwlBase._msgSender();
-    }
-
-    function _msgData() internal view virtual override(OwlBase, ContextUpgradeable) returns (bytes calldata) {
-        return OwlBase._msgData();
     }
 }
