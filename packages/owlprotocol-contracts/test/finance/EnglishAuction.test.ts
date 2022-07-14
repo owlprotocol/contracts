@@ -2,7 +2,6 @@ import { ethers, network } from 'hardhat';
 const { utils } = ethers;
 const { parseUnits } = utils;
 import { expect, assert } from 'chai';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 //import _, { pick } from 'lodash';
 import {
     EnglishAuction,
@@ -14,10 +13,16 @@ import {
     ERC1155,
 } from '../../typechain';
 
-import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../utils';
+import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone, deployCloneWrap } from '../utils';
 import { BigNumber } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
-import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
+import {
+    itGSN,
+    itNoGSN,
+    loadForwarder,
+    loadSignersSmart,
+    TestingSigner,
+} from '@owlprotocol/contract-helpers-opengsn/src';
 
 enum TokenType {
     erc721,
@@ -26,12 +31,12 @@ enum TokenType {
 
 describe('EnglishAuction.sol No Fee', function () {
     //Extra time
-    this.timeout(10000);
-    let seller: SignerWithAddress;
-    let bidder1: SignerWithAddress;
-    let bidder2: SignerWithAddress;
-    let bidder3: SignerWithAddress;
-    let owner: SignerWithAddress;
+    this.timeout(20000);
+    let seller: TestingSigner;
+    let bidder1: TestingSigner;
+    let bidder2: TestingSigner;
+    let bidder3: TestingSigner;
+    let owner: TestingSigner;
     let EnglishAuctionFactory: EnglishAuction__factory;
     let EnglishAuctionImplementation: EnglishAuction;
 
@@ -39,17 +44,11 @@ describe('EnglishAuction.sol No Fee', function () {
     let ERC1167Factory: ERC1167Factory;
 
     let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
-    let gsn: TestEnvironment;
     let web3provider: Web3Provider;
 
     before(async () => {
         //Setup Test Environment
-        gsn = await GsnTestEnvironment.startGsn('http://localhost:8545');
-        const provider = gsn.relayProvider;
-
-        //@ts-ignore
-        web3provider = new ethers.providers.Web3Provider(provider);
-        gsnForwarderAddress = gsn.contractsDeployment.forwarderAddress as string;
+        gsnForwarderAddress = await loadForwarder(ethers);
 
         //launch Auction + implementation
         EnglishAuctionFactory = (await ethers.getContractFactory('EnglishAuction')) as EnglishAuction__factory;
@@ -62,12 +61,7 @@ describe('EnglishAuction.sol No Fee', function () {
         await Promise.all([ERC1167Factory.deployed(), EnglishAuctionImplementation.deployed()]);
 
         //get users (seller + bidder?)
-        [seller, bidder1, bidder2, bidder3, owner] = await ethers.getSigners();
-    });
-
-    after(() => {
-        //Disconnect from relayer
-        gsn.relayProvider.disconnect();
+        [seller, bidder1, bidder2, bidder3, owner] = await loadSignersSmart(ethers);
     });
 
     describe('Auction Tests with ERC721', () => {
@@ -131,37 +125,38 @@ describe('EnglishAuction.sol No Fee', function () {
 
             //deploy auction
 
-            await deployClone(
-                EnglishAuctionImplementation,
-                [
-                    //seller address
-                    //NFT
-                    //ERC20 Contract address (acceptable token)
-                    //starting bid
-                    //auction duration
-                    //reset time
-                    //sale fee
-                    //sale fee address
-                    seller.address,
-                    {
-                        token: TokenType.erc721,
-                        contractAddr: testNFT.address,
-                        tokenId: 1,
-                    },
-                    acceptableERC20Token.address,
-                    2,
-                    86400,
-                    3600,
-                    0,
-                    owner.address,
-                    gsnForwarderAddress,
-                ],
-                ERC1167Factory,
-            );
-            auction = (await ethers.getContractAt('EnglishAuction', EnglishAuctionAddress)) as EnglishAuction;
+            auction = (
+                await deployCloneWrap(
+                    EnglishAuctionImplementation,
+                    [
+                        //seller address
+                        //NFT
+                        //ERC20 Contract address (acceptable token)
+                        //starting bid
+                        //auction duration
+                        //reset time
+                        //sale fee
+                        //sale fee address
+                        seller.address,
+                        {
+                            token: TokenType.erc721,
+                            contractAddr: testNFT.address,
+                            tokenId: 1,
+                        },
+                        acceptableERC20Token.address,
+                        2,
+                        86400,
+                        3600,
+                        0,
+                        owner.address,
+                        gsnForwarderAddress,
+                    ],
+                    ERC1167Factory,
+                )
+            ).contract as EnglishAuction;
 
             //setup GSN-connected contract
-            auctionGSN = auction.connect(web3provider.getSigner(seller.address));
+            auctionGSN = auction;
 
             //assert initial token amounts
 
@@ -174,7 +169,7 @@ describe('EnglishAuction.sol No Fee', function () {
             expect(await acceptableERC20Token.balanceOf(bidder3.address)).to.equal(originalERC20Balance);
         });
 
-        it('simple auction - 1 bidder - Regular', async () => {
+        itNoGSN('simple auction - 1 bidder - Regular', async () => {
             const initialBalance = await ethers.provider.getBalance(bidder1.address);
             await auction.start();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
@@ -197,7 +192,7 @@ describe('EnglishAuction.sol No Fee', function () {
             assert.isTrue(finalBalance.lt(initialBalance), 'finalBalance !< initialBalance');
         });
 
-        it('simple auction - 1 bidder - GSN', async () => {
+        itGSN('simple auction - 1 bidder - GSN', async () => {
             const initialBalance = await ethers.provider.getBalance(bidder1.address);
             await auctionGSN.start();
             expect(await testNFT.balanceOf(auctionGSN.address)).to.equal(1);
@@ -217,7 +212,7 @@ describe('EnglishAuction.sol No Fee', function () {
             expect(await testNFT.balanceOf(bidder1.address)).to.equal(1);
 
             const finalBalance = await ethers.provider.getBalance(bidder1.address);
-            assert.isTrue(finalBalance.lt(initialBalance), 'finalBalance !< initialBalance');
+            assert.isTrue(finalBalance.eq(initialBalance), 'finalBalance != initialBalance');
         });
 
         it('complex auction - two bidders', async () => {
@@ -596,11 +591,11 @@ describe('EnglishAuction.sol No Fee', function () {
 describe('EnglishAuction.sol 20% Fee', function () {
     //Extra time
     this.timeout(10000);
-    let seller: SignerWithAddress;
-    let bidder1: SignerWithAddress;
-    let bidder2: SignerWithAddress;
-    let bidder3: SignerWithAddress;
-    let owner: SignerWithAddress;
+    let seller: TestingSigner;
+    let bidder1: TestingSigner;
+    let bidder2: TestingSigner;
+    let bidder3: TestingSigner;
+    let owner: TestingSigner;
     let EnglishAuctionFactory: EnglishAuction__factory;
     let EnglishAuctionImplementation: EnglishAuction;
 
@@ -608,17 +603,9 @@ describe('EnglishAuction.sol 20% Fee', function () {
     let ERC1167Factory: ERC1167Factory;
 
     let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
-    let gsn: TestEnvironment;
-    let web3provider: Web3Provider;
 
     before(async () => {
-        //Setup Test Environment
-        gsn = await GsnTestEnvironment.startGsn('http://localhost:8545');
-        const provider = gsn.relayProvider;
-
-        //@ts-ignore
-        web3provider = new ethers.providers.Web3Provider(provider);
-        gsnForwarderAddress = gsn.contractsDeployment.forwarderAddress as string;
+        gsnForwarderAddress = await loadForwarder(ethers);
 
         //launch Auction + implementation
         EnglishAuctionFactory = (await ethers.getContractFactory('EnglishAuction')) as EnglishAuction__factory;
@@ -631,12 +618,7 @@ describe('EnglishAuction.sol 20% Fee', function () {
         await Promise.all([ERC1167Factory.deployed(), EnglishAuctionImplementation.deployed()]);
 
         //get users (seller + bidder?)
-        [seller, bidder1, bidder2, bidder3, owner] = await ethers.getSigners();
-    });
-
-    after(() => {
-        //Disconnect from relayer
-        gsn.relayProvider.disconnect();
+        [seller, bidder1, bidder2, bidder3, owner] = await loadSignersSmart(ethers);
     });
 
     describe('Auction Tests with ERC721', () => {

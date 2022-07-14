@@ -2,7 +2,6 @@ import { ethers, network } from 'hardhat';
 const { utils } = ethers;
 const { parseUnits } = utils;
 import { expect } from 'chai';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
     FixedPriceAuction,
     FixedPriceAuction__factory,
@@ -10,13 +9,11 @@ import {
     ERC1167Factory,
     ERC1167Factory__factory,
     ERC721,
-    ERC1155,
 } from '../../typechain';
 
-import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../utils';
+import { createERC20, createERC721, deployClone, predictDeployClone } from '../utils';
 import { BigNumber } from 'ethers';
-import { Web3Provider } from '@ethersproject/providers';
-import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
+import { loadForwarder, loadSignersSmart, TestingSigner } from '@owlprotocol/contract-helpers-opengsn/src';
 
 enum TokenType {
     erc721,
@@ -25,10 +22,10 @@ enum TokenType {
 
 describe('FixedPriceAuction.sol', function () {
     //Extra time
-    this.timeout(100000);
-    let seller: SignerWithAddress;
-    let buyer: SignerWithAddress;
-    let owner: SignerWithAddress;
+    this.timeout(100_000);
+    let seller: TestingSigner;
+    let buyer: TestingSigner;
+    let owner: TestingSigner;
 
     let FixedPriceAuctionFactory: FixedPriceAuction__factory;
     let FixedPriceAuctionImplementation: FixedPriceAuction;
@@ -37,17 +34,10 @@ describe('FixedPriceAuction.sol', function () {
     let ERC1167Factory: ERC1167Factory;
 
     let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
-    let gsn: TestEnvironment;
-    let web3provider: Web3Provider;
 
     before(async () => {
         //Setup Test Environment
-        gsn = await GsnTestEnvironment.startGsn('http://localhost:8545');
-        const provider = gsn.relayProvider;
-
-        //@ts-ignore
-        web3provider = new ethers.providers.Web3Provider(provider);
-        gsnForwarderAddress = gsn.contractsDeployment.forwarderAddress as string;
+        gsnForwarderAddress = await loadForwarder(ethers);
 
         //launch Auction + implementation
         FixedPriceAuctionFactory = (await ethers.getContractFactory('FixedPriceAuction')) as FixedPriceAuction__factory;
@@ -60,12 +50,7 @@ describe('FixedPriceAuction.sol', function () {
         await Promise.all([ERC1167Factory.deployed(), FixedPriceAuctionImplementation.deployed()]);
 
         //get users (seller + bidder?)
-        [seller, buyer, owner] = await ethers.getSigners();
-    });
-
-    after(() => {
-        //Disconnect from relayer
-        gsn.relayProvider.disconnect();
+        [seller, buyer, owner] = await loadSignersSmart(ethers);
     });
 
     describe('No fee tests', () => {
