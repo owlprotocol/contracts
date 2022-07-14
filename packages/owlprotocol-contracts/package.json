@@ -115,6 +115,8 @@
     ],
     "dependencies": {
         "@chainlink/contracts": "^0.4.1",
-        "solidity-coverage": "^0.7.21"
+        "solidity-coverage": "^0.7.21",
+        "truffle": "^5.5.21",
+        "web3-providers-http": "^1.7.4"
     }
 }
