@@ -34,7 +34,7 @@ enum TokenType {
     erc1155,
 }
 
-describe.only('CrafterTransfer.sol NTime', function () {
+describe('CrafterTransfer.sol NTime', function () {
     // Extra time
     this.timeout(10000);
 
