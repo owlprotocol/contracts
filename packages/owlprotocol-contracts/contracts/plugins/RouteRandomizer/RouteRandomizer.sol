@@ -59,9 +59,9 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
      */
     function initialize(
         address _admin,
-        address[] calldata _contracts,
-        bytes[] calldata _signatures,
-        uint8[] calldata _probabilities,
+        address[] memory _contracts,
+        bytes[] memory _signatures,
+        uint8[] memory _probabilities,
         address _vrfBeacon,
         address _forwarder
     ) external initializer {
@@ -70,9 +70,9 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
 
     function proxyInitialize(
         address _admin,
-        address[] calldata _contracts,
-        bytes[] calldata _signatures,
-        uint8[] calldata _probabilities,
+        address[] memory _contracts,
+        bytes[] memory _signatures,
+        uint8[] memory _probabilities,
         address _vrfBeacon,
         address _forwarder
     ) external onlyInitializing {
@@ -81,9 +81,9 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
 
     function __RouteRandomizer_init(
         address _admin,
-        address[] calldata _contracts,
-        bytes[] calldata _signatures,
-        uint8[] calldata _probabilities,
+        address[] memory _contracts,
+        bytes[] memory _signatures,
+        uint8[] memory _probabilities,
         address _vrfBeacon,
         address _forwarder
     ) internal onlyInitializing {
@@ -93,9 +93,9 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
     }
 
     function __RouteRandomizer_init_unchained(
-        address[] calldata _contracts,
-        bytes[] calldata _signatures,
-        uint8[] calldata _probabilities,
+        address[] memory _contracts,
+        bytes[] memory _signatures,
+        uint8[] memory _probabilities,
         address _vrfBeacon
     ) internal onlyInitializing {
         contracts = _contracts;
@@ -108,14 +108,14 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
          Interaction
     **********************/
 
-    function requestRouteRandomize(bytes[] memory argsArr) external returns (uint256 requestId, uint256 blockNumber) {
-        (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
+    // function requestRouteRandomize(bytes[] memory argsArr) external returns (uint256 requestId, uint256 blockNumber) {
+    //     (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
 
-        elements.push(RouteElement(blockNumber, argsArr));
-    }
+    //     elements.push(RouteElement(blockNumber, argsArr));
+    // }
 
     function checkUpkeep(
-        bytes calldata /* checkData */
+        bytes memory /* checkData */
     ) external view override returns (bool upkeepNeeded, bytes memory performData) {
         assert(queueIndex <= elements.length);
         if (elements.length == queueIndex) return (false, '0x');
@@ -126,7 +126,7 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
         return (false, '0x');
     }
 
-    function performUpkeep(bytes calldata performData) external override {
+    function performUpkeep(bytes memory performData) external override {
         (uint256 randomness, uint256 queueIndexRequest) = abi.decode(performData, (uint256, uint256));
 
         //make sure that checkUpKeep hasn't run twice on the same queueIndex
