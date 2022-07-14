@@ -170,6 +170,7 @@ describe('Lootbox.sol', () => {
         lootbox = (await ethers.getContractAt('Lootbox', lootboxInstAddr)) as Lootbox;
 
 
+
         await setCode(coordinatorAddr, mockDeployedBytecode);
 
         coordinator = (await ethers.getContractAt('VRFCoordinatorV2', coordinatorAddr)) as VRFCoordinatorV2;
