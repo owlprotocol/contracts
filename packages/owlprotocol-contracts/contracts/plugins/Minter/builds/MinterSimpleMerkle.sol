@@ -90,10 +90,7 @@ contract MinterSimpleMerkle is MinterAutoId {
     /**
      * @dev Create a new type of species and define attributes.
      */
-    function mint(
-        address buyer,
-        bytes32[] calldata merkleProof
-    ) public {
+    function mint(address buyer, bytes32[] calldata merkleProof) public {
         require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
         MinterAutoId.mint(buyer);
     }
@@ -101,15 +98,12 @@ contract MinterSimpleMerkle is MinterAutoId {
     /**
      * @dev Create a new type of species and define attributes.
      */
-    function safeMint(
-        address buyer,
-        bytes32[] calldata merkleProof
-    ) public {
+    function safeMint(address buyer, bytes32[] calldata merkleProof) public {
         require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
         MinterAutoId.mint(buyer);
     }
 
-    function updateMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
+    function updateMerkleRoot(bytes32 _merkleRoot) public onlyRole(DEFAULT_ADMIN_ROLE) {
         merkleRoot = _merkleRoot;
     }
 
