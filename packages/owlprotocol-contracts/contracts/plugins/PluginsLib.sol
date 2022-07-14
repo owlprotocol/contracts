@@ -65,7 +65,8 @@ library PluginsLib {
         mapping(uint256 => uint256) storage nUse
     ) internal {
         for (uint256 i = 0; i < _inputs.length; i++) {
-            if (_inputs[i].token == PluginsLib.TokenType.erc20) {
+            TokenType token = _inputs[i].token;
+            if (token == PluginsLib.TokenType.erc20) {
                 require(_inputs[i].tokenIds.length == 0, 'PluginsLib: tokenids.length != 0');
                 require(_inputs[i].amounts.length == 1, 'PluginsLib: amounts.length != 1');
                 require(
@@ -73,7 +74,7 @@ library PluginsLib {
                         _inputs[i].consumableType == ConsumableType.burned,
                     'PluginsLib: ERC20 consumableType not unaffected or burned'
                 );
-            } else if (_inputs[i].token == PluginsLib.TokenType.erc721) {
+            } else if (token == PluginsLib.TokenType.erc721) {
                 //accept all token ids as inputs
                 require(_inputs[i].tokenIds.length == 0, 'PluginsLib: tokenIds.length != 0');
                 require(
@@ -90,7 +91,7 @@ library PluginsLib {
 
                     nUse[i] = _inputs[i].amounts[0];
                 } else require(_inputs[i].amounts.length == 0, 'PluginsLib: amounts.length != 0');
-            } else if (_inputs[i].token == PluginsLib.TokenType.erc1155) {
+            } else if (token == PluginsLib.TokenType.erc1155) {
                 require(
                     _inputs[i].tokenIds.length == _inputs[i].amounts.length,
                     'PluginsLib: tokenids.length != amounts.length'
@@ -100,6 +101,8 @@ library PluginsLib {
                         _inputs[i].consumableType == ConsumableType.burned,
                     'PluginsLib: ERC1155 consumableType not unaffected or burned'
                 );
+            } else {
+                revert(); //revert if not valid token type
             }
             inputs.push(_inputs[i]);
         }

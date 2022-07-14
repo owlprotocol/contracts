@@ -12,6 +12,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 
 import '../../OwlBase.sol';
 import '../PluginsLib.sol';
+import 'hardhat/console.sol';
 
 /**
  * @dev Pluggable Transformer Contract.
@@ -126,7 +127,10 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
      */
 
     function transform(uint256 tokenId, uint256[][] calldata _inputERC721Ids) external {
-        require(IERC721Upgradeable(nftAddr).ownerOf(tokenId) == _msgSender());
+        require(
+            IERC721Upgradeable(nftAddr).ownerOf(tokenId) == _msgSender(),
+            'Transformer: you are not the owner of that ID!'
+        );
 
         //Track ERC721 inputs idx
         uint256 erc721Inputs = 0;
@@ -143,7 +147,7 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
                         burnAddress,
                         ingredient.amounts[0]
                     );
-                }
+                } else {} // this is unaffected consumable type, otherwise validate inputs will revert
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
                 //ERC721
                 uint256[] memory currInputArr = _inputERC721Ids[erc721Inputs];
@@ -156,8 +160,8 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
                             _inputERC721Ids[erc721Inputs][j]
                         );
                     }
-                } else if (ingredient.consumableType == PluginsLib.ConsumableType.NTime) {
-                    //Check ERC721
+                } else {
+                    //this is N-Time (otherwise, pluginsLib will revert when validating inputs)
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
                             IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
@@ -172,7 +176,8 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
                     }
                 }
                 erc721Inputs += 1;
-            } else if (ingredient.token == PluginsLib.TokenType.erc1155) {
+            } else {
+                //this is 1155 token type, as ensured by input validations
                 //ERC1155
                 if (ingredient.consumableType == PluginsLib.ConsumableType.burned) {
                     //Transfer ERC1155
@@ -187,7 +192,7 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
                         amounts,
                         new bytes(0)
                     );
-                }
+                } else {} //this is unaffected, as ensured by input validations
             }
         }
 

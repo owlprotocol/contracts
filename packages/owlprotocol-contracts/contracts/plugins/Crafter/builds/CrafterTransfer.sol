@@ -394,7 +394,8 @@ contract CrafterTransfer is
                         burnAddress,
                         ingredient.amounts[0] * craftAmount
                     );
-                } else if (ingredient.consumableType == PluginsLib.ConsumableType.unaffected) {
+                } else {
+                    // this is unaffected, as ensured by input validations
                     //Check ERC20
                     require(
                         IERC20Upgradeable(ingredient.contractAddr).balanceOf(_crafter) >=
@@ -415,7 +416,8 @@ contract CrafterTransfer is
                             currInputArr[j]
                         );
                     }
-                } else if (ingredient.consumableType == PluginsLib.ConsumableType.NTime) {
+                } else {
+                    //this is N-time, as ensured by input validations
                     //Check ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
@@ -431,7 +433,8 @@ contract CrafterTransfer is
                     }
                 }
                 erc721Inputs += 1;
-            } else if (ingredient.token == PluginsLib.TokenType.erc1155) {
+            } else {
+                //this is 1155 token type, as ensured by input validations
                 //ERC1155
                 if (ingredient.consumableType == PluginsLib.ConsumableType.burned) {
                     //Transfer ERC1155
@@ -446,7 +449,8 @@ contract CrafterTransfer is
                         amounts,
                         new bytes(0)
                     );
-                } else if (ingredient.consumableType == PluginsLib.ConsumableType.unaffected) {
+                } else {
+                    //this is unaffected consumable type, as ensured by input validations
                     //Check ERC1155
                     uint256[] memory amounts = new uint256[](ingredient.amounts.length);
                     address[] memory accounts = new address[](ingredient.amounts.length);
