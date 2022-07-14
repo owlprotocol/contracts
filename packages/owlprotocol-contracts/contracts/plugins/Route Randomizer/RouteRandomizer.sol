@@ -13,21 +13,21 @@ import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
 import '../../OwlBase.sol';
 import '../../random/VRFBeacon.sol';
-import '../Crafter/builds/CrafterTransfer.sol';
 import '../PluginsLib.sol';
 import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
 
-contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Lootbox/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://RouteRandomizer/', version)));
 
     /**********************
              State
     **********************/
 
     address[] public crafterContracts;
+    bytes[] public signatures;
     uint256[] public probabilities;
     address public vrfBeacon;
 
@@ -45,59 +45,56 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
     }
 
     /**
-     * @dev Create Lootbox instance
+     * @dev Create RouteRandomizer instance
      * @param _admin the admin/owner of the contract
-     * @param _crafterContracts array of crafterContract address, each with unique recipe
-     * @param _probabilities array of cumulative probabilities associated with using a contract from crafterContracts
+     * @param _contracts array of contract addresses to route to, each instance is defined with unique recipe
+     * @param _signatures bytes array representing function signatures for each contract
+     * @param _probabilities array of cumulative proababilities associated with using a contract from contracts
      * @param _forwarder address for trusted forwarder for open GSN integration
      */
     function initialize(
         address _admin,
-        address[] calldata _crafterContracts,
+        address[] calldata _contracts,
+        bytes[] calldata _signatures,
         uint8[] calldata _probabilities,
         address _vrfBeacon,
         address _forwarder
     ) external initializer {
-        __Lootbox_init(_admin, _crafterContracts, _probabilities, _vrfBeacon, _forwarder);
+        __RouteRandomizer_init(_admin, _contracts, _signatures, _probabilities, _vrfBeacon, _forwarder);
     }
 
     function proxyInitialize(
         address _admin,
-        address[] calldata _crafterContracts,
+        address[] calldata _contracts,
+        bytes[] calldata _signatures,
         uint8[] calldata _probabilities,
         address _vrfBeacon,
         address _forwarder
     ) external onlyInitializing {
-        __Lootbox_init(_admin, _crafterContracts, _probabilities, _vrfBeacon, _forwarder);
+        __RouteRandomizer_init(_admin, _contracts, _signatures, _probabilities, _vrfBeacon, _forwarder);
     }
 
-    function __Lootbox_init(
+    function __RouteRandomizer_init(
         address _admin,
-        address[] calldata _crafterContracts,
+        address[] calldata _contracts,
+        bytes[] calldata _signatures,
         uint8[] calldata _probabilities,
         address _vrfBeacon,
         address _forwarder
     ) internal onlyInitializing {
         __OwlBase_init(_admin, _forwarder);
 
-        __Lootbox_init_unchained(_admin, _crafterContracts, _probabilities, _vrfBeacon);
+        __RouteRandomizer_init_unchained(_admin, _contracts, _signatures, _probabilities, _vrfBeacon, _forwarder);
     }
 
-    function __Lootbox_init_unchained(
+    function __RouteRandomizer_init_unchained(
         address _admin,
-        address[] calldata _crafterContracts,
+        address[] calldata _contracts,
+        bytes[] calldata _signatures,
         uint8[] calldata _probabilities,
-        address _vrfBeacon
-    ) internal onlyInitializing {
-        require(
-            _probabilities.length == _crafterContracts.length,
-            'Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!'
-        );
-
-        crafterContracts = _crafterContracts;
-        probabilities = _probabilities;
-        vrfBeacon = _vrfBeacon;
-    }
+        address _vrfBeacon,
+        address _forwarder
+    ) internal onlyInitializing {}
 
     /**********************
          Interaction
@@ -131,43 +128,9 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
         //make sure that checkUpKeep hasn't run twice on the same queueIndex
         require(queueIndexRequest == queueIndex, 'Lootbox: queueIndex already processed');
 
-        _unlock(upkeepQueue[queueIndex], randomness);
+        // _unlock(upkeepQueue[queueIndex], randomness);
 
         queueIndex++;
-    }
-
-    function _unlock(uint256 lootboxId, uint256 randomSeed) internal {
-        //randomly choose the crafter transfer contract to call
-        uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, lootboxId);
-        uint256 selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
-
-        //craft outputs to msgSender
-        uint256[][] memory inputERC721Id = new uint256[][](1);
-        for (uint256 i = 0; i < 1; i++) {
-            inputERC721Id[i] = new uint256[](1);
-            inputERC721Id[0][0] = lootboxId;
-        }
-
-        CrafterTransfer selectedCrafter = CrafterTransfer(crafterContracts[selectedContract]);
-
-        // try catch to prevent revert loop. queueIndex will not
-        // increment and checkUpKeep will be endlessly called,
-        // not allowing upkeepQueue to make progress
-
-        try selectedCrafter.craft(1, inputERC721Id) {} catch {}
-    }
-
-    /**
-    Getters
-    */
-    function getEpochBlock(uint256 lootboxId) public view returns (uint256) {
-        return lootboxIdToEpochBlock[lootboxId];
-    }
-
-    // used for testing
-    function getRandomContract(uint256 lootboxId, uint256 randomSeed) external view returns (uint256 selectedContract) {
-        uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, lootboxId);
-        selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
     }
 
     /**
@@ -179,7 +142,7 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
         public
         view
         virtual
-        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        override(ERC1155ReceiverUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
