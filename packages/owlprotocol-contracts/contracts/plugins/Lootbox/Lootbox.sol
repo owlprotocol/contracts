@@ -8,6 +8,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol';
 
 import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
@@ -19,6 +20,8 @@ import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
 
 contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+    using AddressUpgradeable for address;
+
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Lootbox/', version)));
@@ -80,11 +83,10 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
     ) internal onlyInitializing {
         __OwlBase_init(_admin, _forwarder);
 
-        __Lootbox_init_unchained(_admin, _crafterContracts, _probabilities, _vrfBeacon);
+        __Lootbox_init_unchained(_crafterContracts, _probabilities, _vrfBeacon);
     }
 
     function __Lootbox_init_unchained(
-        address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities,
         address _vrfBeacon
@@ -148,13 +150,17 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
             inputERC721Id[0][0] = lootboxId;
         }
 
-        CrafterTransfer selectedCrafter = CrafterTransfer(crafterContracts[selectedContract]);
+        address selectedCrafter = crafterContracts[selectedContract];
 
         // try catch to prevent revert loop. queueIndex will not
         // increment and checkUpKeep will be endlessly called,
         // not allowing upkeepQueue to make progress
 
-        try selectedCrafter.craft(1, inputERC721Id) {} catch {}
+        selectedCrafter.functionCall(
+            abi.encodePacked(abi.encodeWithSignature('craft(uint96,uint256[][])', 1, inputERC721Id), _msgSender())
+        );
+
+        // try selectedCrafter.craft(1, inputERC721Id) {} catch {}
     }
 
     /**
