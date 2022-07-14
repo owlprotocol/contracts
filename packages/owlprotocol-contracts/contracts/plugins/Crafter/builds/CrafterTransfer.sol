@@ -10,34 +10,17 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
-
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
-
+import '../../../OwlBase.sol';
 import '../ICrafter.sol';
 import '../../PluginsLib.sol';
-import 'hardhat/console.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
  * Players can interact with the contract to have
  * recipie outputs transferred from a deposit.
  */
-contract CrafterTransfer is
-    BaseRelayRecipient,
-    ICrafter,
-    ERC721HolderUpgradeable,
-    ERC1155HolderUpgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable,
-    AccessControlUpgradeable
-{
+contract CrafterTransfer is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
-    bytes32 internal constant ROUTER_ROLE = keccak256('ROUTER_ROLE');
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterTransfer/', version)));
 
@@ -114,9 +97,9 @@ contract CrafterTransfer is
         require(_burnAddress != address(0), 'CrafterTransfer: burn address must not be 0');
         require(_inputs.length > 0, 'CrafterTransfer: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterTransfer: A crafting output must be given!');
+        __OwlBase_init(_admin, _forwarder);
 
-        _transferOwnership(_admin);
-        __CrafterTransfer_init_unchained(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
+        __CrafterTransfer_init_unchained(_admin, _burnAddress, _craftableAmount, _inputs, _outputs);
     }
 
     function __CrafterTransfer_init_unchained(
@@ -124,8 +107,7 @@ contract CrafterTransfer is
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs,
-        address _forwarder
+        PluginsLib.Ingredient[] calldata _outputs
     ) internal onlyInitializing {
         burnAddress = _burnAddress;
 
@@ -135,20 +117,8 @@ contract CrafterTransfer is
 
         uint256[][] memory _outputsERC721Ids = PluginsLib.createOutputsArr(_outputs, _craftableAmount, erc721Amount);
 
-        //sets trusted forwarder for open gsn
-        _setTrustedForwarder(_forwarder);
-
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids, _admin);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);
-    }
-
-    /**
-     * @notice Must have owner role
-     * @dev Grants ROUTER_ROLE to {a}
-     * @param to address to
-     */
-    function grantRouter(address to) public onlyOwner {
-        _grantRole(ROUTER_ROLE, to);
     }
 
     /**********************
@@ -229,7 +199,7 @@ contract CrafterTransfer is
      * @param depositAmount How many times the recipe should be craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
      */
-    function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyOwner {
+    function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _deposit(depositAmount, _outputsERC721Ids, _msgSender());
     }
 
@@ -302,7 +272,7 @@ contract CrafterTransfer is
      * @dev Used to withdraw recipe outputs. Reverse logic as deposit().
      * @param withdrawAmount How many times the craft outputs should be withdrawn
      */
-    function withdraw(uint96 withdrawAmount) external onlyOwner {
+    function withdraw(uint96 withdrawAmount) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // Requires
         require(withdrawAmount > 0, 'CrafterTransfer: withdrawAmount cannot be 0!');
         require(withdrawAmount <= craftableAmount, 'CrafterTransfer: Not enough resources!');
@@ -507,27 +477,6 @@ contract CrafterTransfer is
         }
 
         emit RecipeCraft(craftAmount, craftableAmount, _crafter);
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
-    }
-
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
     }
 
     /**

@@ -164,7 +164,7 @@ library PluginsLib {
         Ingredient[] memory _outputs,
         uint256 _craftableAmount,
         uint256 erc721Amount
-    ) internal returns (uint256[][] memory) {
+    ) internal pure returns (uint256[][] memory) {
         uint256[][] memory _outputsERC721Ids = new uint256[][](erc721Amount);
         uint256 outputERC721index = 0;
 
@@ -237,16 +237,5 @@ library PluginsLib {
         uint256 bitMaskStart = type(uint256).max << startBit;
         uint256 bitMaskEnd = type(uint256).max >> (256 - endBit);
         bitMask = bitMaskStart & bitMaskEnd;
-    }
-
-    /**
-     * @dev Helper function checking if integer array contains integer
-     * @param _input array
-     * @param num integer to search for
-     * @return bool representing if the array contains num
-     */
-    function arrayContains(uint256[] memory _input, uint256 num) internal returns (bool) {
-        for (uint256 j = 0; j < _input.length; j++) if (_input[j] == num) return true;
-        return false;
     }
 }
