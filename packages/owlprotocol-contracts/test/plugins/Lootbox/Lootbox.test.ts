@@ -1,5 +1,5 @@
 import { ethers, network } from 'hardhat';
-import { time, setCode, mineUpTo } from "@nomicfoundation/hardhat-network-helpers";
+import { time, setCode, mineUpTo } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
@@ -17,7 +17,7 @@ import {
     BeaconProxyInitializable,
 } from '../../../typechain';
 import { pick } from 'lodash';
-import { deployedBytecode as mockDeployedBytecode } from "../../../artifacts/contracts/testing/VRFCoordinatorV2.sol/VRFCoordinatorV2.json"
+import { deployedBytecode as mockDeployedBytecode } from '../../../artifacts/contracts/testing/VRFCoordinatorV2.sol/VRFCoordinatorV2.json';
 
 import { createERC721, deployClone } from '../../utils';
 import { BigNumber } from 'ethers';
@@ -29,13 +29,13 @@ const subId = 8101;
 enum TokenType {
     erc20,
     erc721,
-    erc1155
+    erc1155,
 }
 
 enum ConsumableType {
     unaffected,
     burned,
-    NTime
+    NTime,
 }
 
 describe.only('Lootbox.sol', () => {
@@ -46,7 +46,7 @@ describe.only('Lootbox.sol', () => {
 
     let signer1: SignerWithAddress;
     let burn: SignerWithAddress;
-    let forwarder: SignerWithAddress
+    let forwarder: SignerWithAddress;
 
     let outputTokenIds: number[];
 
@@ -77,7 +77,6 @@ describe.only('Lootbox.sol', () => {
             ],
         });
 
-
         const VRFBeaconFactory = (await ethers.getContractFactory('VRFBeacon')) as VRFBeacon__factory;
         VRFBeacon = (await VRFBeaconFactory.deploy(
             subId,
@@ -87,14 +86,14 @@ describe.only('Lootbox.sol', () => {
             EPOCH_PERIOD,
         )) as VRFBeacon;
 
-        const ERC1167FactoryFactory = await ethers.getContractFactory("ERC1167Factory")
-        const ERC1167Factory = (await ERC1167FactoryFactory.deploy()) as ERC1167Factory
+        const ERC1167FactoryFactory = await ethers.getContractFactory('ERC1167Factory');
+        const ERC1167Factory = (await ERC1167FactoryFactory.deploy()) as ERC1167Factory;
 
         //3 crafter contracts
         const craftableAmount = 15;
 
         [lootboxNFT] = await createERC721(1, craftableAmount);
-        [reward1, reward2, reward3] = await createERC721(3, 0)
+        [reward1, reward2, reward3] = await createERC721(3, 0);
 
         const crafterArgsCommon = [
             signer1.address,
@@ -107,50 +106,56 @@ describe.only('Lootbox.sol', () => {
                     contractAddr: lootboxNFT.address,
                     amounts: [],
                     tokenIds: [],
-                }
-            ]
-        ]
+                },
+            ],
+        ];
 
         outputTokenIds = Array.from(Array(craftableAmount).keys());
         const crafterOutputCommon = {
             token: TokenType.erc721,
             consumableType: ConsumableType.unaffected,
             amounts: [],
-            tokenIds: outputTokenIds
-        }
+            tokenIds: outputTokenIds,
+        };
 
-        const crafterMintFactory = await ethers.getContractFactory("CrafterMint")
-        const crafterMintImpl = await crafterMintFactory.deploy()
+        const crafterMintFactory = await ethers.getContractFactory('CrafterMint');
+        const crafterMintImpl = await crafterMintFactory.deploy();
 
-        const { address: crafterMintAddr1 } = await deployClone(crafterMintImpl, [
-            ...crafterArgsCommon,
-            [{ ...crafterOutputCommon, contractAddr: reward1.address, },],
-            forwarder.address, // forwarder addr
-        ], ERC1167Factory)
+        const { address: crafterMintAddr1 } = await deployClone(
+            crafterMintImpl,
+            [
+                ...crafterArgsCommon,
+                [{ ...crafterOutputCommon, contractAddr: reward1.address }],
+                forwarder.address, // forwarder addr
+            ],
+            ERC1167Factory,
+        );
 
-        const { address: crafterMintAddr2 } = await deployClone(crafterMintImpl, [
-            ...crafterArgsCommon, [{ ...crafterOutputCommon, contractAddr: reward2.address }], forwarder.address
-        ], ERC1167Factory)
+        const { address: crafterMintAddr2 } = await deployClone(
+            crafterMintImpl,
+            [...crafterArgsCommon, [{ ...crafterOutputCommon, contractAddr: reward2.address }], forwarder.address],
+            ERC1167Factory,
+        );
 
-        const { address: crafterMintAddr3 } = await deployClone(crafterMintImpl, [
-            ...crafterArgsCommon, [{ ...crafterOutputCommon, contractAddr: reward3.address }], forwarder.address
-        ], ERC1167Factory)
-
-
+        const { address: crafterMintAddr3 } = await deployClone(
+            crafterMintImpl,
+            [...crafterArgsCommon, [{ ...crafterOutputCommon, contractAddr: reward3.address }], forwarder.address],
+            ERC1167Factory,
+        );
 
         // lootbox contract
-        const lootboxFactory = (await ethers.getContractFactory("Lootbox")) as Lootbox__factory
-        lootboxImpl = await lootboxFactory.deploy()
+        const lootboxFactory = (await ethers.getContractFactory('Lootbox')) as Lootbox__factory;
+        lootboxImpl = await lootboxFactory.deploy();
 
         lootboxArgs = [
             signer1.address,
             [crafterMintAddr1, crafterMintAddr2, crafterMintAddr3],
             [10, 20, 100],
             VRFBeacon.address,
-            forwarder.address]
+            forwarder.address,
+        ];
 
-        const { address: lootboxInstAddr } = await deployClone(lootboxImpl, [...lootboxArgs])
-
+        const { address: lootboxInstAddr } = await deployClone(lootboxImpl, [...lootboxArgs]);
 
         await expect(
             deployClone(lootboxImpl, [
@@ -158,10 +163,11 @@ describe.only('Lootbox.sol', () => {
                 [crafterMintAddr1, crafterMintAddr2, crafterMintAddr3],
                 [10, 20, 100, 120],
                 VRFBeacon.address,
-                forwarder.address])
-        ).to.be.revertedWith('Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!')
+                forwarder.address,
+            ]),
+        ).to.be.revertedWith('Lootbox.sol: lengths of probabilities and crafterContracts arrays do not match!');
 
-        lootbox = (await ethers.getContractAt("Lootbox", lootboxInstAddr)) as Lootbox;
+        lootbox = (await ethers.getContractAt('Lootbox', lootboxInstAddr)) as Lootbox;
 
         await setCode(coordinatorAddr, mockDeployedBytecode);
 
@@ -179,20 +185,20 @@ describe.only('Lootbox.sol', () => {
         await crafterMint1.grantRouter(lootbox.address);
         await crafterMint2.grantRouter(lootbox.address);
         await crafterMint3.grantRouter(lootbox.address);
-
-
-
     });
 
     async function coordinatorRespond(reqId: BigNumber, blockNum: BigNumber) {
         //simulating coordiantor response
-        const tx = await coordinator.fulfillRandomWords(reqId, VRFBeacon.address)
+        const tx = await coordinator.fulfillRandomWords(reqId, VRFBeacon.address);
         const { events } = await tx.wait();
         const fulfilledEvent = events ? events[0] : undefined;
 
         if (fulfilledEvent === undefined) return;
 
-        const { requestId: requestIdFulfilled, randomNumber } = pick(VRFBeacon.interface.decodeEventLog("Fulfilled", fulfilledEvent.data, fulfilledEvent.topics), ['requestId', 'randomNumber'])
+        const { requestId: requestIdFulfilled, randomNumber } = pick(
+            VRFBeacon.interface.decodeEventLog('Fulfilled', fulfilledEvent.data, fulfilledEvent.topics),
+            ['requestId', 'randomNumber'],
+        );
 
         expect(requestIdFulfilled).to.equal(reqId);
         expect(await VRFBeacon.getRandomness(blockNum)).to.equal(randomNumber);
@@ -203,15 +209,18 @@ describe.only('Lootbox.sol', () => {
         //checkUpkeep
         const { upkeepNeeded, performData } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(true);
-        const { randomness, queueIndex } = ethers.utils.defaultAbiCoder.decode(['uint256 randomness', 'uint256 queueIndex'], performData);
+        const { randomness, queueIndex } = ethers.utils.defaultAbiCoder.decode(
+            ['uint256 randomness', 'uint256 queueIndex'],
+            performData,
+        );
 
-        expect(await VRFBeacon.getRandomness(epochBlock)).to.equal(randomness)
+        expect(await VRFBeacon.getRandomness(epochBlock)).to.equal(randomness);
         expect(await lootbox.queueIndex()).to.equal(queueIndex);
 
         //performUpkeep
         const tx = await lootbox.performUpkeep(performData);
         const receipt = await tx.wait();
-        return { randomness, receipt }
+        return { randomness, receipt };
     }
 
     async function stateChecks(tokenId: number, epochBlock: BigNumber) {
@@ -221,7 +230,10 @@ describe.only('Lootbox.sol', () => {
 
         if (transferEvent === undefined) return;
 
-        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
+        const { tokenId: tokenIdMinted } = pick(
+            lootboxNFT.interface.decodeEventLog('Transfer', transferEvent.data, transferEvent.topics),
+            ['tokenId'],
+        );
 
         const randContract = await lootbox.getRandomContract(tokenId, randomness);
 
@@ -240,9 +252,11 @@ describe.only('Lootbox.sol', () => {
         }
     }
 
-
     it('1 Lootbox', async () => {
-        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
+            'requestId',
+            'blockNumber',
+        ]);
         await lootbox.requestUnlock(lootboxToUnlock1);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
@@ -258,7 +272,10 @@ describe.only('Lootbox.sol', () => {
 
         if (transferEvent === undefined) return;
 
-        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
+        const { tokenId: tokenIdMinted } = pick(
+            lootboxNFT.interface.decodeEventLog('Transfer', transferEvent.data, transferEvent.topics),
+            ['tokenId'],
+        );
 
         const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
         if (randContract.eq(0)) {
@@ -281,24 +298,25 @@ describe.only('Lootbox.sol', () => {
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         }
         // after completion
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false)
-
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(false);
     });
 
     it('2 Lootboxes, same EPOCH_PERIOD', async () => {
-
-        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
+            'requestId',
+            'blockNumber',
+        ]);
         await lootbox.requestUnlock(lootboxToUnlock1);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
         const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(false);
 
-        await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber']
+        await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber'];
         await lootbox.requestUnlock(lootboxToUnlock2);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
-        //check that both requestUnlocks are in the same epoch on VRFBeacon 
+        //check that both requestUnlocks are in the same epoch on VRFBeacon
         expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
 
         await mineUpTo(getEpochBlockNumber(blockNumber.toNumber()));
@@ -311,10 +329,12 @@ describe.only('Lootbox.sol', () => {
 
         if (transferEvent === undefined) return;
 
-        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
+        const { tokenId: tokenIdMinted } = pick(
+            lootboxNFT.interface.decodeEventLog('Transfer', transferEvent.data, transferEvent.topics),
+            ['tokenId'],
+        );
 
         const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
-
 
         if (randContract.eq(0)) {
             expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
@@ -336,17 +356,18 @@ describe.only('Lootbox.sol', () => {
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         }
 
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
         await stateChecks(lootboxToUnlock2, blockNumber);
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false);
-    })
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(false);
+    });
 
     it('3 Lootboxes, all in same epoch', async () => {
-
-        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
+            'requestId',
+            'blockNumber',
+        ]);
         await lootbox.requestUnlock(lootboxToUnlock1);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
-
 
         const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(false);
@@ -355,11 +376,11 @@ describe.only('Lootbox.sol', () => {
         await lootbox.requestUnlock(lootboxToUnlock2);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
-        await lootbox.callStatic.requestUnlock(lootboxToUnlock3), ['requestId', 'blockNumber']
+        await lootbox.callStatic.requestUnlock(lootboxToUnlock3), ['requestId', 'blockNumber'];
         await lootbox.requestUnlock(lootboxToUnlock3);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
-        //check that all requestUnlocks are in the same epoch on VRFBeacon 
+        //check that all requestUnlocks are in the same epoch on VRFBeacon
         expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
         expect(await lootbox.getEpochBlock(lootboxToUnlock2)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock3));
 
@@ -373,10 +394,12 @@ describe.only('Lootbox.sol', () => {
 
         if (transferEvent === undefined) return;
 
-        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
+        const { tokenId: tokenIdMinted } = pick(
+            lootboxNFT.interface.decodeEventLog('Transfer', transferEvent.data, transferEvent.topics),
+            ['tokenId'],
+        );
 
         const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
-
 
         if (randContract.eq(0)) {
             expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
@@ -398,16 +421,18 @@ describe.only('Lootbox.sol', () => {
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         }
 
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
         await stateChecks(lootboxToUnlock2, blockNumber);
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
         await stateChecks(lootboxToUnlock3, blockNumber);
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false);
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(false);
     });
 
     it('3 Lootboxes, two in same epoch, one in different', async () => {
-
-        const { requestId: reqId1, blockNumber: blockNumber1 } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        const { requestId: reqId1, blockNumber: blockNumber1 } = pick(
+            await lootbox.callStatic.requestUnlock(lootboxToUnlock1),
+            ['requestId', 'blockNumber'],
+        );
         await lootbox.requestUnlock(lootboxToUnlock1);
         expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
 
@@ -418,12 +443,15 @@ describe.only('Lootbox.sol', () => {
         await lootbox.requestUnlock(lootboxToUnlock2);
         expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
 
-        //check that both requestUnlocks are in the same epoch on VRFBeacon 
+        //check that both requestUnlocks are in the same epoch on VRFBeacon
         expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
 
         await mineUpTo(getEpochBlockNumber(blockNumber1.toNumber()));
 
-        const { blockNumber: blockNumber2, requestId: reqId2 } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock3), ['requestId', 'blockNumber']);
+        const { blockNumber: blockNumber2, requestId: reqId2 } = pick(
+            await lootbox.callStatic.requestUnlock(lootboxToUnlock3),
+            ['requestId', 'blockNumber'],
+        );
         await lootbox.requestUnlock(lootboxToUnlock3);
 
         await coordinatorRespond(reqId1, blockNumber1);
@@ -437,10 +465,12 @@ describe.only('Lootbox.sol', () => {
 
         if (transferEvent === undefined) return;
 
-        const { tokenId: tokenIdMinted } = pick(lootboxNFT.interface.decodeEventLog("Transfer", transferEvent.data, transferEvent.topics), ['tokenId']);
+        const { tokenId: tokenIdMinted } = pick(
+            lootboxNFT.interface.decodeEventLog('Transfer', transferEvent.data, transferEvent.topics),
+            ['tokenId'],
+        );
 
         const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
-
 
         if (randContract.eq(0)) {
             expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
@@ -462,30 +492,35 @@ describe.only('Lootbox.sol', () => {
             expect(await lootboxNFT.ownerOf(lootboxToUnlock1)).to.equal(burn.address);
         }
 
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
         await stateChecks(lootboxToUnlock2, blockNumber1);
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(true);
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
         await stateChecks(lootboxToUnlock3, blockNumber2);
-        expect((await lootbox.checkUpkeep("0x")).upkeepNeeded).to.equal(false);
-
+        expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(false);
     });
 
     it('Request unlock multiple times', async () => {
-        const { requestId: reqId1, blockNumber: blockNumber1 } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        const { requestId: reqId1, blockNumber: blockNumber1 } = pick(
+            await lootbox.callStatic.requestUnlock(lootboxToUnlock1),
+            ['requestId', 'blockNumber'],
+        );
         await lootbox.requestUnlock(lootboxToUnlock1);
         expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
 
-        const { requestId: reqId2, blockNumber: blockNumber2 } = await lootbox.callStatic.requestUnlock(lootboxToUnlock1);
+        const { requestId: reqId2, blockNumber: blockNumber2 } = await lootbox.callStatic.requestUnlock(
+            lootboxToUnlock1,
+        );
         await lootbox.requestUnlock(lootboxToUnlock1);
         expect(await VRFBeacon.getRequestId(blockNumber2)).to.equal(reqId2);
 
-        expect(reqId1).to.equal(reqId2)
-
+        expect(reqId1).to.equal(reqId2);
     });
 
     it('Multiple performUpkeep() calls with same queueIndex should fail', async () => {
-
-        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), ['requestId', 'blockNumber']);
+        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
+            'requestId',
+            'blockNumber',
+        ]);
         await lootbox.requestUnlock(lootboxToUnlock1);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
@@ -499,21 +534,22 @@ describe.only('Lootbox.sol', () => {
         //checkUpkeep
         ({ upkeepNeeded, performData } = await lootbox.checkUpkeep('0x'));
         expect(upkeepNeeded).to.equal(true);
-        const { randomness, queueIndex } = ethers.utils.defaultAbiCoder.decode(['uint256 randomness', 'uint256 queueIndex'], performData);
+        const { randomness, queueIndex } = ethers.utils.defaultAbiCoder.decode(
+            ['uint256 randomness', 'uint256 queueIndex'],
+            performData,
+        );
 
-        expect(await VRFBeacon.getRandomness(blockNumber)).to.equal(randomness)
+        expect(await VRFBeacon.getRandomness(blockNumber)).to.equal(randomness);
         expect(await lootbox.queueIndex()).to.equal(queueIndex);
 
         //performUpkeep (real)
         await lootbox.performUpkeep(performData);
 
         //performUpkeep with same performData (should fail)
-        await expect(lootbox.performUpkeep(performData)).to.be.revertedWith('Lootbox: queueIndex already processed')
-
-    })
+        await expect(lootbox.performUpkeep(performData)).to.be.revertedWith('Lootbox: queueIndex already processed');
+    });
 
     it('beacon proxy initialization', async () => {
-
         const beaconFactory = (await ethers.getContractFactory(
             'UpgradeableBeaconInitializable',
         )) as UpgradeableBeaconInitializable__factory;
@@ -524,23 +560,25 @@ describe.only('Lootbox.sol', () => {
         )) as BeaconProxyInitializable__factory;
         const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
 
-        const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, lootboxImpl.address, forwarder.address]);
+        const { address: beaconAddr } = await deployClone(beaconImpl, [
+            signer1.address,
+            lootboxImpl.address,
+            forwarder.address,
+        ]);
         //@ts-ignore
-        const data = lootboxImpl.interface.encodeFunctionData('proxyInitialize',
-            [...lootboxArgs]
-        );
-        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data, forwarder.address]);
+        const data = lootboxImpl.interface.encodeFunctionData('proxyInitialize', [...lootboxArgs]);
+        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [
+            signer1.address,
+            beaconAddr,
+            data,
+            forwarder.address,
+        ]);
         const contrInst = (await ethers.getContractAt('Lootbox', beaconProxyAddr)) as Lootbox;
 
         await contrInst.requestUnlock(0);
-    })
-
+    });
 });
 
 function getEpochBlockNumber(blockNumber: number) {
     return blockNumber - (blockNumber % EPOCH_PERIOD) + EPOCH_PERIOD;
 }
-
-
-
-
