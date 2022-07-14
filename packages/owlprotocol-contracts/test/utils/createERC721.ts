@@ -1,6 +1,6 @@
 import { TestingSigner, loadSignersSmart, loadForwarder } from '@owlprotocol/contract-helpers-opengsn/src';
 import { ethers } from 'hardhat';
-import { FactoryERC721, ERC721 } from '../../typechain';
+import { FactoryERC721 } from '../../typechain';
 
 // Creates + returns dummy ERC721 tokens for use in testing
 export async function createERC721(tokens = 1, mintAmount = 10, signer?: TestingSigner) {
@@ -12,9 +12,10 @@ export async function createERC721(tokens = 1, mintAmount = 10, signer?: Testing
 
     const contracts = [];
     for (let i = 0; i < tokens; i++) {
+        // cast as FactoryERC721 because FactoryERC721 has exists and ERC721 doesn't
         contracts.push(FactoryERC721.deploy(`Collection ${i}`, `#${i}`) as Promise<FactoryERC721>);
     }
-    let deployedContracts: ERC721[] = await Promise.all(contracts);
+    let deployedContracts = await Promise.all(contracts);
     // Make sure all deployed
     await Promise.all(deployedContracts.map((c) => c.deployed()));
 
