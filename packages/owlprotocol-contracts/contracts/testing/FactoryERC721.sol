@@ -25,7 +25,7 @@ contract FactoryERC721 is ERC721 {
     function mintTokens(uint256 count) public {
         // Loop and assign tokens
         for (uint256 i = 0; i < count; i++) {
-            _mint(msg.sender, ++lastTokenId);
+            _mint(msg.sender, lastTokenId++);
         }
     }
 
