@@ -15,8 +15,12 @@ import {
 } from '../../../typechain';
 import { createERC20, createERC721, createERC1155, predictDeployClone, deployClone } from '../../utils';
 import { BigNumber } from 'ethers';
-
-const ZERO_ADDR = '0x' + '0'.repeat(40);
+import {
+    loadSignersSmart,
+    TestingSigner,
+    loadForwarder,
+    assertBalances,
+} from '@owlprotocol/contract-helpers-opengsn/src';
 
 enum ConsumableType {
     unaffected,
@@ -30,17 +34,19 @@ enum TokenType {
     erc1155,
 }
 
-describe('CrafterTransfer.sol NTime', function () {
+describe.only('CrafterTransfer.sol NTime', function () {
     // Extra time
     this.timeout(10000);
 
-    let owner: SignerWithAddress;
+    let owner: TestingSigner;
 
     let CrafterTransferFactory: CrafterTransfer__factory;
     let CrafterTransferImplementation: CrafterTransfer;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
+
+    let gsnForwarderAddress: string;
 
     before(async () => {
         // Launch Crafter + implementation
@@ -54,7 +60,8 @@ describe('CrafterTransfer.sol NTime', function () {
         await Promise.all([ERC1167Factory.deployed(), CrafterTransferImplementation.deployed()]);
 
         // Get users
-        [owner] = await ethers.getSigners();
+        [owner] = await loadSignersSmart(ethers);
+        gsnForwarderAddress = await loadForwarder(ethers);
     });
 
     describe('ERC721 (amount[0] = 0, craftableAmount = 2)', async () => {
@@ -96,7 +103,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [1, 2],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -132,7 +139,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [1, 2],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -171,35 +178,42 @@ describe('CrafterTransfer.sol NTime', function () {
             });
         });
 
-        it('craft1', async () => {
-            //Craft 1
-            await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
-            await expect(crafter['craft(uint96,uint256[][])'](1, [[1]])).to.be.revertedWith('Used over the limit of n');
-            //Check storage
-            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
-            //Check balances
-            expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
-            expect(await outputERC721.ownerOf(1)).to.equal(crafter.address); // this should be owner.address
-            expect(await outputERC721.ownerOf(2)).to.equal(crafter.address);
-            //Storage tests
-            const input0 = await crafter.getInputIngredient(0);
-            const output0 = await crafter.getOutputIngredient(0);
-            expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
-                token: TokenType.erc721,
-                consumableType: ConsumableType.NTime,
-                contractAddr: inputERC721.address,
-                amounts: [BigNumber.from(0)],
-                tokenIds: [],
-            });
-            //Empty because crafting pops token id
-            expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
-                token: TokenType.erc721,
-                consumableType: ConsumableType.unaffected,
-                contractAddr: outputERC721.address,
-                amounts: [],
-                tokenIds: [BigNumber.from(1), BigNumber.from(2)],
-            });
-        });
+        it(
+            'craft1',
+            assertBalances(ethers, async () => {
+                //Craft 1
+                await inputERC721.connect(owner).approve(CrafterTransferAddress, 1);
+                await expect(crafter['craft(uint96,uint256[][])'](1, [[1]])).to.be.revertedWith(
+                    'Used over the limit of n',
+                );
+                //Check storage
+                expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(2);
+                //Check balances
+                expect(await inputERC721.ownerOf(1)).to.equal(owner.address);
+                expect(await outputERC721.ownerOf(1)).to.equal(crafter.address); // this should be owner.address
+                expect(await outputERC721.ownerOf(2)).to.equal(crafter.address);
+                //Storage tests
+                const input0 = await crafter.getInputIngredient(0);
+                const output0 = await crafter.getOutputIngredient(0);
+                expect(pick(input0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal({
+                    token: TokenType.erc721,
+                    consumableType: ConsumableType.NTime,
+                    contractAddr: inputERC721.address,
+                    amounts: [BigNumber.from(0)],
+                    tokenIds: [],
+                });
+                //Empty because crafting pops token id
+                expect(pick(output0, ['token', 'consumableType', 'contractAddr', 'amounts', 'tokenIds'])).to.deep.equal(
+                    {
+                        token: TokenType.erc721,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: outputERC721.address,
+                        amounts: [],
+                        tokenIds: [BigNumber.from(1), BigNumber.from(2)],
+                    },
+                );
+            }),
+        );
 
         it('craft2', async () => {
             //Craft 2
@@ -306,7 +320,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [1, 2],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -342,7 +356,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [1, 2],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -520,7 +534,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [1, 2],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -556,7 +570,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [1, 2],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -747,7 +761,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [2, 1, 3],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -801,7 +815,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [2, 1, 3],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1052,7 +1066,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1086,7 +1100,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1230,7 +1244,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [1],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1265,7 +1279,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [1],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1442,7 +1456,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [outputId],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1477,7 +1491,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [outputId],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1666,7 +1680,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -1731,7 +1745,7 @@ describe('CrafterTransfer.sol NTime', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
