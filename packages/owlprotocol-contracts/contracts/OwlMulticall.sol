@@ -48,6 +48,7 @@ contract OwlMulticall is OwlBase {
 
     function executMultiCall(bytes[] calldata args) external {
         require(args.length == contracts.length, 'args.length != contracts.length');
+        for (uint256 i = 0; i < contracts.length; i++) {}
     }
 
     function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
