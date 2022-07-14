@@ -87,21 +87,17 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
         address _vrfBeacon,
         address _forwarder
     ) internal onlyInitializing {
-        __OwlBase_init(_admin);
+        __OwlBase_init(_admin, _forwarder);
 
-        __RouteRandomizer_init_unchained(_admin, _contracts, _signatures, _probabilities, _vrfBeacon, _forwarder);
+        __RouteRandomizer_init_unchained(_contracts, _signatures, _probabilities, _vrfBeacon);
     }
 
     function __RouteRandomizer_init_unchained(
-        address _admin,
         address[] calldata _contracts,
         bytes[] calldata _signatures,
         uint8[] calldata _probabilities,
-        address _vrfBeacon,
-        address _forwarder
+        address _vrfBeacon
     ) internal onlyInitializing {
-        _setTrustedForwarder(_forwarder);
-
         contracts = _contracts;
         signatures = _signatures;
         probabilities = _probabilities;
