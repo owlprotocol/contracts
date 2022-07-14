@@ -8,6 +8,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol';
 
 import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
@@ -18,6 +19,8 @@ import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
 
 contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+    using AddressUpgradeable for address;
+
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://RouteRandomizer/', version)));
@@ -25,15 +28,17 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
     /**********************
              State
     **********************/
+    struct RouteElement {
+        uint256 epochBlock;
+        bytes[] args;
+    }
 
-    address[] public crafterContracts;
+    address[] public contracts;
     bytes[] public signatures;
     uint256[] public probabilities;
     address public vrfBeacon;
-
-    mapping(uint256 => uint256) lootboxIdToEpochBlock;
+    RouteElement[] elements;
     uint256 public queueIndex;
-    uint256[] private upkeepQueue; //array of lootboxIds
 
     /**********************
         Initialization
@@ -96,29 +101,30 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
         address _forwarder
     ) internal onlyInitializing {
         _setTrustedForwarder(_forwarder);
+
+        contracts = _contracts;
+        signatures = _signatures;
+        probabilities = _probabilities;
+        vrfBeacon = _vrfBeacon;
     }
 
     /**********************
          Interaction
     **********************/
 
-    function requestUnlock(uint256 lootboxId) external returns (uint256 requestId, uint256 blockNumber) {
-        uint256 currEntry = lootboxIdToEpochBlock[lootboxId];
-        if (currEntry != 0) return (VRFBeacon(vrfBeacon).getRequestId(currEntry), currEntry); //Each lootbox can only be redeemed once
-
+    function requestRouteRandomize(bytes[] memory argsArr) external returns (uint256 requestId, uint256 blockNumber) {
         (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
 
-        lootboxIdToEpochBlock[lootboxId] = blockNumber;
-        upkeepQueue.push(lootboxId);
+        elements.push(RouteElement(blockNumber, argsArr));
     }
 
     function checkUpkeep(
         bytes calldata /* checkData */
     ) external view override returns (bool upkeepNeeded, bytes memory performData) {
-        assert(queueIndex <= upkeepQueue.length);
-        if (upkeepQueue.length == queueIndex) return (false, '0x');
+        assert(queueIndex <= elements.length);
+        if (elements.length == queueIndex) return (false, '0x');
 
-        uint256 randomness = VRFBeacon(vrfBeacon).getRandomness(lootboxIdToEpochBlock[upkeepQueue[queueIndex]]);
+        uint256 randomness = VRFBeacon(vrfBeacon).getRandomness(elements[queueIndex].epochBlock);
 
         if (randomness != 0) return (true, abi.encode(randomness, queueIndex));
         return (false, '0x');
@@ -130,9 +136,21 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
         //make sure that checkUpKeep hasn't run twice on the same queueIndex
         require(queueIndexRequest == queueIndex, 'Lootbox: queueIndex already processed');
 
-        // _unlock(upkeepQueue[queueIndex], randomness);
-
+        _routeRandomize(elements[queueIndex].args, randomness);
         queueIndex++;
+    }
+
+    function _routeRandomize(bytes[] memory argsArr, uint256 randomSeed) internal {
+        //randomly choose the crafter transfer contract to call
+        uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, queueIndex);
+        uint256 selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
+
+        bytes memory finalBytes = abi.encodePacked(
+            signatures[selectedContract],
+            argsArr[selectedContract],
+            _msgSender()
+        );
+        contracts[selectedContract].functionCall(finalBytes);
     }
 
     /**
