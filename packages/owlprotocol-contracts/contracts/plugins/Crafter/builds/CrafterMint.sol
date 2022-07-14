@@ -397,7 +397,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
             }
         }
 
-        emit RecipeCraft(craftAmount, craftableAmount, _crafter);
+        emit RecipeCraft(craftAmount, craftableAmount, _msgSender());
     }
 
     /**
