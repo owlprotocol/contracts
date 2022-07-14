@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { ERC20 } from '../../typechain';
+import { FactoryERC20 } from '../../typechain';
 import { loadSignersSmart, TestingSigner, loadForwarder } from '@owlprotocol/contract-helpers-opengsn/src';
 
 // Creates + returns dummy ERC20 tokens for use in testing
@@ -15,7 +15,7 @@ export async function createERC20(tokens = 1, signer?: TestingSigner) {
 
     const contracts = [];
     for (let i = 0; i < tokens; i++) {
-        contracts.push(FactoryERC20.deploy(mintAmount, coinName, coinTicker) as Promise<ERC20>);
+        contracts.push(FactoryERC20.deploy(mintAmount, coinName, coinTicker) as Promise<FactoryERC20>);
     }
     let deployedContracts = await Promise.all(contracts);
     // Assert all deployed
