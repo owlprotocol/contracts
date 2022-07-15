@@ -9,28 +9,19 @@ import {
     RouteRandomizer__factory,
     ERC1167Factory,
     CrafterMint,
-    CrafterTransfer,
     Transformer,
     VRFBeacon,
     VRFBeacon__factory,
     VRFCoordinatorV2,
     FactoryERC721,
-    UpgradeableBeaconInitializable__factory,
-    UpgradeableBeaconInitializable,
-    BeaconProxyInitializable__factory,
-    BeaconProxyInitializable,
-    ERC721Owl,
     ERC721OwlAttributes,
     ERC721OwlAttributes__factory,
 } from '../../../typechain';
 import { pick } from 'lodash';
 import { deployedBytecode as mockDeployedBytecode } from '../../../artifacts/contracts/testing/VRFCoordinatorV2.sol/VRFCoordinatorV2.json';
 
-import { createERC1155, createERC721, deployClone, encodeGenesUint256 } from '../../utils';
+import { createERC721, deployClone, encodeGenesUint256 } from '../../utils';
 import { BigNumber, Signer } from 'ethers';
-import { deploy } from '@openzeppelin/hardhat-upgrades/dist/utils';
-import { solidityPack } from 'ethers/lib/utils';
-import { txDataByCompiled } from 'eth-crypto';
 
 const coordinatorAddr = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
 const EPOCH_PERIOD = 10;
