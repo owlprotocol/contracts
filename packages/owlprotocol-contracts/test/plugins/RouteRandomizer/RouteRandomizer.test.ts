@@ -291,6 +291,7 @@ describe('RouteRandomizer.sol', async () => {
             'requestId',
             'blockNumber',
         ]);
+        await routeRandomizer.requestRouteRandomize(argsArr);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
         const { upkeepNeeded } = await routeRandomizer.checkUpkeep('0x');
