@@ -1,5 +1,5 @@
 import { ethers, network } from 'hardhat';
-import { time, setCode, mineUpTo } from '@nomicfoundation/hardhat-network-helpers';
+import { time, setCode, mineUpTo, mine } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
@@ -193,6 +193,7 @@ describe('Lootbox.sol', () => {
         const { events } = await tx.wait();
         const fulfilledEvent = events ? events[0] : undefined;
 
+        expect(fulfilledEvent).to.not.equal(undefined);
         if (fulfilledEvent === undefined) return;
 
         const { requestId: requestIdFulfilled, randomNumber } = pick(
@@ -228,6 +229,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -239,17 +241,12 @@ describe('Lootbox.sol', () => {
 
         if (randContract.eq(0)) {
             expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
         } else if (randContract.eq(1)) {
             expect(await reward2.ownerOf(tokenIdMinted)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
         } else if (randContract.eq(2)) {
             expect(await reward3.ownerOf(tokenIdMinted)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
         }
+        expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
     }
 
     it('1 Lootbox', async () => {
@@ -270,6 +267,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -327,6 +325,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -362,22 +361,22 @@ describe('Lootbox.sol', () => {
     });
 
     it('3 Lootboxes, all in same epoch', async () => {
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
         const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
             'blockNumber',
         ]);
-        await lootbox.requestUnlock(lootboxToUnlock1);
-        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
-        const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
-        expect(upkeepNeeded).to.equal(false);
+        await network.provider.send('evm_setAutomine', [false]);
 
-        await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber'];
-        await lootbox.requestUnlock(lootboxToUnlock2);
-        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+        lootbox.requestUnlock(lootboxToUnlock1);
+        lootbox.requestUnlock(lootboxToUnlock2);
+        lootbox.requestUnlock(lootboxToUnlock3)
 
-        await lootbox.callStatic.requestUnlock(lootboxToUnlock3), ['requestId', 'blockNumber'];
-        await lootbox.requestUnlock(lootboxToUnlock3);
+        await ethers.provider.send('evm_increaseTime', [10]);
+        await ethers.provider.send('evm_mine', []);
+        await network.provider.send('evm_setAutomine', [true]);
+
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 
         //check that all requestUnlocks are in the same epoch on VRFBeacon
@@ -392,6 +391,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -429,18 +429,24 @@ describe('Lootbox.sol', () => {
     });
 
     it('3 Lootboxes, two in same epoch, one in different', async () => {
+        const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
+        expect(upkeepNeeded).to.equal(false);
+
         const { requestId: reqId1, blockNumber: blockNumber1 } = pick(
             await lootbox.callStatic.requestUnlock(lootboxToUnlock1),
             ['requestId', 'blockNumber'],
         );
-        await lootbox.requestUnlock(lootboxToUnlock1);
+
+        await network.provider.send('evm_setAutomine', [false]);
+
+        lootbox.requestUnlock(lootboxToUnlock1);
+        lootbox.requestUnlock(lootboxToUnlock2);
+
+        await ethers.provider.send('evm_increaseTime', [10]);
+        await ethers.provider.send('evm_mine', []);
+        await network.provider.send('evm_setAutomine', [true]);
+
         expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
-
-        const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
-        expect(upkeepNeeded).to.equal(false);
-
-        await lootbox.callStatic.requestUnlock(lootboxToUnlock2);
-        await lootbox.requestUnlock(lootboxToUnlock2);
         expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
 
         //check that both requestUnlocks are in the same epoch on VRFBeacon
@@ -463,6 +469,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -563,7 +570,6 @@ describe('Lootbox.sol', () => {
         const { address: beaconAddr } = await deployClone(beaconImpl, [
             signer1.address,
             lootboxImpl.address,
-            forwarder.address,
         ]);
         //@ts-ignore
         const data = lootboxImpl.interface.encodeFunctionData('proxyInitialize', [...lootboxArgs]);
@@ -571,7 +577,6 @@ describe('Lootbox.sol', () => {
             signer1.address,
             beaconAddr,
             data,
-            forwarder.address,
         ]);
         const contrInst = (await ethers.getContractAt('Lootbox', beaconProxyAddr)) as Lootbox;
 

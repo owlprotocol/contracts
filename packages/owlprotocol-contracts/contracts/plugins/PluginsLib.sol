@@ -8,6 +8,9 @@ import '../assets/ERC721/ERC721OwlAttributes.sol';
  *
  */
 library PluginsLib {
+
+    event RouterError(uint256 indexed routeId, address indexed sender, bytes indexed data);
+
     /**
      * @dev Allows for specification of what happens to input ingredients after craft is complete
      * @param unaffected inputs of this type are unaffected by the crafting process. DOES NOT APPLY TO ERC 721 INPUTS, USE NTime INSTEAD.

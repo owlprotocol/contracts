@@ -73,7 +73,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
         PluginsLib.Ingredient[] calldata _inputs,
         PluginsLib.Ingredient[] calldata _outputs,
         address _forwarder
-    ) public initializer {
+    ) external initializer {
         __CrafterMint_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
@@ -84,7 +84,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
         PluginsLib.Ingredient[] calldata _inputs,
         PluginsLib.Ingredient[] calldata _outputs,
         address _forwarder
-    ) public onlyInitializing {
+    ) external onlyInitializing {
         __CrafterMint_init(_admin, _burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
     }
 
@@ -95,7 +95,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
         PluginsLib.Ingredient[] calldata _inputs,
         PluginsLib.Ingredient[] calldata _outputs,
         address _forwarder
-    ) public onlyInitializing {
+    ) internal onlyInitializing {
         require(_burnAddress != address(0), 'CrafterMint: burn address must not be 0');
         require(_inputs.length > 0, 'CrafterMint: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterMint: A crafting output must be given!');
@@ -265,29 +265,13 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
         emit RecipeUpdate(craftableAmount);
     }
 
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
-        _craft(craftAmount, _inputERC721Ids, _msgSender());
-    }
-
-    function craft(
-        uint96 craftAmount,
-        uint256[][] calldata _inputERC721Ids,
-        address _crafter
-    ) external onlyRole(ROUTER_ROLE) {
-        _craft(craftAmount, _inputERC721Ids, _crafter);
-    }
-
     /**
      * @notice Craft {craftAmount}
      * @dev Used to craft. Consumes inputs and transfers outputs.
      * @param craftAmount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function _craft(
-        uint96 craftAmount,
-        uint256[][] calldata _inputERC721Ids,
-        address _crafter
-    ) internal {
+    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
         // Requires
         require(craftAmount > 0, 'CrafterMint: craftAmount cannot be 0!');
         require(craftAmount <= craftableAmount, 'CrafterMint: Not enough resources to craft!');
@@ -307,7 +291,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
                     //Transfer ERC20
                     SafeERC20Upgradeable.safeTransferFrom(
                         IERC20Upgradeable(ingredient.contractAddr),
-                        _crafter,
+                        _msgSender(),
                         burnAddress,
                         ingredient.amounts[0] * craftAmount
                     );
@@ -315,7 +299,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
                     //this is unaffected consumable type, as ensured by input validations
                     //Check ERC20
                     require(
-                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_crafter) >=
+                        IERC20Upgradeable(ingredient.contractAddr).balanceOf(_msgSender()) >=
                             ingredient.amounts[0] * craftAmount,
                         'CrafterMint: User missing minimum token balance(s)!'
                     );
@@ -326,9 +310,10 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
                 require(currInputArr.length == craftAmount, 'CrafterMint: _inputERC721Ids[i] != craftAmount');
                 if (ingredient.consumableType == PluginsLib.ConsumableType.burned) {
                     //Transfer ERC721
+                    
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                            _crafter,
+                            _msgSender(),
                             burnAddress,
                             currInputArr[j]
                         );
@@ -338,7 +323,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
                     //Check ERC721
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _crafter,
+                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
                             'CrafterMint: User does not own token(s)!'
                         );
                         uint256 currTokenId = currInputArr[j];
@@ -360,7 +345,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
                         amounts[j] = ingredient.amounts[j] * craftAmount;
                     }
                     IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                        _crafter,
+                        _msgSender(),
                         burnAddress,
                         ingredient.tokenIds,
                         amounts,
@@ -373,7 +358,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
                     address[] memory accounts = new address[](ingredient.amounts.length);
                     for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                         amounts[j] = ingredient.amounts[j] * craftAmount;
-                        accounts[j] = _crafter;
+                        accounts[j] = _msgSender();
                     }
 
                     uint256[] memory balances = IERC1155Upgradeable(ingredient.contractAddr).balanceOfBatch(
@@ -391,12 +376,12 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
             PluginsLib.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == PluginsLib.TokenType.erc20) {
                 //Transfer ERC20
-                ERC20Owl(ingredient.contractAddr).mint(_crafter, ingredient.amounts[0] * craftAmount);
+                ERC20Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.amounts[0] * craftAmount);
             } else if (ingredient.token == PluginsLib.TokenType.erc721) {
                 //Pop token ids from storage
                 for (uint256 j = 0; j < craftAmount; j++) {
                     ERC721Owl(ingredient.contractAddr).mint(
-                        _crafter,
+                        _msgSender(),
                         ingredient.tokenIds[ingredient.tokenIds.length - 1]
                     );
 
@@ -409,11 +394,11 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
                 for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                     amounts[j] = ingredient.amounts[j] * craftAmount;
                 }
-                ERC1155Owl(ingredient.contractAddr).mintBatch(_crafter, ingredient.tokenIds, amounts, new bytes(0));
+                ERC1155Owl(ingredient.contractAddr).mintBatch(_msgSender(), ingredient.tokenIds, amounts, new bytes(0));
             }
         }
 
-        emit RecipeCraft(craftAmount, craftableAmount, _crafter);
+        emit RecipeCraft(craftAmount, craftableAmount, _msgSender());
     }
 
     /**

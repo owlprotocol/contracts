@@ -8,24 +8,26 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol';
 
 import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
 import '../../OwlBase.sol';
 import '../../random/VRFBeacon.sol';
-import '../Crafter/builds/CrafterTransfer.sol';
 import '../PluginsLib.sol';
-import './LootboxLib.sol';
 import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
+import '../Crafter/ICrafter.sol';
 
 contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+    using AddressUpgradeable for address;
+
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Lootbox/', version)));
 
     /**********************
-             Types
+             State
     **********************/
 
     address[] public crafterContracts;
@@ -46,7 +48,7 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
     }
 
     /**
-     * @dev Create auction instance
+     * @dev Create Lootbox instance
      * @param _admin the admin/owner of the contract
      * @param _crafterContracts array of crafterContract address, each with unique recipe
      * @param _probabilities array of cumulative probabilities associated with using a contract from crafterContracts
@@ -81,11 +83,10 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
     ) internal onlyInitializing {
         __OwlBase_init(_admin, _forwarder);
 
-        __Lootbox_init_unchained(_admin, _crafterContracts, _probabilities, _vrfBeacon);
+        __Lootbox_init_unchained(_crafterContracts, _probabilities, _vrfBeacon);
     }
 
     function __Lootbox_init_unchained(
-        address _admin,
         address[] calldata _crafterContracts,
         uint8[] calldata _probabilities,
         address _vrfBeacon
@@ -138,7 +139,7 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
     }
 
     function _unlock(uint256 lootboxId, uint256 randomSeed) internal {
-        //randomly choose the crafter transfer contract to call
+        //randomly choose the crafter contract to call
         uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, lootboxId);
         uint256 selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
 
@@ -149,16 +150,17 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
             inputERC721Id[0][0] = lootboxId;
         }
 
-        CrafterTransfer selectedCrafter = CrafterTransfer(crafterContracts[selectedContract]);
+        address selectedCrafter = crafterContracts[selectedContract];
 
-        // try catch to prevent revert loop. queueIndex will not
-        // increment and checkUpKeep will be endlessly called,
+        // try catch to prevent from reverting. queueIndex will not
+        // increment and performUpkeep will be endlessly called,
         // not allowing upkeepQueue to make progress
 
-        /*
-        try selectedCrafter.craft(1, inputERC721Id, _msgSender()) {} catch {}
-        */
-        selectedCrafter.craft(1, inputERC721Id, _msgSender());
+        (bool success, bytes memory returnData) = selectedCrafter.call(
+            abi.encodePacked(abi.encodeWithSignature('craft(uint96,uint256[][])', 1, inputERC721Id), _msgSender())
+        );
+
+        emit PluginsLib.RouterError(lootboxId, _msgSender(), returnData);
     }
 
     /**
