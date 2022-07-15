@@ -1,4 +1,4 @@
-import { ethers, network } from 'hardhat';
+import { ethers, network, web3 } from 'hardhat';
 import { time, setCode, mineUpTo } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';

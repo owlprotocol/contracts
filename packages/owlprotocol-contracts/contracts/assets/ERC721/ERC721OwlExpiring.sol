@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import './ERC721Owl.sol';
 import '@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol';
-import 'hardhat/console.sol';
+
+import './ERC721Owl.sol';
 
 contract ERC721OwlExpiring is ERC721Owl {
     using StringsUpgradeable for uint256;
@@ -43,13 +43,12 @@ contract ERC721OwlExpiring is ERC721Owl {
         address _forwarder
     ) internal onlyInitializing {
         __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder);
-        __ERC721OwlExpiring_init_unchained(_admin, _forwarder);
+        _grantRole(EXPIRY_ROLE, _admin);
+
+        __ERC721OwlExpiring_init_unchained();
     }
 
-    function __ERC721OwlExpiring_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        _grantRole(EXPIRY_ROLE, _admin);
-        _setTrustedForwarder(_forwarder);
-    }
+    function __ERC721OwlExpiring_init_unchained() internal onlyInitializing {}
 
     /**
      * @notice Must have DEFAULT_ADMIN_ROLE
@@ -58,16 +57,6 @@ contract ERC721OwlExpiring is ERC721Owl {
      */
     function grantExpiry(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _grantRole(EXPIRY_ROLE, to);
-    }
-
-    /* ERC721Upgradeable Overrides */
-    /**
-     * @dev ERC165 Support
-     * @param interfaceId hash of the interface testing for
-     * @return bool whether interface is supported
-     */
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721Owl) returns (bool) {
-        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 
     /**
@@ -197,5 +186,15 @@ contract ERC721OwlExpiring is ERC721Owl {
 
     function version() public pure override returns (string memory) {
         return _version;
+    }
+
+    /* ERC721Upgradeable Overrides */
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721Owl) returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }

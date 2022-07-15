@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
-contract ERC1155Owl is BaseRelayRecipient, ERC1155Upgradeable, ERC1155BurnableUpgradeable, AccessControlUpgradeable {
+import '../../OwlBase.sol';
+
+contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
     string private contractURI_;
@@ -45,22 +43,16 @@ contract ERC1155Owl is BaseRelayRecipient, ERC1155Upgradeable, ERC1155BurnableUp
         address _forwarder
     ) internal onlyInitializing {
         __ERC1155_init(uri_);
-        __ERC1155Burnable_init();
-        __AccessControl_init();
-        __ERC1155Owl_init_unchained(_admin, newContractURI, _forwarder);
-    }
-
-    function __ERC1155Owl_init_unchained(
-        address _admin,
-        string calldata newContractURI,
-        address _forwarder
-    ) internal onlyInitializing {
+        __OwlBase_init(_admin, _forwarder);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
 
+        __ERC1155Owl_init_unchained(newContractURI);
+    }
+
+    function __ERC1155Owl_init_unchained(string calldata newContractURI) internal onlyInitializing {
         contractURI_ = newContractURI;
-        _setTrustedForwarder(_forwarder);
     }
 
     /**
@@ -142,6 +134,17 @@ contract ERC1155Owl is BaseRelayRecipient, ERC1155Upgradeable, ERC1155BurnableUp
         return contractURI_;
     }
 
+    /**
+     * @notice the following 3 functions are all required for OpenGSN integration
+     */
+    function _msgSender() internal view override(OwlBase, ContextUpgradeable) returns (address) {
+        return OwlBase._msgSender();
+    }
+
+    function _msgData() internal view override(OwlBase, ContextUpgradeable) returns (bytes calldata) {
+        return OwlBase._msgData();
+    }
+
     /* @dev ERC165 Support
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
@@ -154,20 +157,5 @@ contract ERC1155Owl is BaseRelayRecipient, ERC1155Upgradeable, ERC1155BurnableUp
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
     }
 }

@@ -9,13 +9,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
-
+import '../OwlBase.sol';
 import './AuctionLib.sol';
 
 /**
@@ -26,13 +20,7 @@ import './AuctionLib.sol';
  * Theoretically, the auction can go on forever if higher bids continue to be made within the resetTime period.
  * Once the ending time is passed, the auction finishes and the NFT is transferred to the highest bidder.
  */
-contract EnglishAuction is
-    BaseRelayRecipient,
-    ERC721HolderUpgradeable,
-    ERC1155HolderUpgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable
-{
+contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://EnglishAuction/', version)));
@@ -142,7 +130,8 @@ contract EnglishAuction is
         address payable _saleFeeAddress,
         address _forwarder
     ) internal onlyInitializing {
-        _transferOwnership(_seller);
+        __OwlBase_init(_seller, _forwarder);
+
         __EnglishAuction_init_unchained(
             _seller,
             _asset,
@@ -151,8 +140,7 @@ contract EnglishAuction is
             _auctionDuration,
             _resetTime,
             _saleFee,
-            _saleFeeAddress,
-            _forwarder
+            _saleFeeAddress
         );
     }
 
@@ -164,8 +152,7 @@ contract EnglishAuction is
         uint256 _auctionDuration,
         uint256 _resetTime,
         uint256 _saleFee,
-        address payable _saleFeeAddress,
-        address _forwarder
+        address payable _saleFeeAddress
     ) internal onlyInitializing {
         require(_saleFee <= 100, 'EnglishAuction: saleFee cannot be above 100 percent!');
         asset = _asset;
@@ -178,9 +165,6 @@ contract EnglishAuction is
         resetTime = _resetTime;
         saleFee = _saleFee;
         saleFeeAddress = _saleFeeAddress;
-
-        //Setting trusted forwarder for open GSN integration
-        _setTrustedForwarder(_forwarder);
 
         //transferring ERC 721
         if (asset.token == AuctionLib.TokenType.erc721)
@@ -205,7 +189,7 @@ contract EnglishAuction is
      * @dev Allows the owner to start the auction
      * this function also defines the starting endAt time based on auctionDuration
      */
-    function start() external onlyOwner {
+    function start() external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(!started, 'EnglishAuction: started');
 
         started = true;
@@ -260,7 +244,7 @@ contract EnglishAuction is
      * @dev Allows owner to claim bid.
      * The seller must call to transfer the ERC20 to themselves
      */
-    function ownerClaim() external onlyOwner {
+    function ownerClaim() external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(started, 'EnglishAuction: not started');
         require(block.timestamp >= endAt, 'EnglishAuction: not ended');
         require(!ownerClaimed, 'EnglishAuction: owner has already claimed');
@@ -329,42 +313,17 @@ contract EnglishAuction is
     }
 
     /**
-    Upgradeable functions
-    */
-
-    /**
-     * @dev Returns the address of the implementation contract.
-     */
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    /**
-     * @dev Returns the address of the implementation contract.
-     */
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
-    }
-
-    /**
      * @dev ERC165 Support
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        returns (bool)
+    {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
     }
 }

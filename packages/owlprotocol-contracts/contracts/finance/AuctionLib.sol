@@ -6,7 +6,6 @@ pragma solidity ^0.8.0;
  *
  */
 library AuctionLib {
-    // Token Types
     enum TokenType {
         erc721,
         erc1155
@@ -15,6 +14,6 @@ library AuctionLib {
     struct Asset {
         TokenType token;
         address contractAddr;
-        uint256 tokenId; 
+        uint256 tokenId;
     }
 }

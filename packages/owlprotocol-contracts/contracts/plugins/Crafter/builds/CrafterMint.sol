@@ -10,23 +10,13 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
-
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
-
-import '../../../OwlBase.sol';
 import '../../../assets/ERC20/ERC20Owl.sol';
 import '../../../assets/ERC721/ERC721Owl.sol';
 import '../../../assets/ERC1155/ERC1155Owl.sol';
 
+import '../../../OwlBase.sol';
 import '../ICrafter.sol';
 import '../../PluginsLib.sol';
-
-import 'hardhat/console.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
@@ -109,19 +99,17 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
         require(_burnAddress != address(0), 'CrafterMint: burn address must not be 0');
         require(_inputs.length > 0, 'CrafterMint: A crafting input must be given!');
         require(_outputs.length > 0, 'CrafterMint: A crafting output must be given!');
+        __OwlBase_init(_admin, _forwarder);
 
-        __OwlBase_init(_admin);
-
-        __CrafterMint_init_unchained(_burnAddress, _craftableAmount, _inputs, _outputs, _forwarder);
+        __CrafterMint_init_unchained(_burnAddress, _craftableAmount, _inputs, _outputs);
     }
 
     function __CrafterMint_init_unchained(
         address _burnAddress,
         uint96 _craftableAmount,
         PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs,
-        address _forwarder
-    ) internal onlyInitializing {
+        PluginsLib.Ingredient[] calldata _outputs
+    ) public onlyInitializing {
         burnAddress = _burnAddress;
 
         PluginsLib.validateInputs(_inputs, inputs, nUse);
@@ -129,9 +117,6 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
         uint256 erc721Amount = PluginsLib.validateOutputs(_outputs, outputs, _craftableAmount);
 
         uint256[][] memory _outputsERC721Ids = PluginsLib.createOutputsArr(_outputs, _craftableAmount, erc721Amount);
-
-        //sets trusted forwarder address for open gsn
-        _setTrustedForwarder(_forwarder);
 
         if (_craftableAmount > 0) _deposit(_craftableAmount, _outputsERC721Ids);
         emit CreateRecipe(_msgSender(), _inputs, _outputs);

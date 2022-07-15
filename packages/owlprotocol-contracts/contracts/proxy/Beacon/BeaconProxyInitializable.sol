@@ -12,6 +12,8 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@opengsn/contracts/src/BaseRelayRecipient.sol';
 import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
+import 'hardhat/console.sol';
+
 /**
  * @dev This contract implements a proxy that gets the implementation address for each call from an {UpgradeableBeacon}.
  *
@@ -20,13 +22,7 @@ import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
  *
  * _Available since v3.4._
  */
-contract BeaconProxyInitializable is
-    BaseRelayRecipient,
-    Initializable,
-    ProxyUpgradeable,
-    ERC1967UpgradeUpgradeable,
-    OwnableUpgradeable
-{
+contract BeaconProxyInitializable is ProxyUpgradeable, ERC1967UpgradeUpgradeable, OwnableUpgradeable {
     /**
      * @dev Initializes the proxy with `beacon`.
      *
@@ -53,8 +49,6 @@ contract BeaconProxyInitializable is
 
         __Ownable_init();
         _transferOwnership(_admin);
-
-        _setTrustedForwarder(_forwarder);
     }
 
     /**
@@ -91,20 +85,5 @@ contract BeaconProxyInitializable is
 
     function setBeacon(address beacon, bytes memory data) external onlyOwner {
         _setBeacon(beacon, data);
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
     }
 }

@@ -20,7 +20,6 @@ import { createERC1155, createERC20, createERC721, deployClone, encodeGenesUint2
 import { pick } from 'lodash';
 import { BigNumber } from 'ethers';
 import { parseUnits } from 'ethers/lib/utils';
-import { zeroAddress } from 'ethereumjs-util';
 
 const salt = ethers.utils.formatBytes32String('1');
 
@@ -699,7 +698,7 @@ describe.only('Transformer.sol; genes [2, 4, 6]', () => {
                 transformerImpl,
                 [
                     adminAddress,
-                    zeroAddress(),
+                    ethers.constants.AddressZero,
                     [
                         {
                             token: TokenType.erc721,
