@@ -157,7 +157,7 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
         // not allowing upkeepQueue to make progress
 
         (bool success, bytes memory returnData) = selectedCrafter.call(
-             abi.encodePacked(abi.encodeWithSignature('craft(uint96,uint256[][])', 1, inputERC721Id), _msgSender())
+            abi.encodePacked(abi.encodeWithSignature('craft(uint96,uint256[][])', 1, inputERC721Id), _msgSender())
         );
 
         emit PluginsLib.RouterError(lootboxId, _msgSender(), returnData);

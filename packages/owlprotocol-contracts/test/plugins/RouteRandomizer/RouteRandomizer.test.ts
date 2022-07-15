@@ -1,7 +1,7 @@
 import { ethers, network } from 'hardhat';
 const { utils } = ethers;
 const { keccak256, toUtf8Bytes, defaultAbiCoder } = utils;
-import { time, setCode, mineUpTo } from '@nomicfoundation/hardhat-network-helpers';
+import { time, setCode, mineUpTo, mine } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
@@ -291,10 +291,14 @@ describe('RouteRandomizer.sol', async () => {
         const craftArgs = defaultAbiCoder.encode(['uint96', 'uint256[][]'], [craftAmount, inputNFTIds]);
         const transformArgs = defaultAbiCoder.encode(['uint256', 'uint256[][]'], [transformTokenId, inputNFTIds]);
         const argsArr = [craftArgs, craftArgs, transformArgs];
+
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+
         const { requestId, blockNumber } = pick(await routeRandomizer.callStatic.requestRouteRandomize(argsArr), [
             'requestId',
             'blockNumber',
         ]);
+
         await routeRandomizer.requestRouteRandomize(argsArr);
         expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
 

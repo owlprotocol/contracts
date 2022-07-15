@@ -113,6 +113,8 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
     function requestRouteRandomize(bytes[] memory argsArr) external returns (uint256 requestId, uint256 blockNumber) {
         (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
 
+        console.log(requestId);
+
         elements.push(RouteElement(blockNumber, argsArr));
     }
 
@@ -141,10 +143,10 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
         //randomly choose the crafter transfer contract to call
         uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, queueIndex);
         uint256 selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
-        
+
         address routedContract = contracts[selectedContract];
 
-        uint256 sz = (argsArr[selectedContract].length);
+        // uint256 sz = (argsArr[selectedContract].length);
 
         // bytes memory a;
         // assembly {
@@ -167,15 +169,19 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
             signatures[selectedContract],
             argsArr[selectedContract],
             _msgSender()
-        );        
+        );
 
         (bool success, bytes memory returnData) = routedContract.call(finalBytes);
-        
-        if(!success) emit PluginsLib.RouterError(queueIndex, _msgSender(), returnData);
+
+        if (!success) emit PluginsLib.RouterError(queueIndex, _msgSender(), returnData);
     }
 
     // used for testing
-    function getRandomContract(uint256 queueIndex, uint256 randomSeed) external view returns (uint256 selectedContract) {
+    function getRandomContract(uint256 queueIndex, uint256 randomSeed)
+        external
+        view
+        returns (uint256 selectedContract)
+    {
         uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, queueIndex);
         selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
     }
