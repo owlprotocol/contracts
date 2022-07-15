@@ -310,6 +310,7 @@ contract CrafterMint is OwlBase, ICrafter, ERC721HolderUpgradeable, ERC1155Holde
                 require(currInputArr.length == craftAmount, 'CrafterMint: _inputERC721Ids[i] != craftAmount');
                 if (ingredient.consumableType == PluginsLib.ConsumableType.burned) {
                     //Transfer ERC721
+                    
                     for (uint256 j = 0; j < currInputArr.length; j++) {
                         IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
                             _msgSender(),

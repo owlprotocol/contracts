@@ -14,10 +14,10 @@ import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
 import '../../OwlBase.sol';
 import '../../random/VRFBeacon.sol';
-import '../Crafter/builds/CrafterTransfer.sol';
 import '../PluginsLib.sol';
 import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
+import '../Crafter/ICrafter.sol';
 
 contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     using AddressUpgradeable for address;
@@ -139,7 +139,7 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
     }
 
     function _unlock(uint256 lootboxId, uint256 randomSeed) internal {
-        //randomly choose the crafter transfer contract to call
+        //randomly choose the crafter contract to call
         uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, lootboxId);
         uint256 selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
 
@@ -152,15 +152,15 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
 
         address selectedCrafter = crafterContracts[selectedContract];
 
-        // try catch to prevent revert loop. queueIndex will not
-        // increment and checkUpKeep will be endlessly called,
+        // try catch to prevent from reverting. queueIndex will not
+        // increment and performUpkeep will be endlessly called,
         // not allowing upkeepQueue to make progress
 
-        selectedCrafter.functionCall(
-            abi.encodePacked(abi.encodeWithSignature('craft(uint96,uint256[][])', 1, inputERC721Id), _msgSender())
+        (bool success, bytes memory returnData) = selectedCrafter.call(
+             abi.encodePacked(abi.encodeWithSignature('craft(uint96,uint256[][])', 1, inputERC721Id), _msgSender())
         );
 
-        // try selectedCrafter.craft(1, inputERC721Id) {} catch {}
+        emit PluginsLib.RouterError(lootboxId, _msgSender(), returnData);
     }
 
     /**
