@@ -93,6 +93,14 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
             beaconProxyAddr,
         )) as BeaconProxyInitializable;
 
+        // await owlAdmin.sendTransaction({
+        //     to: beaconProxyInst.address,
+        //     value: ethers.utils.parseEther("1.0"),
+        //     gasLimit: 100000
+        // })
+
+        // expect(await ethers.provider.getBalance(beaconProxyInst.address)).to.equal(ethers.utils.parseEther("1.0"))
+
         expect(await beaconProxyInst.beacon()).to.equal(beaconAddr);
 
         await beaconProxyInst.connect(gameDev).setBeacon(beaconAddr2, '0x');
@@ -117,4 +125,5 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
             'UpgradeableBeacon: implementation is not a contract',
         );
     });
+
 });

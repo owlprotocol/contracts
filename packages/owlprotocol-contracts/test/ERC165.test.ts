@@ -18,6 +18,7 @@ describe('ERC165 Testing', async () => {
             'ERC1155Owl',
             'ERC20Owl',
             'ERC721Owl',
+            'ERC721OwlAttributes',
             'ERC721OwlExpiring',
             'DutchAuction',
             'EnglishAuction',

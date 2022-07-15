@@ -56,6 +56,7 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
     }
 
     function __ERC721Owl_init_unchained(string memory baseURI_) internal onlyInitializing {
+        (_msgData());
         baseURI = baseURI_;
     }
 
