@@ -144,6 +144,25 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
         
         address routedContract = contracts[selectedContract];
 
+        uint256 sz = (argsArr[selectedContract].length);
+
+        // bytes memory a;
+        // assembly {
+        //     let fptr := mload(0x40)
+        //     let ptr := add(fptr, 0x20)
+        //     mstore(ptr, sload(add(signatures.slot, selectedContract)))
+        //     // prettier-ignore
+        //     for { let i := 0 } lt(i, sz) { i := add(i, 0x20) } {
+        //         mstore(add(ptr, add(i, 0x04)), mload(add(sub(fptr, sz), i)))
+        //     }
+        //     mstore(add(ptr, add(sz, 0x04)), shl(0x60, caller()))
+        //     mstore(fptr, add(sz, 0x20))
+        //     mstore(0x40, add(add(sz, 0x40), mload(0x40)))
+        //     a := fptr
+        // }
+
+        // console.logBytes(a);
+
         bytes memory finalBytes = abi.encodePacked(
             signatures[selectedContract],
             argsArr[selectedContract],
