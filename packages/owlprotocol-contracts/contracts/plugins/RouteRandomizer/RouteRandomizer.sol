@@ -17,6 +17,7 @@ import '../../random/VRFBeacon.sol';
 import '../PluginsLib.sol';
 import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
+import '../Transformer/Transformer.sol';
 
 contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     using AddressUpgradeable for address;
@@ -132,7 +133,6 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
 
         //make sure that checkUpKeep hasn't run twice on the same queueIndex
         require(queueIndexRequest == queueIndex, 'Lootbox: queueIndex already processed');
-
         _routeRandomize(elements[queueIndex].args, randomness);
         queueIndex++;
     }
@@ -141,17 +141,28 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
         //randomly choose the crafter transfer contract to call
         uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, queueIndex);
         uint256 selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
+        
+        address routedContract = contracts[selectedContract];
 
         bytes memory finalBytes = abi.encodePacked(
             signatures[selectedContract],
             argsArr[selectedContract],
             _msgSender()
-        );
-
-        address routedContract = contracts[selectedContract];
+        );        
 
         (bool success, bytes memory returnData) = routedContract.call(finalBytes);
-        emit PluginsLib.RouterError(queueIndex, _msgSender(), returnData);
+        
+        if(!success) emit PluginsLib.RouterError(queueIndex, _msgSender(), returnData);
+    }
+
+    // used for testing
+    function getRandomContract(uint256 queueIndex, uint256 randomSeed) external view returns (uint256 selectedContract) {
+        uint256 randomNumber = SourceRandom.getSeededRandom(randomSeed, queueIndex);
+        selectedContract = Probability.probabilityDistribution(randomNumber, probabilities);
+    }
+
+    function getQueueIndex() public view returns (uint256) {
+        return queueIndex;
     }
 
     /**
