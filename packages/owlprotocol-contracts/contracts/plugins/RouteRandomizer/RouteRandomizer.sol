@@ -147,7 +147,11 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
             argsArr[selectedContract],
             _msgSender()
         );
-        contracts[selectedContract].functionCall(finalBytes);
+
+        address routedContract = contracts[selectedContract];
+
+        (bool success, bytes memory returnData) = routedContract.call(finalBytes);
+        emit PluginsLib.RouterError(queueIndex, _msgSender(), returnData);
     }
 
     /**

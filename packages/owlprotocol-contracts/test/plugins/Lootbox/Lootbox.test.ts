@@ -169,8 +169,6 @@ describe('Lootbox.sol', () => {
 
         lootbox = (await ethers.getContractAt('Lootbox', lootboxInstAddr)) as Lootbox;
 
-
-
         await setCode(coordinatorAddr, mockDeployedBytecode);
 
         coordinator = (await ethers.getContractAt('VRFCoordinatorV2', coordinatorAddr)) as VRFCoordinatorV2;
@@ -195,6 +193,7 @@ describe('Lootbox.sol', () => {
         const { events } = await tx.wait();
         const fulfilledEvent = events ? events[0] : undefined;
 
+        expect(fulfilledEvent).to.not.equal(undefined);
         if (fulfilledEvent === undefined) return;
 
         const { requestId: requestIdFulfilled, randomNumber } = pick(
@@ -230,6 +229,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -241,17 +241,12 @@ describe('Lootbox.sol', () => {
 
         if (randContract.eq(0)) {
             expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
         } else if (randContract.eq(1)) {
             expect(await reward2.ownerOf(tokenIdMinted)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
         } else if (randContract.eq(2)) {
             expect(await reward3.ownerOf(tokenIdMinted)).to.equal(signer1.address);
-
-            expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
         }
+        expect(await lootboxNFT.ownerOf(tokenId)).to.equal(burn.address);
     }
 
     it('1 Lootbox', async () => {
@@ -272,6 +267,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -329,6 +325,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -394,6 +391,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
@@ -465,6 +463,7 @@ describe('Lootbox.sol', () => {
         const { events } = receipt;
         const transferEvent = events ? events[2] : undefined;
 
+        expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
 
         const { tokenId: tokenIdMinted } = pick(
