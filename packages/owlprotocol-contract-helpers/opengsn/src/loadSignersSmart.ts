@@ -4,6 +4,8 @@ import { GsnTestEnvironment, TestEnvironment } from '@opengsn/dev';
 import { JsonRpcSigner, JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
+import { GSNContractsDeployment } from '@opengsn/common/dist/GSNContractsDeployment';
+
 
 const ZERO_ADDR = '0x' + '0'.repeat(40);
 
@@ -29,9 +31,10 @@ export const describeNoGSN = IS_GSN ? describe.skip : describe;
 interface loadedSigners {
     signer1: TestingSigner;
     signers: (TestingSigner)[];
+    gsnForwarderAddress: string;
     gsnTestEnv?: TestEnvironment;
     provider?: Web3Provider;
-    gsnForwarderAddress: string;
+    contracts?: GSNContractsDeployment;
 }
 
 export class JsonRpcSignerTesting extends JsonRpcSigner {
@@ -76,7 +79,7 @@ export default async function loadEnvironment(ethers: any, hardhatNetwork: Netwo
 
         }
 
-        return { signers, signer1, gsnTestEnv, provider, gsnForwarderAddress };
+        return { signers, signer1, gsnTestEnv, provider, gsnForwarderAddress, contracts: gsnTestEnv.contractsDeployment };
 
     } else {
 

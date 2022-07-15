@@ -16,6 +16,7 @@
   "devDependencies": {
     "@ethersproject/providers": "^5.5.2",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
+    "@opengsn/common": "^2.2.6",
     "@opengsn/dev": "^2.2.6",
     "@typechain/hardhat": "^2.3.1",
     "hardhat": "^2.9.1",

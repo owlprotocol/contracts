@@ -11,12 +11,13 @@ import {
 import { deployClone2, createERC721 } from '../utils';
 import { Web3Provider, ExternalProvider } from '@ethersproject/providers';
 import { RelayProvider, GSNConfig } from '@opengsn/provider';
-import { Web3ProviderBaseInterface } from '@opengsn/common/dist/types/Aliases';
-import { TestingSigner } from '@owlprotocol/contract-helpers-opengsn/src';
+import { loadEnvironment, loadSignersSmart, TestingSigner } from '@owlprotocol/contract-helpers-opengsn/src';
 import web3 from 'Web3';
 import { JsonRpcSignerTesting } from '@owlprotocol/contract-helpers-opengsn/src/loadSignersSmart';
 import { BigNumber } from 'ethers';
 import { GSNContractsDeployment } from '@opengsn/common/dist/GSNContractsDeployment';
+import { Web3ProviderBaseInterface } from '@opengsn/common/dist/types/Aliases';
+
 
 describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
     let ERC721OwlFactory: ERC721Owl__factory;
@@ -28,7 +29,6 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
     let signer2: TestingSigner;
 
     let testNFT: FactoryERC721;
-    let gsn: TestEnvironment | GSNContractsDeployment;
     let gsnConfig: Partial<GSNConfig>;
 
     let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
@@ -44,7 +44,13 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
     //Use account1 as account0 is used as relayer
     //Use Web3.js as better suited for provider
     before(async () => {
-        [signer1, signer2] = await ethers.getSigners();
+        //Setup Test Environment and get addresses
+        const gsn = await loadEnvironment(ethers);
+        if (gsn.gsnTestEnv === undefined) throw 'Must enable gsn!';
+        gsnForwarderAddress = gsn.gsnTestEnv.contractsDeployment.forwarderAddress as string;
+        relayHubAddress = gsn.gsnTestEnv.contractsDeployment.relayHubAddress as string;
+
+        [signer1, signer2] = await loadSignersSmart(ethers);
 
         // Deploy dummy nft
         [testNFT] = await createERC721(1, 1);
@@ -57,20 +63,15 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
         )) as NFTOwnershipPaymaster__factory;
         NFTPaymaster = await NFTOwnershipPaymasterFactory.deploy(testNFT.address, tokenId);
 
-        //Setup Test Environment and get addresses
-        gsn = (await GsnTestEnvironment.startGsn('http://localhost:8545')).contractsDeployment;
-        // gsn = GsnTestEnvironment.loadDeployment();
-        gsnForwarderAddress = gsn.forwarderAddress as string;
-        relayHubAddress = gsn.relayHubAddress as string;
-
         // Set relay hub and fund
         await NFTPaymaster.setRelayHub(relayHubAddress);
-        await signer1.sendTransaction({ to: NFTPaymaster.address, value: BigNumber.from(10).pow(18) });
+        const etherSigner = await ethers.getSigner(signer1.address);
+        await etherSigner.sendTransaction({ to: NFTPaymaster.address, value: BigNumber.from(10).pow(18) });
 
         // Setup config
         gsnConfig = {
             // Address configs
-            paymasterAddress: NFTPaymaster.address,
+            paymasterAddress: gsn.gsnTestEnv.contractsDeployment.paymasterAddress,
             // preferredRelays: [gsn.relayUrl],
             // GSN configs
             loggerConfiguration: {
@@ -105,6 +106,8 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
                 signer: signer1,
             })
         ).contract as ERC721Owl;
+
+        console.log('ran');
     });
 
     describe('Caller Approved', () => {
