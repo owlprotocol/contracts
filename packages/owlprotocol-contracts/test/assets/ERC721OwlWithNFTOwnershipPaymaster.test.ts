@@ -10,14 +10,22 @@ import {
 import { deployClone2, createERC721 } from '../utils';
 import { Web3Provider, ExternalProvider } from '@ethersproject/providers';
 import { RelayProvider, GSNConfig } from '@opengsn/provider';
-import { loadEnvironment, loadSignersSmart, TestingSigner } from '@owlprotocol/contract-helpers-opengsn/src';
+import {
+    loadEnvironment,
+    loadSignersSmart,
+    TestingSigner,
+    assertBalances,
+} from '@owlprotocol/contract-helpers-opengsn/src';
 import web3 from 'Web3';
-import { JsonRpcSignerTesting } from '@owlprotocol/contract-helpers-opengsn/src/loadSignersSmart';
+import {
+    describeGSN,
+    JsonRpcSignerTesting,
+    expectPaymasterThrows,
+} from '@owlprotocol/contract-helpers-opengsn/src/loadSignersSmart';
 import { BigNumber } from 'ethers';
 import { Web3ProviderBaseInterface } from '@opengsn/common/dist/types/Aliases';
-import { RelayRequest } from '@opengsn/common/dist/EIP712/RelayRequest';
 
-describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
+describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
     let ERC721OwlFactory: ERC721Owl__factory;
     let ERC721OwlImplementation: ERC721Owl;
 
@@ -25,6 +33,7 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
 
     let signer1: TestingSigner;
     let signer2: TestingSigner;
+    let signer3: TestingSigner;
 
     let testNFT: FactoryERC721;
     let gsnConfig: Partial<GSNConfig>;
@@ -48,7 +57,7 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
         gsnForwarderAddress = gsn.gsnTestEnv.contractsDeployment.forwarderAddress as string;
         relayHubAddress = gsn.gsnTestEnv.contractsDeployment.relayHubAddress as string;
 
-        [signer1, signer2] = await loadSignersSmart(ethers);
+        [signer1, signer2, signer3] = await loadSignersSmart(ethers);
 
         // Deploy dummy nft
         [testNFT] = await createERC721(1, 1);
@@ -59,7 +68,7 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
         NFTOwnershipPaymasterFactory = (await ethers.getContractFactory(
             'NFTOwnershipPaymaster',
         )) as NFTOwnershipPaymaster__factory;
-        NFTPaymaster = await NFTOwnershipPaymasterFactory.deploy(testNFT.address, 3);
+        NFTPaymaster = await NFTOwnershipPaymasterFactory.deploy(testNFT.address, tokenId);
 
         // Set relay hub and fund
         await NFTPaymaster.setRelayHub(relayHubAddress);
@@ -92,12 +101,15 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
             overrideDependencies: { asyncApprovalData },
         }).init()) as unknown as ExternalProvider;
         etherProvider = new ethers.providers.Web3Provider(gsnProvider);
+        // TODO - create factory in loadEnvironment (will fix signers)
 
         // Overwrite our signer + set address field (quirk of JsonRpcSignerTesting)
         signer1 = etherProvider.getSigner(signer1.address) as JsonRpcSignerTesting;
         signer2 = etherProvider.getSigner(signer2.address) as JsonRpcSignerTesting;
+        signer3 = etherProvider.getSigner(signer3.address) as JsonRpcSignerTesting;
         signer1.address = await signer1.getAddress();
         signer2.address = await signer2.getAddress();
+        signer3.address = await signer3.getAddress();
 
         // Contract deployment
         ERC721OwlFactory = (await ethers.getContractFactory('ERC721Owl')) as ERC721Owl__factory;
@@ -180,42 +192,3 @@ describe.only('ERC721Owl With NFTOwnershipPaymaster', () => {
         });
     });
 });
-
-/* describe('Caller not approved', () => {
-    //initialize the paymaster so that the acceptable NFT has tokenId = 1
-    //do NOT give ownership of tokenId 1 to the caller
-    //let OwlGSNContract: ERC721Owl;
-
-    before(async () => {
-        //Setup GSN-connected contract
-        //OwlGSNContract = Owl.connect(web3provider.getSigner(signer2.address));
-
-        //mint NFT
-        [testNFT] = await createERC721(1, 1);
-        expect(await testNFT.balanceOf(signer2.address)).to.equal(0); //make sure signer 2 does NOT own the NFT
-
-        //deploy paymaster
-        NFTOwnershipPaymasterFactory = (await ethers.getContractFactory(
-            'NFTOwnershipPaymaster',
-        )) as NFTOwnershipPaymaster__factory;
-        NFTPaymaster = await NFTOwnershipPaymasterFactory.deploy(testNFT.address, 1);
-        NFTPaymaster = NFTPaymaster.connect(signer2);
-        await NFTPaymaster.deployed();
-
-        await NFTPaymaster.connect(signer1).setRelayHub(relayHubAddress);
-        await web3.eth.sendTransaction({ from: signer1.address, to: NFTPaymaster.address, value: 1e18 });
-    });
-
-    it('mint() with gas', async () => {
-        const initialBalance = await ethers.provider.getBalance(signer2.address);
-
-        await OwlGSNContract.mint(signer2.address, '2', { gasLimit: 1e6 });
-
-        // Ensure exists
-        const exists = await OwlGSNContract.exists('2');
-        assert.equal(exists, true, 'Token not minted!');
-
-        //Gas was spent by user
-        const finalBalance = await ethers.provider.getBalance(signer2.address);
-        assert.isTrue(finalBalance.lt(initialBalance), 'finalBalance !< initialBalance');
-    }); */

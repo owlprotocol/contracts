@@ -24,15 +24,9 @@ contract NFTOwnershipPaymaster is BasePaymaster {
      * @param _acceptableToken acceptable ERC721 for approving a transaction
      * @param _limit number of times a tokenId can be minted
      */
-    constructor(
-        address _acceptableToken,
-        //uint256 _tokenId,
-        uint256 _limit
-    ) {
+    constructor(address _acceptableToken, uint256 _limit) {
         acceptableToken = IERC721Upgradeable(_acceptableToken);
-        //tokenId = _tokenId;
         limit = _limit;
-        //numTimes[tokenId] = 0;
     }
 
     function preRelayedCall(
@@ -42,8 +36,8 @@ contract NFTOwnershipPaymaster is BasePaymaster {
         uint256 maxPossibleGas
     ) external virtual override returns (bytes memory context, bool revertOnRecipientRevert) {
         require(relayRequest.relayData.paymasterData.length == 0, 'paymasterData: invalid length');
-        _verifyForwarder(relayRequest);
         (signature, maxPossibleGas);
+
         payer = relayRequest.request.from;
 
         uint256 tokenId = abi.decode(approvalData, (uint256));
@@ -51,7 +45,6 @@ contract NFTOwnershipPaymaster is BasePaymaster {
         numTimes[tokenId]++;
 
         require(acceptableToken.ownerOf(tokenId) == payer, 'User does not own NFT');
-
         require(numTimes[tokenId] <= limit, 'TokenId reached minting limit');
 
         return ('', false);
@@ -67,7 +60,7 @@ contract NFTOwnershipPaymaster is BasePaymaster {
     }
 
     function versionPaymaster() external view virtual override returns (string memory) {
-        return '2.2.0';
+        return '2.2.0+owlprotocol.paymasters.nftownershippaymaster';
     }
 
     function getNumTransactions(uint256 tokenId) external view returns (uint256) {
