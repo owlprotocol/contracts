@@ -3,9 +3,20 @@ import { network } from 'hardhat';
 import { GsnTestEnvironment, TestEnvironment } from '@opengsn/dev';
 import { JsonRpcSigner, JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { expect } from 'chai';
 import { GSNContractsDeployment } from '@opengsn/common/dist/GSNContractsDeployment';
+import { ContractTransaction } from '@ethersproject/contracts';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
+const { expect } = chai;
 
+export async function expectContractThrows(call: Promise<ContractTransaction>) {
+    await chai.expect((await call).wait()).to.be.rejectedWith(Error);
+}
+
+export async function expectPaymasterThrows(call: Promise<ContractTransaction>) {
+    await chai.expect((call)).to.be.rejectedWith(Error);
+}
 
 const ZERO_ADDR = '0x' + '0'.repeat(40);
 
