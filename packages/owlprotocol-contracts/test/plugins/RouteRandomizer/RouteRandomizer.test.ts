@@ -1,4 +1,6 @@
 import { ethers, network } from 'hardhat';
+const { utils } = ethers
+const { keccak256, toUtf8Bytes } = utils
 import { time, setCode, mineUpTo } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -124,20 +126,16 @@ describe('RouteRandomizer.sol', async () => {
             tokenIds: outputTokenIds
         }
 
-        // creating crafter transfer + mint instances
-        const crafterTransferFactory = await ethers.getContractFactory('CrafterTransfer');
-        const crafterTransferImpl = await crafterTransferFactory.deploy();
-
-        const { address: crafterTransferAddress } = await deployClone(crafterTransferImpl, [
-            ...crafterArgsCommon,
-            [{ ...crafterOutputCommon, contractAddr: crafterTransferReward.address, },],
-            forwarder.address, // forwarder addr
-        ], ERC1167Factory);
+        // creating 2 crafter mint instances
 
         const crafterMintFactory = await ethers.getContractFactory("CrafterMint")
         const crafterMintImpl = await crafterMintFactory.deploy()
 
-        const { address: crafterMintAddress } = await deployClone(crafterMintImpl, [
+        const { address: crafterMintAddr1 } = await deployClone(crafterMintImpl, [
+            ...crafterArgsCommon, [{ ...crafterOutputCommon, contractAddr: crafterMintReward.address }], forwarder.address
+        ], ERC1167Factory);
+
+        const { address: crafterMintAddr2 } = await deployClone(crafterMintImpl, [
             ...crafterArgsCommon, [{ ...crafterOutputCommon, contractAddr: crafterMintReward.address }], forwarder.address
         ], ERC1167Factory);
 
@@ -180,12 +178,18 @@ describe('RouteRandomizer.sol', async () => {
         const routeRandomizerFactory = await ethers.getContractFactory("RouteRandomizer") as RouteRandomizer__factory;
         routeRandomizerImpl = await routeRandomizerFactory.deploy();
 
+        const craftSig = keccak256(toUtf8Bytes("craft(uint96,uint256[][])"))
+        const transformSig = keccak256(toUtf8Bytes("transform(uint256,uint256[][])"))
+
         routeRandomizerArgs = [
             signer1.address,
-            [crafterTransferAddress, crafterMintAddress, transformerAddress],
-            [],
+            [crafterMintAddr1, crafterMintAddr2, transformerAddress],
+            [craftSig, craftSig, transformSig],
             [33, 66, 100],
             forwarder.address
         ]
+    })
+
+    it('1 route randomization', async () => {
     })
 });

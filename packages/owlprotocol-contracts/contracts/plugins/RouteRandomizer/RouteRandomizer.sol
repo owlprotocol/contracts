@@ -87,6 +87,7 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
         address _vrfBeacon,
         address _forwarder
     ) internal onlyInitializing {
+        require(_contracts.length == _signatures.length, '_contracts.length != _signatures.length');
         __OwlBase_init(_admin, _forwarder);
 
         __RouteRandomizer_init_unchained(_contracts, _signatures, _probabilities, _vrfBeacon);
@@ -108,11 +109,11 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
          Interaction
     **********************/
 
-    // function requestRouteRandomize(bytes[] memory argsArr) external returns (uint256 requestId, uint256 blockNumber) {
-    //     (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
+    function requestRouteRandomize(bytes[] memory argsArr) external returns (uint256 requestId, uint256 blockNumber) {
+        (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
 
-    //     elements.push(RouteElement(blockNumber, argsArr));
-    // }
+        elements.push(RouteElement(blockNumber, argsArr));
+    }
 
     function checkUpkeep(
         bytes memory /* checkData */
