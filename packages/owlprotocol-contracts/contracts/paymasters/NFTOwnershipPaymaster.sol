@@ -42,10 +42,10 @@ contract NFTOwnershipPaymaster is BasePaymaster {
 
         uint256 tokenId = abi.decode(approvalData, (uint256));
 
+        require(numTimes[tokenId] < limit, 'TokenId reached minting limit');
         numTimes[tokenId]++;
 
         require(acceptableToken.ownerOf(tokenId) == payer, 'User does not own NFT');
-        require(numTimes[tokenId] <= limit, 'TokenId reached minting limit');
 
         return ('', false);
     }
