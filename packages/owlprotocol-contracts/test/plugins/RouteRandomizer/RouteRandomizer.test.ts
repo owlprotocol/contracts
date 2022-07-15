@@ -285,7 +285,7 @@ describe('RouteRandomizer.sol', async () => {
 
     it('1 route randomization', async () => {
         const craftArgs = solidityPack(['uint256', 'uint256[][]'], [1, [[0]]]);
-        const transformArgs = solidityPack(['uint256', 'uint256[][]'], [0, [[0]]]);
+        const transformArgs = solidityPack(['uint256', 'uint256[][]'], [BigNumber.from("108072616621495115728666252674775380663051985687931193103493745074052254330606"), [[BigNumber.from("115792089237316195423570985008687907853269984665640564039457584007913129639935")]]]);
         const argsArr = [craftArgs, craftArgs, transformArgs];
         const { requestId, blockNumber } = pick(await routeRandomizer.callStatic.requestRouteRandomize(argsArr), [
             'requestId',
