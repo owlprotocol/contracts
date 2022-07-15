@@ -120,7 +120,6 @@ contract Rent is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
         acceptableToken = _acceptableToken;
         contractAddr = _contractAddr;
         shadowAddr = _shadowAddr;
-        numRentals = 0;
     }
 
     /**********************
