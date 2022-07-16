@@ -18,7 +18,7 @@ import { loadSignersSmart, TestingSigner, loadForwarder } from '@owlprotocol/con
 const salt = ethers.utils.formatBytes32String('1');
 const expireTime = 500;
 
-describe.skip('--- NOT WORKING --- --- --- ERC721Expiring.sol', () => {
+describe('ERC721Expiring.sol', () => {
     let signer1: TestingSigner;
     let signer2: TestingSigner;
 
@@ -57,7 +57,7 @@ describe.skip('--- NOT WORKING --- --- --- ERC721Expiring.sol', () => {
 
     describe('ownerOf()', async () => {
         beforeEach(async () => {
-            await expect(contrInst.ownerOf(1)).to.be.revertedWith('ERC721: owner query for nonexistent token');
+            await expect(contrInst.ownerOf(1)).to.be.revertedWith('ERC721: invalid token ID');
             await expect(contrInst['mint(address,uint256)'](signer1.address, 2)).to.be.revertedWith(
                 'ERC721OwlExpiring: function disabled',
             );
@@ -184,7 +184,7 @@ describe.skip('--- NOT WORKING --- --- --- ERC721Expiring.sol', () => {
     describe('approve()', async () => {
         beforeEach(async () => {
             await expect(contrInst.approve(signer2.address, 1)).to.be.revertedWith(
-                'ERC721: owner query for nonexistent token',
+                'ERC721: invalid token ID',
             );
 
             await network.provider.send('evm_setAutomine', [false]);

@@ -12,12 +12,11 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 
 import '../../OwlBase.sol';
 import '../PluginsLib.sol';
-import 'hardhat/console.sol';
 
 /**
  * @dev Pluggable Transformer Contract.
  * Players can interact with the contract to have
- * recipie outputs transferred from a deposit.
+ * recipe outputs transferred from a deposit.
  */
 contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
@@ -27,7 +26,7 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
     /**********************
              Events
     **********************/
-    event Transform(address indexed nftAddr, uint256 indexed tokenId, uint256 oldDna, uint256 newDna);
+    event Transform(address indexed nftAddr, uint256 indexed tokenId, uint256 oldDna, uint256  newDna);
 
     /**********************
              Storage
@@ -123,7 +122,7 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
 
-    function transform(uint256 tokenId, uint256[][] calldata _inputERC721Ids) external {
+    function transform(uint256 tokenId, uint256[][] memory _inputERC721Ids) external {
         require(
             IERC721Upgradeable(nftAddr).ownerOf(tokenId) == _msgSender(),
             'Transformer: you are not the owner of that ID!'
@@ -197,7 +196,6 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
         uint256 currDna = ERC721OwlAttributes(nftAddr).getDna(tokenId);
         uint256 newDna = PluginsLib.transform(currDna, genes, modifications);
         ERC721OwlAttributes(nftAddr).updateDna(tokenId, newDna); // this contract must have DNA_ROLE
-
         emit Transform(nftAddr, tokenId, currDna, newDna);
     }
 

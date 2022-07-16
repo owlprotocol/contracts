@@ -61,10 +61,12 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
         uint256 currRequestId = blockNumberToRequestId[epochBlockNumber];
         if (currRequestId != 0) return (currRequestId, epochBlockNumber);
 
+        uint16 reqConf = uint16(uint256(EPOCH_PERIOD) - (block.number % uint256(EPOCH_PERIOD)));
+
         uint256 requestId = COORDINATOR.requestRandomWords(
             keyHash,
             s_subscriptionId,
-            uint16(uint256(EPOCH_PERIOD) - (block.number % uint256(EPOCH_PERIOD))),
+            reqConf < 3 ? 3 : reqConf > 200 ? 200 : reqConf,
             callbackGasLimit,
             numWords
         );

@@ -14,7 +14,7 @@ import '../MinterCore.sol';
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterAutoId is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUPSUpgradeable {
+contract MinterAutoId is MinterCore {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', version)));
@@ -58,14 +58,11 @@ contract MinterAutoId is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
         address _nftContractAddr,
         address _forwarder
     ) internal onlyInitializing {
-        __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterAutoId_init_unchained(_admin);
-        _setTrustedForwarder(_forwarder);
+        __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterAutoId_init_unchained();
     }
 
-    function __MinterAutoId_init_unchained(address _admin) internal onlyInitializing {
-        _transferOwnership(_admin);
-    }
+    function __MinterAutoId_init_unchained() internal onlyInitializing {}
 
     /**
      * @dev Create a new type of species and define attributes.
@@ -91,29 +88,8 @@ contract MinterAutoId is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
      * and we get out of sync.
      * @param nextTokenId_ next token id to be minted
      */
-    function setNextTokenId(uint256 nextTokenId_) public onlyOwner {
+    function setNextTokenId(uint256 nextTokenId_) public onlyRole(DEFAULT_ADMIN_ROLE) {
         nextTokenId = nextTokenId_;
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
-    }
-
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
     }
 
     /**
