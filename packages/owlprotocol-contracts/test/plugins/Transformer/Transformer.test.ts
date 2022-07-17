@@ -417,7 +417,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             await transformerInst.connect(signer1).transform(0, [[1]]);
             await transformerInst.connect(signer1).transform(0, [[1]]);
             await expect(transformerInst.connect(signer1).transform(0, [[1]])).to.be.revertedWith(
-                'Transformer: Used over the limit of n',
+                'PluginsCore: Used over the limit of n',
             );
 
             expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
@@ -700,7 +700,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
 
             await expect(transformerInst.connect(signer1).transform(0, [[1]])).to.be.revertedWith(
-                'Transformer: Used over the limit of n',
+                'PluginsCore: Used over the limit of n',
             );
 
             expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
@@ -941,10 +941,11 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
 
             const transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
             await expect(transformerInst.connect(signer2).transform(0, [[0]])).to.be.revertedWith(
-                'Transformer: User does not own token(s)!',
+                'PluginsCore: User does not own token(s)!',
             );
         });
     });
+
     it('beacon proxy initialization', async () => {
         const beaconFactory = (await ethers.getContractFactory(
             'UpgradeableBeaconInitializable',
@@ -992,7 +993,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
         const contrInst = (await ethers.getContractAt('Transformer', beaconProxyAddr)) as Transformer;
 
         //transformer doesn't have only dna role
-        await expect(contrInst.transform(0, [[]])).to.be.revertedWith(
+        await expect(contrInst.transform(0, [[1]])).to.be.revertedWith(
             `AccessControl: account ${beaconProxyAddr.toLowerCase()} is missing role 0xd81e3d287dc343b6afbd738eeed3ca0a2b77921a595a475a4e43ed25b38ceb2f`,
         );
     });

@@ -10,15 +10,15 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
-import '../../OwlBase.sol';
-import '../PluginsLib.sol';
+import '../../assets/ERC721/ERC721OwlAttributes.sol';
+import './TransformerCore.sol';
 
 /**
  * @dev Pluggable Transformer Contract.
  * Players can interact with the contract to have
  * recipe outputs transferred from a deposit.
  */
-contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Transformer/', version)));
@@ -26,21 +26,18 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
     /**********************
              Events
     **********************/
-    event Transform(address indexed nftAddr, uint256 indexed tokenId, uint256 oldDna, uint256  newDna);
+    event Transform(address indexed nftAddr, uint256 indexed tokenId, uint256 oldDna, uint256 newDna);
 
     /**********************
              Storage
     **********************/
 
     address public burnAddress;
-    PluginsLib.Ingredient[] private inputs;
+    Ingredient[] private inputs;
     address nftAddr;
 
     uint8[] genes;
-    PluginsLib.GeneMod[] modifications;
-
-    mapping(uint256 => uint256) nUse; //maps ingredient to nUSE (max count grabbed from amount[0])
-    mapping(address => mapping(uint256 => uint256)) usedERC721Inputs; //maps a contract address to a tokenId to nUsed
+    GeneMod[] modifications;
 
     /**********************
         Initialization
@@ -55,9 +52,9 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
     function initialize(
         address _admin,
         address _burnAddress,
-        PluginsLib.Ingredient[] memory _inputs,
+        Ingredient[] calldata _inputs,
         uint8[] memory _genes,
-        PluginsLib.GeneMod[] memory _modifications,
+        GeneMod[] memory _modifications,
         address _nftAddr,
         address _forwarder
     ) external initializer {
@@ -67,9 +64,9 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
     function proxyInitialize(
         address _admin,
         address _burnAddress,
-        PluginsLib.Ingredient[] memory _inputs,
+        Ingredient[] calldata _inputs,
         uint8[] memory _genes,
-        PluginsLib.GeneMod[] memory _modifications,
+        GeneMod[] memory _modifications,
         address _nftAddr,
         address _forwarder
     ) external onlyInitializing {
@@ -79,9 +76,9 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
     function __Transformer_init(
         address _admin,
         address _burnAddress,
-        PluginsLib.Ingredient[] memory _inputs,
+        Ingredient[] calldata _inputs,
         uint8[] memory _genes,
-        PluginsLib.GeneMod[] memory _modifications,
+        GeneMod[] memory _modifications,
         address _nftAddr,
         address _forwarder
     ) internal onlyInitializing {
@@ -89,18 +86,17 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
         require(_inputs.length > 0, 'Transformer: A crafting input must be given!');
         __OwlBase_init(_admin, _forwarder);
 
-        __Transformer_init_unchained(_burnAddress, _inputs, _genes, _modifications, _nftAddr, _forwarder);
+        __Transformer_init_unchained(_burnAddress, _inputs, _genes, _modifications, _nftAddr);
     }
 
     function __Transformer_init_unchained(
         address _burnAddress,
-        PluginsLib.Ingredient[] memory _inputs,
+        Ingredient[] calldata _inputs,
         uint8[] memory _genes,
-        PluginsLib.GeneMod[] memory _modifications,
-        address _nftAddr,
-        address _forwarder
+        GeneMod[] memory _modifications,
+        address _nftAddr
     ) internal onlyInitializing {
-        PluginsLib.validateInputs(_inputs, inputs, nUse);
+        _validateInputs(_inputs, inputs);
 
         require(
             _genes.length == _modifications.length,
@@ -122,80 +118,20 @@ contract Transformer is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeab
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
 
-    function transform(uint256 tokenId, uint256[][] memory _inputERC721Ids) external {
+    function transform(uint256 tokenId, uint256[][] calldata _inputERC721Ids) external {
         require(
             IERC721Upgradeable(nftAddr).ownerOf(tokenId) == _msgSender(),
             'Transformer: you are not the owner of that ID!'
         );
 
-        //Track ERC721 inputs idx
-        uint256 erc721Inputs = 0;
-        //Transfer inputs
-        for (uint256 i = 0; i < inputs.length; i++) {
-            PluginsLib.Ingredient storage ingredient = inputs[i];
-            if (ingredient.token == PluginsLib.TokenType.erc20) {
-                //ERC20
-                if (ingredient.consumableType == PluginsLib.ConsumableType.burned) {
-                    //Transfer ERC20
-                    SafeERC20Upgradeable.safeTransferFrom(
-                        IERC20Upgradeable(ingredient.contractAddr),
-                        _msgSender(),
-                        burnAddress,
-                        ingredient.amounts[0]
-                    );
-                } else {} // this is unaffected consumable type, otherwise validate inputs will revert
-            } else if (ingredient.token == PluginsLib.TokenType.erc721) {
-                //ERC721
-                uint256[] memory currInputArr = _inputERC721Ids[erc721Inputs];
-                if (ingredient.consumableType == PluginsLib.ConsumableType.burned) {
-                    //Transfer ERC721
-                    for (uint256 j = 0; j < currInputArr.length; j++) {
-                        IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                            _msgSender(),
-                            burnAddress,
-                            _inputERC721Ids[erc721Inputs][j]
-                        );
-                    }
-                } else {
-                    //this is N-Time (otherwise, pluginsLib will revert when validating inputs)
-                    for (uint256 j = 0; j < currInputArr.length; j++) {
-                        require(
-                            IERC721Upgradeable(ingredient.contractAddr).ownerOf(currInputArr[j]) == _msgSender(),
-                            'Transformer: User does not own token(s)!'
-                        );
-                        uint256 currTokenID = currInputArr[j];
-                        require(
-                            (usedERC721Inputs[ingredient.contractAddr])[currTokenID] < nUse[i],
-                            'Transformer: Used over the limit of n'
-                        );
-                        (usedERC721Inputs[ingredient.contractAddr])[currTokenID] += 1;
-                    }
-                }
-                erc721Inputs += 1;
-            } else {
-                //this is 1155 token type, as ensured by input validations
-                //ERC1155
-                if (ingredient.consumableType == PluginsLib.ConsumableType.burned) {
-                    //Transfer ERC1155
-                    uint256[] memory amounts = new uint256[](ingredient.amounts.length);
-                    for (uint256 j = 0; j < ingredient.amounts.length; j++) {
-                        amounts[j] = ingredient.amounts[j];
-                    }
-                    IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                        _msgSender(),
-                        burnAddress,
-                        ingredient.tokenIds,
-                        amounts,
-                        new bytes(0)
-                    );
-                } else {} //this is unaffected, as ensured by input validations
-            }
-        }
+        _useInputs(inputs, _msgSender(), burnAddress, _inputERC721Ids, 1);
 
-        // transform DNA
+        // Transform DNA
         uint256 currDna = ERC721OwlAttributes(nftAddr).getDna(tokenId);
-        uint256 newDna = PluginsLib.transform(currDna, genes, modifications);
-        ERC721OwlAttributes(nftAddr).updateDna(tokenId, newDna); // this contract must have DNA_ROLE
+        uint256 newDna = transform(currDna, genes, modifications);
+
+        // This contract must have DNA_ROLE
+        ERC721OwlAttributes(nftAddr).updateDna(tokenId, newDna);
         emit Transform(nftAddr, tokenId, currDna, newDna);
     }
 

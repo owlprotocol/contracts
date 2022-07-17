@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import '../PluginsLib.sol';
+
+import '../PluginsCore.sol';
 
 /**
  * @dev Pluggable Crafting Contract.
@@ -23,8 +24,8 @@ interface ICrafter {
         address _admin,
         address _burnAddress,
         uint96 _craftableAmount,
-        PluginsLib.Ingredient[] calldata _inputs,
-        PluginsLib.Ingredient[] calldata _outputs,
+        PluginsCore.Ingredient[] calldata _inputs,
+        PluginsCore.Ingredient[] calldata _outputs,
         address _forwarder
     ) external;
 
