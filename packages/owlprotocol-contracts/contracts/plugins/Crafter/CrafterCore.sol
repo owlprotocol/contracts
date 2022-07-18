@@ -318,12 +318,12 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
         bool transferring
     ) internal {
         // `transferring` bool will indicate if this is a removal
-        // for `CrafterCore` or `CrafterTransfer`. For CrafterCore,
+        // for `CrafterMint` or `CrafterTransfer`. For CrafterMint,
         // in the case of withdrawal, removal of outputs is neccesary
         // without any minting happening. This will be denoted by
         // the `to` address being address(0) since ERC721 prevents
         // minting to address(0) anyways. If to != address(0), then
-        // alongside, removal of outputs from contract balances,
+        // alongside removal of outputs from contract balances,
         // assets will be minted to `to`.
         for (uint256 i = 0; i < outputs.length; i++) {
             PluginsCore.Ingredient storage ingredient = outputs[i];

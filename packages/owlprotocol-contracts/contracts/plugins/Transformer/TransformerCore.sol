@@ -10,8 +10,6 @@ abstract contract TransformerCore is PluginsCore {
         sub,
         mult,
         set
-        // ,
-        // random
     }
 
     // defines specification of how a specific gene is transformed
@@ -20,8 +18,12 @@ abstract contract TransformerCore is PluginsCore {
         uint256 value;
     }
 
+    /**********************
+           Utilities
+    **********************/
+
     /**
-     * @dev Generates a 256-bit bitmask from startBit:endBit
+     * @dev Uses bitmask to transform inputted DNA according to modifications
      * @param currDna original DNA, represented in base 10
      * @param genes array representing start indexes of genes within binary representation of currDna
      * @param modifications array describing modifications to each gene

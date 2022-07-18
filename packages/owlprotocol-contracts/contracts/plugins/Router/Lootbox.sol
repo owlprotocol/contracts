@@ -12,14 +12,12 @@ import '@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol';
 
 import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
-import '../../OwlBase.sol';
 import '../../random/VRFBeacon.sol';
-import '../PluginsLib.sol';
+import '../PluginsCore.sol';
 import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
-import '../Crafter/ICrafter.sol';
 
-contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+contract Lootbox is PluginsCore, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     using AddressUpgradeable for address;
 
     // Specification + ERC165
@@ -160,7 +158,7 @@ contract Lootbox is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable,
             abi.encodePacked(abi.encodeWithSignature('craft(uint96,uint256[][])', 1, inputERC721Id), _msgSender())
         );
 
-        emit PluginsLib.RouterError(lootboxId, _msgSender(), returnData);
+        if (!success) emit RouterError(lootboxId, _msgSender(), returnData);
     }
 
     /**

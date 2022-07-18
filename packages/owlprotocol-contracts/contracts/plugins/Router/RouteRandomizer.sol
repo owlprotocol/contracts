@@ -12,14 +12,12 @@ import '@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol';
 
 import '@chainlink/contracts/src/v0.8/KeeperCompatible.sol';
 
-import '../../OwlBase.sol';
 import '../../random/VRFBeacon.sol';
-import '../PluginsLib.sol';
+import '../PluginsCore.sol';
 import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
-import '../Transformer/Transformer.sol';
 
-contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+contract RouteRandomizer is PluginsCore, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     using AddressUpgradeable for address;
 
     // Specification + ERC165
@@ -173,7 +171,7 @@ contract RouteRandomizer is OwlBase, KeeperCompatibleInterface, ERC721HolderUpgr
 
         (bool success, bytes memory returnData) = routedContract.call(finalBytes);
 
-        if (!success) emit PluginsLib.RouterError(queueIndex, _msgSender(), returnData);
+        if (!success) emit RouterError(queueIndex, _msgSender(), returnData);
     }
 
     // used for testing

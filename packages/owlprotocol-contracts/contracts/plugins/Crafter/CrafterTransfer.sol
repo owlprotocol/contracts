@@ -47,7 +47,9 @@ import './CrafterCore.sol';
  * the `amounts` array denoting ERC20 token amount requirement.
  * `tokenIds` should be empty.
  *
- * ERC721 `inputs` elements should have empty `amounts` and `tokenIds`
+ * NTime consumable type ERC721 inputs should have empty `tokenIds` and
+ * `amounts[0]` equal to `n` - the maximum number of times the input can be used.
+ * Burned ERC721 `inputs` elements should have * empty `amounts` and `tokenIds`
  * array. This contract accepts *all* `tokenId`s from an ERC721 contract
  * as inputs. ERC721 `outputs` elements must have empty `amounts`
  * array. `tokenIds` array length should be `craftableAmount`. The `tokenIds`
