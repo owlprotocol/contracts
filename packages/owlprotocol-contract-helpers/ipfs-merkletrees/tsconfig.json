@@ -1,14 +1,16 @@
 {
     "compilerOptions": {
         //ES Module
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "target": "es2020",
+        // "module": "esnext",
+        // "moduleResolution": "node",
+        // "target": "esnext",
         //"sourceMap": true,
-        // "outDir": "lib",
-        // "rootDir": "src",
+        "outDir": "lib",
         "strict": true,
-        "lib": ["esnext", "dom"],
+        "lib": [
+            "esnext",
+            "dom"
+        ],
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "declaration": true,

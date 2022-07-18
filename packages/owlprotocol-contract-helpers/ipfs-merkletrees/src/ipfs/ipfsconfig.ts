@@ -1,13 +1,12 @@
+import { create } from 'ipfs-http-client';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export async function getInfuraIPFS() {
-    // eslint-disable-next-line import/no-unresolved
-    const { create } = await import('ipfs-http-client');
-
-    const projectId = process.env.INFURA_PROJECT_ID;
+export function getInfuraIPFS(_projectId?: string, _projectSecret?: string) {
+    // Load environments
+    const projectId = process.env.INFURA_PROJECT_ID || _projectId;
     if (!projectId) throw 'INFURA_PROJECT_ID must be set!';
-    const projectSecret = process.env.INFURA_PROJECT_SECRET;
+    const projectSecret = process.env.INFURA_PROJECT_SECRET || _projectSecret;
     if (!projectSecret) throw 'INFURA_PROJECT_SECRET must be set!';
     const auth = 'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64');
 

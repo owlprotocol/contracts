@@ -1,10 +1,9 @@
 import { expect } from 'chai';
-import { concat, toString } from 'uint8arrays';
-import { getInfuraIPFS } from '..';
 import { IPFSHTTPClient } from 'ipfs-http-client';
+import { concat, toString } from 'uint8arrays';
+import { getInfuraIPFS } from '../index';
 
 describe('ipfsconfig.ts', async () => {
-
     let ipfsClient: IPFSHTTPClient;
 
     before(async () => {
@@ -29,6 +28,6 @@ describe('ipfsconfig.ts', async () => {
             const dataString = toString(concat(download));
             const parsed = JSON.parse(dataString);
             expect(parsed).to.deep.equal(dummyData, 'downloaded file not the same!');
-        })
-    })
+        });
+    });
 });

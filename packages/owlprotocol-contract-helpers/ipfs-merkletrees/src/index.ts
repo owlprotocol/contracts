@@ -1,2 +1,2 @@
-export { loadFromIpfs, dumpToIpfs, createMerkleFromUsers } from './ipfs/ipfstools';
+export { loadFromIpfs, dumpToIpfs, createMerkleFromUsers, formatAddresses, getLeaf } from './ipfs/ipfstools';
 export { getInfuraIPFS } from './ipfs/ipfsconfig';
