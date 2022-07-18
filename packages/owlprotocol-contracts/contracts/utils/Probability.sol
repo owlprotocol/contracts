@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 library Probability {
     /**
-     * @dev validates inputs array of ingredients
+     * @dev returns a sample of the random variable described by distribution
      * @param seed an inputted random seed
      * @param distribution array of cumulative probability distribution
      * @return index randomly selected index of distribution

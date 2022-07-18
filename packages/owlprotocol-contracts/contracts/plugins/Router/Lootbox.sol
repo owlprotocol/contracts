@@ -17,6 +17,25 @@ import '../PluginsCore.sol';
 import '../../utils/SourceRandom.sol';
 import '../../utils/Probability.sol';
 
+/**
+ * @dev Contract module that enables implementation of unlockable lootboxes by routing
+ * unlock requests to a number of deployed Crafter contracts. By configuring multiple
+ * Crafter contracts that take in the lootbox (typically some ERC721 token) as their sole input
+ * and each have different output asset bundles, a developer can route the output of a certain
+ * lootbox to a myriad of possible output bundles, effectively designating the inputted token as a
+ * lootbox.
+ *
+ * Configuration for a lootbox requires the developer enter `_crafterContracts`, an address array
+ * of deployed Crafter contracts that makes up the pool of potential contracts routed to.
+ * The `probabilities` array must be of the same length, as it describes the probability distribution
+ * of the random variable that determines a randomly chosen contract.
+ *
+ * A VRFBeacon is deployed and used to inject randomness, while a Chainlink Keeper is used to autonomously
+ * check if a random number has been returned by the off-chain VRFBeacon coordinator. Upon receiving a
+ * random number, the Keeper then calls the _unlock() function to randomly select a Crafter contract and call
+ * its `craft()` function.
+ */
+
 contract Lootbox is PluginsCore, KeeperCompatibleInterface, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     using AddressUpgradeable for address;
 

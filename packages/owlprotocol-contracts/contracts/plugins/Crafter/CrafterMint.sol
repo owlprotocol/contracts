@@ -58,7 +58,7 @@ import './CrafterCore.sol';
  * *end* of the array since `.pop()` is used.
  *
  * ERC1155 `inputs` and `outputs` elements should have the length
- * of `amounts` and `tokenIds` array be the same. The indeces
+ * of `amounts` and `tokenIds` array be the same. The indices
  * will be linked where each index denotes how much of each
  * ERC1155 `tokenId` is required.
  *
