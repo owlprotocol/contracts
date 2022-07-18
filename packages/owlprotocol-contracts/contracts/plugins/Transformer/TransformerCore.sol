@@ -10,20 +10,23 @@ abstract contract TransformerCore is PluginsCore {
         sub,
         mult,
         set
-        // ,
-        // random
     }
 
-    // defines specification of how a specific gene is transformed
+    // Defines specification of how a specific gene is transformed
     struct GeneMod {
         GeneTransformType geneTransformType;
         uint256 value;
     }
 
+    /**********************
+           Utilities
+    **********************/
+
     /**
-     * @dev Generates a 256-bit bitmask from startBit:endBit
+     * @dev Uses bitmask to transform inputted DNA according to modifications
      * @param currDna original DNA, represented in base 10
-     * @param genes array representing start indexes of genes within binary representation of currDna
+     * @param genes array representing start indexes of genes within binary
+     * representation of currDna
      * @param modifications array describing modifications to each gene
      * @return newDna the transformed DNA
      */
@@ -55,7 +58,7 @@ abstract contract TransformerCore is PluginsCore {
                 if (prod > 2**maxBits - 1) gene = 2**maxBits - 1;
                 else gene = prod;
             } else if (currMod.geneTransformType == GeneTransformType.set) {
-                //set must be in range, otherwise ignored
+                // Set must be in range, otherwise ignored
                 if (currMod.value <= 2**maxBits - 1 && currMod.value >= 0) gene = currMod.value;
             }
 

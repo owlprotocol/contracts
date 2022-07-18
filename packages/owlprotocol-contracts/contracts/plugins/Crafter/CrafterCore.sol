@@ -7,6 +7,9 @@ import '../../assets/ERC1155/ERC1155Owl.sol';
 import '../PluginsCore.sol';
 import './ICrafter.sol';
 
+/**
+ * @dev Base contract that all Crafter contracts will inherit from
+ */
 abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable {
     /**********************
              Events
@@ -32,14 +35,15 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     Ingredient[] private inputs;
 
     // Array of outputs in this configurations
-    Ingredient[] private outputs;
+    Ingredient[] internal outputs;
 
     /**********************
         Initialization
     **********************/
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and creates the configuration
+     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * creates the configuration
      */
     function __CrafterCore_init(
         address _admin,
@@ -57,7 +61,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     }
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and creates the configuration
+     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * creates the configuration
      */
     function __CrafterCore_init_unchained(
         address _burnAddress,
@@ -91,12 +96,9 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
         return outputs;
     }
 
-    /**********************
-           Utilities
-    **********************/
-
     /**
-     * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
+     * @dev Returns all details for a specific ingredient (including
+     * amounts/tokenIds)
      * @param index ingredient index to return details for
      * @return token token type
      * @return consumableType consumable type
@@ -121,7 +123,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     }
 
     /**
-     * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
+     * @dev Returns all details for a specific ingredient (including
+     * amounts/tokenIds)
      * @param index ingredient index to return details for
      * @return token token type
      * @return consumableType consumable type
@@ -145,6 +148,10 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
         return (i.token, i.consumableType, i.contractAddr, i.amounts, i.tokenIds);
     }
 
+    /**********************
+           Utilities
+    **********************/
+
     /**
      * @dev calls PluginsCore._validateInputs(_inputs, inputs)
      */
@@ -153,7 +160,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     }
 
     /**
-     * @dev call PluginsCore._useInputs(inputs, from, burnAddress, _inputERC721Ids, amount)
+     * @dev call PluginsCore._useInputs(inputs, from, burnAddress,
+     * _inputERC721Ids, amount)
      */
     function _useInputs(uint256[][] calldata _inputERC721Ids, uint256 amount) internal {
         super._useInputs(inputs, _msgSender(), burnAddress, _inputERC721Ids, amount);
@@ -183,8 +191,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
                 require(_outputs[i].amounts.length == 0, 'CrafterTransfer: amounts.length != 0');
                 erc721Amount++;
 
-                // Copy token data but set tokenIds as empty (these are filled out
-                // in the _deposit function call)
+                // Copy token data but set tokenIds as empty (these are filled
+                // out in the _deposit function call)
                 PluginsCore.Ingredient memory x = PluginsCore.Ingredient({
                     token: PluginsCore.TokenType.erc721,
                     consumableType: _outputs[i].consumableType,
@@ -233,148 +241,27 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     }
 
     /**
-     * @dev if transferring, iterate through the `inputs` array
-     * and call the appropriate transfer function. Otherwise,
-     * only update ERC721 outputs array
-     * @param depositAmount sets of outputs to deposit
+     * @dev function must be overriden by child contract. Adding
+     * process is too different between the contract for
+     * abstraction
+     * @param amount sets of outputs to deposit
      * @param _outputsERC721Ids erc721 `tokenId`s to use as outputs
      * @param from if transferring, address to transfer outputs from
      */
     function _addOutputs(
-        uint256 depositAmount,
+        uint256 amount,
         uint256[][] memory _outputsERC721Ids,
-        address from,
-        bool transferring
-    ) internal {
-        // Keep count of the amount of erc721Outputs so if there
-        // are multiple `tokenId`s in `_outputsERC721Ids`, next
-        // element in the array is only used when iteration is
-        // at next ERC721
-        uint256 erc721Outputs = 0;
-
-        // Go through all `PluginsCore.Ingredient`s in `outputs` and
-        // call appropriate function to transfer the outputs in from
-        // `from`
-        for (uint256 i = 0; i < outputs.length; i++) {
-            PluginsCore.Ingredient storage ingredient = outputs[i];
-            if (ingredient.token == PluginsCore.TokenType.erc20 && transferring) {
-                SafeERC20Upgradeable.safeTransferFrom(
-                    IERC20Upgradeable(ingredient.contractAddr),
-                    from,
-                    address(this),
-                    ingredient.amounts[0] * depositAmount
-                );
-            } else if (ingredient.token == PluginsCore.TokenType.erc721) {
-                require(
-                    _outputsERC721Ids[erc721Outputs].length == depositAmount,
-                    'CrafterTransfer: _outputsERC721Ids[i] != depositAmount'
-                );
-                for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
-                    if (transferring)
-                        IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                            from,
-                            address(this),
-                            _outputsERC721Ids[erc721Outputs][j]
-                        );
-                    else
-                        require(
-                            !ERC721Owl(ingredient.contractAddr).exists(_outputsERC721Ids[erc721Outputs][j]),
-                            'CrafterCore: tokenId already minted'
-                        );
-                    //Update ingredient `tokenIds`, push additional ERC721 tokenId
-                    ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
-                }
-                erc721Outputs += 1;
-            } else if (ingredient.token == PluginsCore.TokenType.erc1155 && transferring) {
-                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
-
-                // Calculate amount of each `tokenId` to transfer
-                for (uint256 j = 0; j < ingredient.amounts.length; j++) {
-                    amounts[j] = ingredient.amounts[j] * depositAmount;
-                }
-
-                // Use batch transfer to save gas
-                IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                    from,
-                    address(this),
-                    ingredient.tokenIds,
-                    amounts,
-                    new bytes(0)
-                );
-            }
-        }
-    }
+        address from
+    ) internal virtual;
 
     /**
-     * @dev if transferring, iterate through the `outputs` array
-     * and call the appropriate transfer function. Otherwise,
-     * only update ERC721 outputs array
+     * @dev function must be overriden by child contract. Removal
+     * process is too different between the contracts for
+     * abstraction
      * @param amount sets of outputs to remove
-     * @param to if transferring, address to transfer outputs to
+     * @param to address to send outputs to
      */
-    function _removeOutputs(
-        uint256 amount,
-        address to,
-        bool transferring
-    ) internal {
-        // `transferring` bool will indicate if this is a removal
-        // for `CrafterCore` or `CrafterTransfer`. For CrafterCore,
-        // in the case of withdrawal, removal of outputs is neccesary
-        // without any minting happening. This will be denoted by
-        // the `to` address being address(0) since ERC721 prevents
-        // minting to address(0) anyways. If to != address(0), then
-        // alongside, removal of outputs from contract balances,
-        // assets will be minted to `to`.
-        for (uint256 i = 0; i < outputs.length; i++) {
-            PluginsCore.Ingredient storage ingredient = outputs[i];
-            if (ingredient.token == PluginsCore.TokenType.erc20) {
-                if (transferring)
-                    SafeERC20Upgradeable.safeTransfer(
-                        IERC20Upgradeable(ingredient.contractAddr),
-                        to,
-                        ingredient.amounts[0] * amount
-                    );
-                else if (to != address(0))
-                    ERC20Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.amounts[0] * amount);
-            } else if (ingredient.token == PluginsCore.TokenType.erc721) {
-                for (uint256 j = 0; j < amount; j++) {
-                    if (transferring)
-                        IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
-                            address(this),
-                            to,
-                            ingredient.tokenIds[ingredient.tokenIds.length - 1]
-                        );
-                    else if (to != address(0))
-                        ERC721Owl(ingredient.contractAddr).mint(
-                            _msgSender(),
-                            ingredient.tokenIds[ingredient.tokenIds.length - 1]
-                        );
-                    // Pop `tokenId`s from the back
-                    ingredient.tokenIds.pop();
-                }
-            } else if (ingredient.token == PluginsCore.TokenType.erc1155) {
-                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
-                for (uint256 j = 0; j < ingredient.amounts.length; j++) {
-                    amounts[j] = ingredient.amounts[j] * amount;
-                }
-                if (transferring)
-                    IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
-                        address(this),
-                        to,
-                        ingredient.tokenIds,
-                        amounts,
-                        new bytes(0)
-                    );
-                else if (to != address(0))
-                    ERC1155Owl(ingredient.contractAddr).mintBatch(
-                        _msgSender(),
-                        ingredient.tokenIds,
-                        amounts,
-                        new bytes(0)
-                    );
-            }
-        }
-    }
+    function _removeOutputs(uint96 amount, address to) internal virtual;
 
     uint256[46] private __gap;
 }
