@@ -42,7 +42,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     **********************/
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and creates the configuration
+     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * creates the configuration
      */
     function __CrafterCore_init(
         address _admin,
@@ -60,7 +61,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     }
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and creates the configuration
+     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * creates the configuration
      */
     function __CrafterCore_init_unchained(
         address _burnAddress,
@@ -95,7 +97,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     }
 
     /**
-     * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
+     * @dev Returns all details for a specific ingredient (including
+     * amounts/tokenIds)
      * @param index ingredient index to return details for
      * @return token token type
      * @return consumableType consumable type
@@ -120,7 +123,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     }
 
     /**
-     * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
+     * @dev Returns all details for a specific ingredient (including
+     * amounts/tokenIds)
      * @param index ingredient index to return details for
      * @return token token type
      * @return consumableType consumable type
@@ -156,7 +160,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
     }
 
     /**
-     * @dev call PluginsCore._useInputs(inputs, from, burnAddress, _inputERC721Ids, amount)
+     * @dev call PluginsCore._useInputs(inputs, from, burnAddress,
+     * _inputERC721Ids, amount)
      */
     function _useInputs(uint256[][] calldata _inputERC721Ids, uint256 amount) internal {
         super._useInputs(inputs, _msgSender(), burnAddress, _inputERC721Ids, amount);
@@ -186,8 +191,8 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
                 require(_outputs[i].amounts.length == 0, 'CrafterTransfer: amounts.length != 0');
                 erc721Amount++;
 
-                // Copy token data but set tokenIds as empty (these are filled out
-                // in the _deposit function call)
+                // Copy token data but set tokenIds as empty (these are filled
+                // out in the _deposit function call)
                 PluginsCore.Ingredient memory x = PluginsCore.Ingredient({
                     token: PluginsCore.TokenType.erc721,
                     consumableType: _outputs[i].consumableType,

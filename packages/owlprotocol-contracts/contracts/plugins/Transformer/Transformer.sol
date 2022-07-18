@@ -78,21 +78,24 @@ import './TransformerCore.sol';
  * each gene in the form of a `GeneMod` struct.
  *
  * ```
- * struct GeneMod {
- *     GeneTransformType geneTransformType;
- *     uint256 value;
+ * struct GeneMod
+ * {
+ *   GeneTransformType geneTransformType;
+ *   uint256 value;
  * }
- *
  * ```
  *
  * The GeneMod struct refers to a `GeneTransformType`, an enum that can be
  * declared as one of the operations: add, subtract, multiply, divide, or set.
  * The `value` then specifies the amount by which to perform the operation.
+ *
  * This configuration is set in the initializers and cannot be edited once the
  * contract has been launched Other configurations will require their own
- * contract to be deployed.* Upon successful completion of the `transform()`
- * operation, the ERC721Owl with the passed tokenID will have its DNA modified
- * in-place, never having been transferred out of the caller's possession.
+ * contract to be deployed.
+ *
+ * Upon successful completion of the `transform()` operation, the ERC721Owl with
+ * the passed tokenId will have its DNA modified in-place, never having been
+ * transferred out of the caller's possession.
  */
 contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
@@ -123,7 +126,8 @@ contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderU
      * @param _admin owner, no special permissions as of current release
      * @param _burnAddress Burn address for burn inputs
      * @param _inputs input ingredients for configuration
-     * @param _genes array denoting start location of genes within the 256 bit DNA
+     * @param _genes array denoting start location of genes within the 256 bit
+     * DNA
      * @param _modifications array denoting the modifications to be made upon
      * each gene after transformation
      * @param _nftAddr the address of the ERC721Owl contract
@@ -209,7 +213,8 @@ contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderU
     **********************/
 
     /**
-     * @dev Used to transform. Consumes inputs and modifies DNA of inputted NFT token.
+     * @dev Used to transform. Consumes inputs and modifies DNA of inputted NFT
+     * token.
      * @notice the transformer instance from which this method is called from
      * must have ERC721OwlAttributes DNA_ROLE
      * @param tokenId ID of NFT token to transform

@@ -12,14 +12,18 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 
 import '../OwlBase.sol';
 
+/**
+ @dev Abstract contract with types and utilities that will be used by many (if
+ not all) Plugins contracts
+ */
 abstract contract PluginsCore is OwlBase {
     event RouterError(uint256 indexed routeId, address indexed sender, bytes indexed data);
 
     // Unaffected inputs of this type are unaffected by the crafting process.
     // DOES NOT APPLY TO ERC 721 INPUTS, USE NTime INSTEAD.
-    // Burned inputs of this type are burned during the crafting process
-    // NTime inputs of this type are not burned, but can only be used N times in the same recipe;
-    // Only available for ERC721 TokenType
+    // Burned inputs of this type are burned during the crafting process/
+    // NTime inputs of this type are not burned, but can only be used N times in
+    // the same recipe; Only available for ERC721 TokenType
     enum ConsumableType {
         unaffected,
         burned,

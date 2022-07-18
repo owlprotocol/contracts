@@ -4,16 +4,12 @@ pragma solidity ^0.8.0;
 import './CrafterCore.sol';
 
 /**
- * @dev Contract module that enables crafting of
- * different types of assets (ERC20, ERC721, ERC1155)
- * whose crafting outputs are minted to the
- * caller.
+ * @dev Contract module that enables crafting of different types of assets
+ * (ERC20, ERC721, ERC1155) whose crafting outputs are minted to the caller.
  *
- * Crafting configuration is designated by two
- * {Ingredient}[]. One array is the `inputs`
- * and the other is the `outputs`. The contract
- * allows for the `inputs` to be redeemed for the
- * `outputs`, `craftableAmount` times.
+ * Crafting configuration is designated by two {Ingredient}[]. One array is the
+ * `inputs` and the other is the `outputs`. The contract allows for the `inputs`
+ * to be redeemed for the `outputs`, `craftableAmount` times.
  *
  * ```
  * struct Ingredient {
@@ -25,46 +21,40 @@ import './CrafterCore.sol';
  * }
  * ```
  *
- * Configuration is set in the initializers
- * and cannot be edited once the contract has been launched
- * Other configurations will require their own contract to
- * be deployed
+ * Configuration is set in the initializers and cannot be edited once the
+ * contract has been launched Other configurations will require their own
+ * contract to be deployed
  *
- * However, `craftableAmount` can be dynamically updated
- * through the {deposit} and {withdraw} functions which
- * are only accessible to `DEFAULT_ADMIN_ROLE`
+ * However, `craftableAmount` can be dynamically updated through the {deposit}
+ * and {withdraw} functions which are only accessible to `DEFAULT_ADMIN_ROLE`
  *
- * Each Ingredient has a `consumableType` field.
- * This field is for the `inputs` elements and ignored by the
- * `outputs` elements. ERC20 and ERC1155 `inputs` elements can be
- * `unaffected` or `burned`. `unaffected` will check for
- * ownership/balance while `burned` will send the asset(s)
- * to the `burnAddress`. ERC721 inputs can be `NTime`
- * or `burned`. `NTime` allows for a specfic `tokenId` to
- * only be used 'n times', as defined by contract deployer.
+ * Each Ingredient has a `consumableType` field.* This field is for the `inputs`
+ * elements and ignored by the `outputs` elements. ERC20 and ERC1155 `inputs`
+ * elements can be `unaffected` or `burned`. `unaffected` will check for
+ * ownership/balance while `burned` will send the asset(s) to the `burnAddress`.
+ * ERC721 inputs can be `NTime` or `burned`. `NTime` allows for a specfic
+ * `tokenId` to only be used 'n times', as defined by contract deployer.
  *
- * ERC20 `inputs` and `outputs` elements should have one number in
- * the `amounts` array denoting ERC20 token amount requirement.
- * `tokenIds` should be empty.
+ * ERC20 `inputs` and `outputs` elements should have one number in the `amounts`
+ * array denoting ERC20 token amount requirement.* `tokenIds` should be empty.
  *
  * NTime consumable type ERC721 inputs should have empty `tokenIds` and
- * `amounts[0]` equal to `n` - the maximum number of times the input can be used.
- * Burned ERC721 `inputs` elements should have * empty `amounts` and `tokenIds`
- * array. This contract accepts *all* `tokenId`s from an ERC721 contract
- * as inputs. ERC721 `outputs` elements must have empty `amounts`
+ * `amounts[0]` equal to `n` - the maximum number of times the input can be
+ * used.* Burned ERC721 `inputs` elements should have * empty `amounts` and
+ * `tokenIds` array. This contract accepts *all* `tokenId`s from an ERC721
+ * contract as inputs. ERC721 `outputs` elements must have empty `amounts`
  * array. `tokenIds` array length should be `craftableAmount`. The `tokenIds`
- * array will contain the `tokenIds` to be transferred out when {craft}
- * is called. Important to note that output transfers will be from the
- * *end* of the array since `.pop()` is used.
+ * array will contain the `tokenIds` to be transferred out when {craft} is
+ * called. Important to note that output transfers will be from the *end* of the
+ * array since `.pop()` is used.
  *
- * ERC1155 `inputs` and `outputs` elements should have the length
- * of `amounts` and `tokenIds` array be the same. The indices
- * will be linked where each index denotes how much of each
- * ERC1155 `tokenId` is required.
+ * ERC1155 `inputs` and `outputs` elements should have the length of `amounts`
+ * and `tokenIds` array be the same. The indices will be linked where each index
+ * denotes how much of each ERC1155 `tokenId` is required.
  *
- * This module is used through composition. It can be deployed
- * to create crafting logic with asset contracts that are
- * already on chain and active; plug-and-play, so to speak.
+ * This module is used through composition. It can be deployed to create
+ * crafting logic with asset contracts that are already on chain and active;
+ * plug-and-play, so to speak.
  */
 contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     string public constant VERSION = 'v0.1';
@@ -83,7 +73,8 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
      * @dev Initializes contract (replaces constructor in proxy pattern)
      * @param _admin owner, can control outputs on contract
      * @param _burnAddress Burn address for burn inputs
-     * @param _craftableAmount limit on the number of times this configuration can be crafted
+     * @param _craftableAmount limit on the number of times this configuration
+     * can be crafted
      * @param _inputs inputs for configuration
      * @param _outputs outputs for configuration
      * @param _forwarder trusted forwarder address for openGSN
@@ -100,7 +91,8 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     }
 
     /**
-     * @dev Initializes contract through beacon proxy (replaces constructor in proxy pattern)
+     * @dev Initializes contract through beacon proxy (replaces constructor in
+     * proxy pattern)
      */
     function proxyInitialize(
         address _admin,
@@ -114,7 +106,8 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     }
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and creates the configuration
+     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * creates the configuration
      */
     function __CrafterMint_init(
         address _admin,
@@ -130,7 +123,8 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     }
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and creates the configuration
+     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * creates the configuration
      */
     function __CrafterMint_init_unchained(uint96 _craftableAmount, Ingredient[] calldata _outputs)
         internal
@@ -149,9 +143,11 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     /**
      * @notice Must be `DEFAULT_ADMIN_ROLE`.
      * @dev Used to deposit configuration outputs.
-     * @param depositAmount How many more times the configuration should be craftable
+     * @param amount How many more times the configuration should be
+     * craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
-     * Example of `_outputERC721Ids` with `depositAmount = 2` with 3 `Ingredient`s
+     * Example of `_outputERC721Ids` with `amount = 2` with 3
+     * `Ingredient`s
      * in `outputs` with `TokenType.ERC721`
      * ```
      * [
@@ -161,32 +157,33 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
      * ]
      * ```
      */
-    function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _deposit(depositAmount, _outputsERC721Ids);
+    function deposit(uint96 amount, uint256[][] calldata _outputsERC721Ids) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _deposit(amount, _outputsERC721Ids);
     }
 
     /**
      * @notice Must be `DEFAULT_ADMIN_ROLE`
      * @dev Used to deposit configuration outputs. This is only ever directly
      * called in intializations.
-     * @param depositAmount How many times the configuration should be craftable
+     * @param amount How many times the configuration should be craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
      */
-    function _deposit(uint96 depositAmount, uint256[][] memory _outputsERC721Ids) internal {
-        require(depositAmount > 0, 'CrafterMint: depositAmount cannot be 0!');
+    function _deposit(uint96 amount, uint256[][] memory _outputsERC721Ids) internal {
+        require(amount > 0, 'CrafterMint: amount cannot be 0!');
 
-        craftableAmount += depositAmount;
+        craftableAmount += amount;
 
         // address `from` parameter irrelevant in CrafterMint... passing
         // 0 address will suffice
-        _addOutputs(depositAmount, _outputsERC721Ids, address(0));
+        _addOutputs(amount, _outputsERC721Ids, address(0));
 
         emit Update(craftableAmount);
     }
 
     /**
      * @notice Must be `DEFAULT_ADMIN_ROLE`
-     * @dev Used to withdraw configuration outputs out of contract by decreasing `craftableAmount`.
+     * @dev Used to withdraw configuration outputs out of contract by decreasing
+     * `craftableAmount`.
      * @param amount How many sets of outputs should be withdrawn
      */
     function withdraw(uint96 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -225,7 +222,8 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     /**
      * @dev adds outputs to the contract balances
      * @param amount sets of outputs to add
-     * @param _outputsERC721Ids if there are ERC721 tokens present, supply their `tokenId`s
+     * @param _outputsERC721Ids if there are ERC721 tokens present, supply their
+     * `tokenId`s
      * Example of `_outputERC721Ids` with `amount = 2` with 3 `Ingredient`s
      * in `outputs` with `TokenType.ERC721`
      * ```
