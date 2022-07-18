@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        //ES Module
+        // "module": "esnext",
+        // "moduleResolution": "node",
+        // "target": "esnext",
+        //"sourceMap": true,
+        "outDir": "lib",
+        "strict": true,
+        "lib": [
+            "esnext",
+            "dom"
+        ],
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "declaration": true,
+        "skipLibCheck": true
+    }
+}
+// hh recommended config
+// {
+//     "compilerOptions": {
+//         "target": "es2020",
+//         "module": "commonjs",
+//         "esModuleInterop": true,
+//         "forceConsistentCasingInFileNames": true,
+//         "strict": true,
+//         "skipLibCheck": true
+//     }
+// }

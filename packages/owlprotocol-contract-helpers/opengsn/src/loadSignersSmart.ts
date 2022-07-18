@@ -1,7 +1,7 @@
 import { Network } from 'hardhat/types/runtime';
 import { network } from 'hardhat';
 import { GsnTestEnvironment, TestEnvironment } from '@opengsn/dev';
-import { JsonRpcSigner, JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
+import { JsonRpcSigner, Web3Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { GSNContractsDeployment } from '@opengsn/common/dist/GSNContractsDeployment';
 import { ContractTransaction } from '@ethersproject/contracts';
@@ -15,7 +15,7 @@ export async function expectContractThrows(call: Promise<ContractTransaction>) {
 }
 
 export async function expectPaymasterThrows(call: Promise<ContractTransaction>) {
-    await chai.expect((call)).to.be.rejectedWith(Error);
+    await chai.expect(call).to.be.rejectedWith(Error);
 }
 
 const ZERO_ADDR = '0x' + '0'.repeat(40);
@@ -31,7 +31,7 @@ let provider: Web3Provider;
 let gsnForwarderAddress = ZERO_ADDR;
 let signer1: TestingSigner;
 
-export const IS_GSN = (process.env.IS_GSN?.toLowerCase() === 'true') || (network.name === 'local') || false;
+export const IS_GSN = process.env.IS_GSN?.toLowerCase() === 'true' || network.name === 'local' || false;
 
 export const itGSN = IS_GSN ? it : it.skip; // skips tests if gsn disabled
 export const describeGSN = IS_GSN ? describe : describe.skip;
@@ -41,7 +41,7 @@ export const describeNoGSN = IS_GSN ? describe.skip : describe;
 
 interface loadedSigners {
     signer1: TestingSigner;
-    signers: (TestingSigner)[];
+    signers: TestingSigner[];
     gsnForwarderAddress: string;
     gsnTestEnv?: TestEnvironment;
     provider?: Web3Provider;
@@ -50,17 +50,17 @@ interface loadedSigners {
 
 export class JsonRpcSignerTesting extends JsonRpcSigner {
     // Allow native interchange w/ SignerWithAddress
-    address: string = '';
+    address = '';
 }
 
 /**
  * Returns GSN-wrapped signers if GSN environment is live.
  * Otherwise returns standard.
  * TODO - stop @ts-ignore
+ * TODO - fix network pass
  */
 export default async function loadEnvironment(ethers: any, hardhatNetwork: Network = network): Promise<loadedSigners> {
     if (IS_GSN) {
-
         if (gsnTestEnv === undefined) {
             // Instantiate testing environment
             console.log('===== Loading Global GSN Environment! =====');
@@ -71,7 +71,7 @@ export default async function loadEnvironment(ethers: any, hardhatNetwork: Netwo
             provider = new ethers.providers.Web3Provider(gsnTestEnv.relayProvider);
 
             // Wrap signers with provider and add address field
-            for (let etherSigner of await ethers.getSigners()) {
+            for (const etherSigner of await ethers.getSigners()) {
                 // Get signer wrapped with GSN
                 const signer = provider.getSigner(etherSigner.address) as JsonRpcSignerTesting;
                 // Fill in address field
@@ -81,25 +81,27 @@ export default async function loadEnvironment(ethers: any, hardhatNetwork: Netwo
             }
 
             // Grab forwarder address
-            if (gsnTestEnv.contractsDeployment.forwarderAddress === undefined)
-                throw "Unable to launch forwarder!";
+            if (gsnTestEnv.contractsDeployment.forwarderAddress === undefined) throw 'Unable to launch forwarder!';
             gsnForwarderAddress = gsnTestEnv.contractsDeployment.forwarderAddress;
 
             // Assign signer1 for easier deconstructing
             signer1 = signers[0];
-
         }
 
-        return { signers, signer1, gsnTestEnv, provider, gsnForwarderAddress, contracts: gsnTestEnv.contractsDeployment };
-
+        return {
+            signers,
+            signer1,
+            gsnTestEnv,
+            provider,
+            gsnForwarderAddress,
+            contracts: gsnTestEnv.contractsDeployment,
+        };
     } else {
-
         // Return standard ethers signers
         signers = await ethers.getSigners();
         signer1 = signers[0];
 
         return { signers, signer1, gsnForwarderAddress };
-
     }
 }
 
@@ -107,8 +109,7 @@ export default async function loadEnvironment(ethers: any, hardhatNetwork: Netwo
  * Return only signers
  */
 export async function loadSignersSmart(ethers: any, hardhatNetwork: Network = network) {
-    if (signers.length === 0)
-        await loadEnvironment(ethers, hardhatNetwork);
+    if (signers.length === 0) await loadEnvironment(ethers, hardhatNetwork);
     return signers;
 }
 
@@ -116,39 +117,38 @@ export async function loadSignersSmart(ethers: any, hardhatNetwork: Network = ne
  * Return only signers
  */
 export async function loadForwarder(ethers: any, hardhatNetwork: Network = network) {
-    if (gsnForwarderAddress === ZERO_ADDR)
-        await loadEnvironment(ethers, hardhatNetwork);
+    if (gsnForwarderAddress === ZERO_ADDR) await loadEnvironment(ethers, hardhatNetwork);
     return gsnForwarderAddress;
 }
+
+type TestFunction = {
+    (): void;
+};
 
 /**
  * Test wrapper to assert balances don't change in a test.
  */
-export function assertBalances(ethers: any, fn: Function, signersToCheck?: TestingSigner[]) {
-
+export function assertBalances(ethers: any, fn: TestFunction, signersToCheck?: TestingSigner[]) {
     return async function () {
         // Default to all signers if none provided.
         signersToCheck = signersToCheck !== undefined && signersToCheck.length > 0 ? signersToCheck : signers;
         let balancesBefore;
         if (IS_GSN) {
             // Get all balances
-            balancesBefore = await Promise.all(signers.map(signer => ethers.provider.getBalance(signer.address)));
-            console.log(`All signer bals: ${JSON.stringify(balancesBefore)}`);
+            balancesBefore = await Promise.all(signers.map((signer) => ethers.provider.getBalance(signer.address)));
 
             // Call function
             await fn();
 
             // Check balances after
-            const balancesAfter = await Promise.all(signers.map(signer => ethers.provider.getBalance(signer.address)));
-            console.log(`Balances after: ${JSON.stringify(balancesAfter)}`);
+            const balancesAfter = await Promise.all(
+                signers.map((signer) => ethers.provider.getBalance(signer.address)),
+            );
 
             // Assert same
-            for (let i = 0; i < signers.length; i++)
-                expect(balancesBefore[i]).to.equal(balancesAfter[i]);
-            console.log('No fees spent!');
+            for (let i = 0; i < signers.length; i++) expect(balancesBefore[i]).to.equal(balancesAfter[i]);
         } else {
             await fn();
         }
-
-    }
+    };
 }
