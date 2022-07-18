@@ -294,16 +294,11 @@ describe('RouteRandomizer.sol', async () => {
     }
 
     it('1 route randomization', async () => {
-<<<<<<< HEAD
         const craftAmount = 1;
         const transformTokenId = 0;
         const inputNFTIds = [[3]];
         const craftArgs = defaultAbiCoder.encode(['uint96', 'uint256[][]'], [craftAmount, inputNFTIds]);
         const transformArgs = defaultAbiCoder.encode(['uint256', 'uint256[][]'], [transformTokenId, inputNFTIds]);
-=======
-        const craftArgs = solidityPack(['uint256', 'uint256[][]'], [1, [[0]]]);
-        const transformArgs = solidityPack(['uint256', 'uint256[][]'], [BigNumber.from("108072616621495115728666252674775380663051985687931193103493745074052254330606"), [[BigNumber.from("115792089237316195423570985008687907853269984665640564039457584007913129639935")]]]);
->>>>>>> a3fead4fe6de1975883f9d6c7ffcb20189e170b3
         const argsArr = [craftArgs, craftArgs, transformArgs];
         const { requestId, blockNumber } = pick(await routeRandomizer.callStatic.requestRouteRandomize(argsArr), [
             'requestId',
