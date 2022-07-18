@@ -14,13 +14,13 @@ import '../../assets/ERC721/ERC721OwlAttributes.sol';
 import './TransformerCore.sol';
 
 /**
- * @dev Contract module that enables transformation of ERC721Owl assets under
- * the same inputs -> outputs logic defined in the Crafter contracts. The
- * Transformer, like Crafter, takes different types of input assets (ERC20,
- * ERC721, ERC1155) in addition to the ERC721Owl to be transformed. However,
- * instead of a new output being transferred or minted to the caller,
- * transformations are made to the existing ERC721Owl's DNA. Logic regarding
- * ingredient consumable type follows that of the Crafter:
+ * @dev Contract module that enables transformation of ERC721OwlAttributes
+ * assets under the same inputs -> outputs logic defined in the Crafter
+ * contracts. The Transformer, like Crafter, takes different types of input
+ * assets (ERC20, ERC721, ERC1155) in addition to the ERC721Owl to be
+ * transformed. However, instead of a new output being transferred or minted to
+ * the caller, transformations are made to the existing ERC721Owl's DNA. Logic
+ * regarding ingredient consumable type follows that of the Crafter:
  *
  * Crafting configuration is designated by two {Ingredient}[]. One array is the
  * `inputs` and the other is the `outputs`. The contract allows for the `inputs`
