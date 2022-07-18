@@ -5,20 +5,42 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721Burnab
 
 import '../../OwlBase.sol';
 
+/**
+ * @dev This implements the standard OwlProtocol `ERC721` contract that is an
+ * extension of Openzeppelin's `ERC721BurnableUpgradeable`. Initializations
+ * happens through initializers for compatibility with a EIP1167 minimal-proxy
+ * deployment strategy.
+ */
 contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
     bytes32 internal constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 internal constant URI_ROLE = keccak256('URI_ROLE');
 
-    string private constant _version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', _version)));
+    string private constant VERSION = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', VERSION)));
+
+    /**********************
+           Storage
+    **********************/
 
     string public baseURI;
+
+    /**********************
+        Initialization
+    **********************/
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
+    /**
+     * @dev Initializes contract (replaces constructor in proxy pattern)
+     * @param _admin owner
+     * @param _name name
+     * @param _symbol symbol
+     * @param baseURI_ uri
+     * @param _forwarder trusted forwarder address for openGSN
+     */
     function initialize(
         address _admin,
         string calldata _name,
@@ -29,6 +51,10 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
         __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder);
     }
 
+    /**
+     * @dev Initializes contract through beacon proxy (replaces constructor in
+     * proxy pattern)
+     */
     function proxyInitialize(
         address _admin,
         string calldata _name,
@@ -60,10 +86,14 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
         baseURI = baseURI_;
     }
 
+    /**********************
+          Interaction
+    **********************/
+
     /**
      * @notice Must have DEFAULT_ADMIN_ROLE
-     * @dev Grants MINTER_ROLE to {a}
-     * @param to address to
+     * @dev Grants MINTER_ROLE to `to`
+     * @param to address tos
      */
     function grantMinter(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _grantRole(MINTER_ROLE, to);
@@ -71,14 +101,13 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
 
     /**
      * @notice Must have DEFAULT_ADMIN_ROLE
-     * @dev Grants URI_ROLE to {a}
+     * @dev Grants URI_ROLE to `a`
      * @param to address to
      */
     function grantUriRole(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _grantRole(URI_ROLE, to);
     }
 
-    /***** MINTING *****/
     /**
      * @notice Must have MINTER_ROLE
      * @dev Allows MINTER_ROLE to mint NFTs
@@ -122,21 +151,23 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
         return string(abi.encodePacked(baseURI, 'metadata.json'));
     }
 
+    /**
+     * @dev exposing `_exists`
+     */
     function exists(uint256 tokenId) external view returns (bool) {
         return _exists(tokenId);
     }
 
-    function version() public pure virtual returns (string memory) {
-        return _version;
-    }
-
     /**
-     * @notice the following 3 functions are all required for OpenGSN integration
+     * @dev use {OwlBase._msgSender()}
      */
     function _msgSender() internal view override(OwlBase, ContextUpgradeable) returns (address) {
         return OwlBase._msgSender();
     }
 
+    /**
+     * @dev use {OwlBase._msgData()}
+     */
     function _msgData() internal view override(OwlBase, ContextUpgradeable) returns (bytes calldata) {
         return OwlBase._msgData();
     }
