@@ -38,9 +38,10 @@ abstract contract TransformerCore is PluginsCore {
         for (uint16 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
             // Gene details
             uint16 geneStartIdx = genes[geneIdx];
-            uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 256;
+            uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 256; // if on last element of genes, set end to 256 
 
-            uint256 bitmask = get256Bitmask(geneStartIdx, geneEndIdx);
+// bitmask to extract bits of current gene
+            uint256 bitmask = get256Bitmask(geneStartIdx, geneEndIdx); 
             uint256 gene = (currDna & bitmask) >> geneStartIdx;
 
             uint256 maxBits = geneEndIdx - geneStartIdx;
@@ -48,10 +49,10 @@ abstract contract TransformerCore is PluginsCore {
             GeneMod memory currMod = modifications[geneIdx];
             if (currMod.geneTransformType == GeneTransformType.add) {
                 uint256 sum = gene + currMod.value;
-                if (sum > 2**maxBits - 1) gene = 2**maxBits - 1;
+                if (sum > 2**maxBits - 1) gene = 2**maxBits - 1; //handle overflow with ceiling
                 else gene = sum;
             } else if (currMod.geneTransformType == GeneTransformType.sub) {
-                if (currMod.value > gene) gene = 0;
+                if (currMod.value > gene) gene = 0; //handle underflow with floor
                 else gene = gene - currMod.value;
             } else if (currMod.geneTransformType == GeneTransformType.mult) {
                 uint256 prod = gene * currMod.value;
@@ -62,9 +63,9 @@ abstract contract TransformerCore is PluginsCore {
                 if (currMod.value <= 2**maxBits - 1 && currMod.value >= 0) gene = currMod.value;
             }
 
-            gene = gene << geneStartIdx;
+            gene = gene << geneStartIdx; //shift back to original representation
 
-            newDna = newDna | gene;
+            newDna = newDna | gene; 
         }
     }
 

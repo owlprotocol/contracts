@@ -15,13 +15,13 @@ import './TransformerCore.sol';
 
 /**
  * @dev Contract module that enables transformation of ERC721Owl assets. The
- * Transformer takes different types of input assets (ERC20, ERC721, ERC1155) in
- * addition to the ERC721Owl to be transformed. However, instead of a new output
- * being transferred or minted to the caller, transformations are made to the
- * existing ERC721Owl's DNA. Logic regarding ingredient consumable type follows
- * that of the Crafter:
+ * Transformer takes different types of input assets (ERC20, ERC721, ERC1155) 
+ * from a caller, who holds the ERC721Owl to be transformed. However, instead 
+ * of a new output being transferred or minted to the caller, transformations 
+ * are made to the existing ERC721Owl's DNA. Logic regarding ingredient consumable 
+ * type follows that of the Crafter:
  *
- * Crafting configuration is designated by an {Ingredient}[].
+ * Input configuration is designated by an {Ingredient}[].
  * ```
  * struct Ingredient {
  *     TokenType token;
@@ -58,8 +58,8 @@ import './TransformerCore.sol';
  * crafting logic with asset contracts that are already on chain and active;
  * plug-and-play, so to speak.
  *
- * Transform configuration is designated by `admin`, `burnAddress`, and an
- * {Ingredient}[] of inputs, as in the Crafter. In addition, it takes an integer
+ * Transform configuration is designated by `DEFAULT_ADMIN_ADDRESS`, `burnAddress`, 
+ * and an {Ingredient}[] of inputs, as in the Crafter. In addition, it takes an integer
  * array `genes` denoting the start point of each gene within the bit
  * representation of ERC721Owl's DNA. The `modifications` array is of the same
  * length of `genes`, as it describes the modifications that should be made to
@@ -77,9 +77,21 @@ import './TransformerCore.sol';
  * declared as one of the operations: add, subtract, multiply, divide, or set.
  * The `value` then specifies the amount by which to perform the operation.
  *
- * This configuration is set in the initializers and cannot be edited once the
- * contract has been launched Other configurations will require their own
- * contract to be deployed.
+ * Since DNA is represented as a uint256, our implementation assumes the last gene
+ * described by the genes array will end at bit 255 of the DNA. Let `genes` be
+ * the array [0, 64, 128, 192] - indicating there exist 4 genes (consisting of bits 
+ * 0-63, 64 - 127, 128 - 191, 192 - 255).
+ *
+ * Suppose a gene were represented by the 2-bit number `10`. If
+ * the modification for this gene was to add 1, the transformed gene would be
+ * `11`. This implementation further prevents genes from overflowing and underflowing
+ * into other genes. For example, adding `2` to `10` would cap the resulting
+ * gene at `11` instead of reaching `100`. This logic applies to all operations,
+ * including set.
+
+ * Configuration of `genes` and `modifications` is set in the initializers and 
+ * cannot be edited once the contract has been launched Other configurations will 
+ * require their own contract to be deployed.
  *
  * Upon successful completion of the `transform()` operation, the ERC721Owl with
  * the passed tokenId will have its DNA modified in-place, never having been
