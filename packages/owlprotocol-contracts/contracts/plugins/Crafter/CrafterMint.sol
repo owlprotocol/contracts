@@ -147,10 +147,19 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     **********************/
 
     /**
-     * @notice Must be `DEFAULT_ADMIN_ROLE`. Automatically sends from `msg.sender`
+     * @notice Must be `DEFAULT_ADMIN_ROLE`.
      * @dev Used to deposit configuration outputs.
-     * @param depositAmount How many times the configuration should be craftable
+     * @param depositAmount How many more times the configuration should be craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     * Example of `_outputERC721Ids` with `depositAmount = 2` with 3 `Ingredient`s
+     * in `outputs` with `TokenType.ERC721`
+     * ```
+     * [
+     *  [1, 2]
+     *  [3, 4]
+     *  [5, 6]
+     * ]
+     * ```
      */
     function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _deposit(depositAmount, _outputsERC721Ids);
@@ -168,7 +177,7 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
 
         craftableAmount += depositAmount;
 
-        // address from parameter irrelevant in CrafterMint... passing
+        // address `from` parameter irrelevant in CrafterMint... passing
         // 0 address will suffice
         _addOutputs(depositAmount, _outputsERC721Ids, address(0));
 
@@ -178,12 +187,12 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     /**
      * @notice Must be `DEFAULT_ADMIN_ROLE`
      * @dev Used to withdraw configuration outputs out of contract by decreasing `craftableAmount`.
-     * @param withdrawAmount How many sets of outputs should be withdrawn
+     * @param amount How many sets of outputs should be withdrawn
      */
-    function withdraw(uint96 withdrawAmount) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // This will remove a `withdrawAmount` of outputs and ERC721 `tokenId`
+    function withdraw(uint96 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // This will remove a `amount` of outputs and ERC721 `tokenId`
         // without doing any minting
-        _removeOutputs(withdrawAmount, address(0));
+        _removeOutputs(amount, address(0));
 
         emit Update(craftableAmount);
     }
@@ -193,9 +202,18 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
      * @dev Used to craft. Consumes inputs and mints outputs.
      * @param amount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
+     * Example of `_inputERC721Ids` with `amount = 2` with 3 `Ingredient`s
+     * in `inputs` with `TokenType.ERC721`
+     * ```
+     * [
+     *  [1, 2]
+     *  [3, 4]
+     *  [5, 6]
+     * ]
+     * ```
      */
     function craft(uint96 amount, uint256[][] calldata _inputERC721Ids) external {
-        // This will remove a `withdrawAmount` of outputs and ERC721 `tokenId`
+        // This will remove a `amount` of outputs and ERC721 `tokenId`
         // while also minting to the _msgSender()
         _removeOutputs(amount, _msgSender());
 
@@ -207,8 +225,16 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
     /**
      * @dev adds outputs to the contract balances
      * @param amount sets of outputs to add
-     * @param _outputsERC721Ids if there are ERC721 tokens present, supply their
-     * `tokenId`s
+     * @param _outputsERC721Ids if there are ERC721 tokens present, supply their `tokenId`s
+     * Example of `_outputERC721Ids` with `amount = 2` with 3 `Ingredient`s
+     * in `outputs` with `TokenType.ERC721`
+     * ```
+     * [
+     *  [1, 2]
+     *  [3, 4]
+     *  [5, 6]
+     * ]
+     * ```
      */
     function _addOutputs(
         uint256 amount,
@@ -222,9 +248,9 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
         uint256 erc721Outputs = 0;
 
         // Go through all `PluginsCore.Ingredient`s in `outputs` and
-        // find ERC721 outputs. Then update `tokenId`s inside the
-        // `outputs` array. ERC20 and ERC1155 changes do not need
-        // to be made as their balances are only dependent on the
+        // find ERC721 outputs. Then update `tokenId`s in ERC721 `Ingredient`s
+        //  inside the `outputs` array. ERC20 and ERC1155 changes do
+        //  not need to be made as their balances are only dependent on the
         // `craftableAmount` variable
         for (uint256 i = 0; i < outputs.length; i++) {
             PluginsCore.Ingredient storage ingredient = outputs[i];

@@ -54,6 +54,15 @@ abstract contract PluginsCore is OwlBase {
      * @param burnAddress in case configuration requires a burn
      * address to transfer items to
      * @param _inputERC721Ids set of ERC721 `tokenId`s, if applicable
+     * Example of `_inputERC721Ids` with `amount = 2` with 3 `Ingredient`s
+     * in `inputs` with `TokenType.ERC721`
+     * ```
+     * [
+     *  [1, 2]
+     *  [3, 4]
+     *  [5, 6]
+     * ]
+     * ```
      * @param amount sets of inputs to use/consume
      */
     function _useInputs(

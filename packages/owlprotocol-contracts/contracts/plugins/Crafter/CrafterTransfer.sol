@@ -58,7 +58,7 @@ import './CrafterCore.sol';
  * *end* of the array since `.pop()` is used.
  *
  * ERC1155 `inputs` and `outputs` elements should have the length
- * of `amounts` and `tokenIds` array be the same. The indeces
+ * of `amounts` and `tokenIds` array be the same. The indices
  * will be linked where each index denotes how much of each
  * ERC1155 `tokenId` is required.
  *
@@ -152,10 +152,19 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
     **********************/
 
     /**
-     * @notice Must be `DEFAULT_ADMIN_ROLE`. Automatically sends from `msg.sender`
+     * @notice Must be `DEFAULT_ADMIN_ROLE`. Automatically sends from `_msgSender()`
      * @dev Used to deposit configuration outputs.
-     * @param depositAmount How many times the configuration should be craftable
+     * @param depositAmount How many more times the configuration should be craftable
      * @param _outputsERC721Ids 2D-array of ERC721 tokens used in crafting
+     * Example of `_outputERC721Ids` with `depositAmount = 2` with 3 `Ingredient`s
+     * in `outputs` with `TokenType.ERC721`
+     * ```
+     * [
+     *  [1, 2]
+     *  [3, 4]
+     *  [5, 6]
+     * ]
+     * ```
      */
     function deposit(uint96 depositAmount, uint256[][] calldata _outputsERC721Ids) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _deposit(depositAmount, _outputsERC721Ids, _msgSender());
@@ -202,6 +211,15 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
      * @dev Used to craft. Consumes inputs and transfers outputs.
      * @param amount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
+     * Example of `_inputERC721Ids` with `amount = 2` with 3 `Ingredient`s
+     * in `inputs` with `TokenType.ERC721`
+     * ```
+     * [
+     *  [1, 2]
+     *  [3, 4]
+     *  [5, 6]
+     * ]
+     * ```
      */
     function craft(uint96 amount, uint256[][] calldata _inputERC721Ids) external {
         // This will remove a `withdrawAmount` of outputs and ERC721 `tokenId`
@@ -217,8 +235,16 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
      * @dev adds outputs to the contract balances and transers the outputs into
      * the contract
      * @param amount sets of outputs to add
-     * @param _outputsERC721Ids if there are ERC721 tokens present, supply their
-     * `tokenId`s
+     * @param _outputsERC721Ids if there are ERC721 tokens present, supply their `tokenId`s
+     * Example of `_outputERC721Ids` with `amount = 2` with 3 `Ingredient`s
+     * in `outputs` with `TokenType.ERC721`
+     * ```
+     * [
+     *  [1, 2]
+     *  [3, 4]
+     *  [5, 6]
+     * ]
+     * ```
      * @param from address to transfer assets from
      */
     function _addOutputs(

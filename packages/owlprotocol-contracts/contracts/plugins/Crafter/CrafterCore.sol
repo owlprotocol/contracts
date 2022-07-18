@@ -8,7 +8,7 @@ import '../PluginsCore.sol';
 import './ICrafter.sol';
 
 /**
- * @dev Base contract that all Crafter contracts will in
+ * @dev Base contract that all Crafter contracts will inherit from
  */
 abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable {
     /**********************
@@ -94,10 +94,6 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
         return outputs;
     }
 
-    /**********************
-           Utilities
-    **********************/
-
     /**
      * @dev Returns all details for a specific ingredient (including amounts/tokenIds)
      * @param index ingredient index to return details for
@@ -147,6 +143,10 @@ abstract contract CrafterCore is PluginsCore, ICrafter, ERC721HolderUpgradeable 
 
         return (i.token, i.consumableType, i.contractAddr, i.amounts, i.tokenIds);
     }
+
+    /**********************
+           Utilities
+    **********************/
 
     /**
      * @dev calls PluginsCore._validateInputs(_inputs, inputs)
