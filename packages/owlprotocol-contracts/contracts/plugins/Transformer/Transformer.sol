@@ -14,18 +14,14 @@ import '../../assets/ERC721/ERC721OwlAttributes.sol';
 import './TransformerCore.sol';
 
 /**
- * @dev Contract module that enables transformation of ERC721OwlAttributes
- * assets under the same inputs -> outputs logic defined in the Crafter
- * contracts. The Transformer, like Crafter, takes different types of input
- * assets (ERC20, ERC721, ERC1155) in addition to the ERC721Owl to be
- * transformed. However, instead of a new output being transferred or minted to
- * the caller, transformations are made to the existing ERC721Owl's DNA. Logic
- * regarding ingredient consumable type follows that of the Crafter:
+ * @dev Contract module that enables transformation of ERC721Owl assets. The
+ * Transformer takes different types of input assets (ERC20, ERC721, ERC1155) in
+ * addition to the ERC721Owl to be transformed. However, instead of a new output
+ * being transferred or minted to the caller, transformations are made to the
+ * existing ERC721Owl's DNA. Logic regarding ingredient consumable type follows
+ * that of the Crafter:
  *
- * Crafting configuration is designated by two {Ingredient}[]. One array is the
- * `inputs` and the other is the `outputs`. The contract allows for the `inputs`
- * to be redeemed for the `outputs`, `craftableAmount` times.
- *
+ * Crafting configuration is designated by an {Ingredient}[].
  * ```
  * struct Ingredient {
  *     TokenType token;
@@ -37,32 +33,24 @@ import './TransformerCore.sol';
  * ```
  *
  * Configuration is set in the initializers and cannot be edited once the
- * contract has been launched Other configurations will require their own
+ * contract has been launched, other configurations will require their own
  * contract to be deployed
  *
- * However, `craftableAmount` can be dynamically updated through the {deposit}
- * and {withdraw} functions which are only accessible to `DEFAULT_ADMIN_ROLE`
- *
- * Each Ingredient has a `consumableType` field.* This field is for the `inputs`
- * elements and ignored by the `outputs` elements. ERC20 and ERC1155 `inputs`
+ * Each Ingredient has a `consumableType` field.  ERC20 and ERC1155 `inputs`
  * elements can be `unaffected` or `burned`. `unaffected` will check for
  * ownership/balance while `burned` will send the asset(s) to the `burnAddress`.
  * ERC721 inputs can be `NTime` or `burned`. `NTime` allows for a specfic
  * `tokenId` to only be used 'n times', as defined by contract deployer.
  *
- * ERC20 `inputs` and `outputs` elements should have one number in the `amounts`
+ * ERC20 `inputs` elements should have one number in the `amounts`
  * array denoting ERC20 token amount requirement. `tokenIds` should be empty.
  * NTime consumable type ERC721 inputs should have empty `tokenIds` and
  * `amounts[0]` equal to `n` - the maximum number of times the input can be used.
  * Burned ERC721 `inputs` elements should have empty `amounts` and `tokenIds`
  * array. This contract accepts *all* `tokenId`s from an ERC721 contract as
- * inputs. ERC721 `outputs` elements must have empty `amounts` array. `tokenIds`
- * array length should be `craftableAmount`. The `tokenIds` array will contain
- * the `tokenIds` to be transferred out when {craft} is called. Important to
- * note that output transfers will be from the *end* of the array since `.pop()`
- * is used.
+ * inputs.
  *
- * ERC1155 `inputs` and `outputs` elements should have the length of `amounts`
+ * ERC1155 `inputs` elements should have the length of `amounts`
  * and `tokenIds` array be the same. The indices will be linked where each index
  * denotes how much of each ERC1155 `tokenId` is required.
  *
@@ -162,7 +150,7 @@ contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderU
     }
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * @dev performs validations that `_inputs` are valid and
      * creates the configuration
      */
     function __Transformer_init(
@@ -182,7 +170,7 @@ contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderU
     }
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * @dev performs validations that `_inputs` and are valid and
      * creates the configuration
      */
     function __Transformer_init_unchained(
