@@ -8,6 +8,9 @@ import '../assets/ERC721/ERC721OwlAttributes.sol';
  *
  */
 library PluginsLib {
+
+    event RouterError(uint256 indexed routeId, address indexed sender, bytes indexed data);
+
     /**
      * @dev Allows for specification of what happens to input ingredients after craft is complete
      * @param unaffected inputs of this type are unaffected by the crafting process. DOES NOT APPLY TO ERC 721 INPUTS, USE NTime INSTEAD.
@@ -65,7 +68,8 @@ library PluginsLib {
         mapping(uint256 => uint256) storage nUse
     ) internal {
         for (uint256 i = 0; i < _inputs.length; i++) {
-            if (_inputs[i].token == PluginsLib.TokenType.erc20) {
+            TokenType token = _inputs[i].token;
+            if (token == PluginsLib.TokenType.erc20) {
                 require(_inputs[i].tokenIds.length == 0, 'PluginsLib: tokenids.length != 0');
                 require(_inputs[i].amounts.length == 1, 'PluginsLib: amounts.length != 1');
                 require(
@@ -73,7 +77,7 @@ library PluginsLib {
                         _inputs[i].consumableType == ConsumableType.burned,
                     'PluginsLib: ERC20 consumableType not unaffected or burned'
                 );
-            } else if (_inputs[i].token == PluginsLib.TokenType.erc721) {
+            } else if (token == PluginsLib.TokenType.erc721) {
                 //accept all token ids as inputs
                 require(_inputs[i].tokenIds.length == 0, 'PluginsLib: tokenIds.length != 0');
                 require(
@@ -89,8 +93,8 @@ library PluginsLib {
                     );
 
                     nUse[i] = _inputs[i].amounts[0];
-                } else require(_inputs[i].amounts.length == 0, 'PluginsLib: amounts.length != 1 or 0');
-            } else if (_inputs[i].token == PluginsLib.TokenType.erc1155) {
+                } else require(_inputs[i].amounts.length == 0, 'PluginsLib: amounts.length != 0');
+            } else if (token == PluginsLib.TokenType.erc1155) {
                 require(
                     _inputs[i].tokenIds.length == _inputs[i].amounts.length,
                     'PluginsLib: tokenids.length != amounts.length'
@@ -100,11 +104,19 @@ library PluginsLib {
                         _inputs[i].consumableType == ConsumableType.burned,
                     'PluginsLib: ERC1155 consumableType not unaffected or burned'
                 );
+            } else {
+                revert(); //revert if not valid token type
             }
             inputs.push(_inputs[i]);
         }
     }
 
+    /**
+     * @dev validates outputs array of ingredients
+     * @param _outputs the output array of the Crafter initializer
+     * @param outputs storage array of outputs, copied from _outputs
+     * @param _craftableAmount the amount of times the recipe may be crafted
+     */
     function validateOutputs(
         Ingredient[] memory _outputs,
         Ingredient[] storage outputs,
@@ -146,11 +158,16 @@ library PluginsLib {
         return erc721Amount;
     }
 
+    /**
+     * @param _outputs the output array of the Crafter initializer
+     * @param _craftableAmount the amount of times the recipe may be crafted
+     * @param erc721Amount the number of erc721 tokens to be used as output
+     */
     function createOutputsArr(
         Ingredient[] memory _outputs,
         uint256 _craftableAmount,
         uint256 erc721Amount
-    ) internal returns (uint256[][] memory) {
+    ) internal pure returns (uint256[][] memory) {
         uint256[][] memory _outputsERC721Ids = new uint256[][](erc721Amount);
         uint256 outputERC721index = 0;
 
@@ -167,6 +184,13 @@ library PluginsLib {
         return _outputsERC721Ids;
     }
 
+    /**
+     * @dev Generates a 256-bit bitmask from startBit:endBit
+     * @param currDna original DNA, represented in base 10
+     * @param genes array representing start indexes of genes within binary representation of currDna
+     * @param modifications array describing modifications to each gene
+     * @return newDna the transformed DNA
+     */
     function transform(
         uint256 currDna,
         uint8[] memory genes,
@@ -195,7 +219,9 @@ library PluginsLib {
                 if (prod > 2**maxBits - 1) gene = 2**maxBits - 1;
                 else gene = prod;
             } else if (currMod.geneTransformType == GeneTransformType.set) {
-                gene = currMod.value;
+                if (currMod.value <= 2**maxBits - 1 && currMod.value >= 0)
+                    //set must be in range, otherwise ignored
+                    gene = currMod.value;
             }
 
             gene = gene << geneStartIdx;
@@ -214,10 +240,5 @@ library PluginsLib {
         uint256 bitMaskStart = type(uint256).max << startBit;
         uint256 bitMaskEnd = type(uint256).max >> (256 - endBit);
         bitMask = bitMaskStart & bitMaskEnd;
-    }
-
-    function arrayContains(uint256[] memory _input, uint256 num) internal returns (bool) {
-        for (uint256 j = 0; j < _input.length; j++) if (_input[j] == num) return true;
-        return false;
     }
 }

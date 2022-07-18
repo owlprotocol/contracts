@@ -2,7 +2,6 @@ import { ethers } from 'hardhat';
 const { utils } = ethers;
 const { parseUnits } = utils;
 import { expect } from 'chai';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { pick } from 'lodash';
 import {
     CrafterMint,
@@ -13,10 +12,21 @@ import {
     ERC721,
     ERC1155,
 } from '../../../typechain';
-import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../../utils';
+import {
+    createERC20,
+    createERC721,
+    createERC1155,
+    deployCloneWrap,
+    deployClone,
+    predictDeployClone,
+} from '../../utils';
 import { BigNumber } from 'ethers';
-
-const ZERO_ADDR = '0x' + '0'.repeat(40);
+import {
+    loadSignersSmart,
+    loadEnvironment,
+    TestingSigner,
+    assertBalances,
+} from '@owlprotocol/contract-helpers-opengsn/src';
 
 enum ConsumableType {
     unaffected,
@@ -29,11 +39,11 @@ enum TokenType {
     erc1155,
 }
 
-describe.only('CrafterMint.sol', function () {
+describe('CrafterMint.sol', function () {
     // Extra time
     this.timeout(10000);
 
-    let owner: SignerWithAddress;
+    let owner: TestingSigner;
 
     let CrafterMintFactory: CrafterMint__factory;
     let CrafterMintImplementation: CrafterMint;
@@ -41,7 +51,11 @@ describe.only('CrafterMint.sol', function () {
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
 
+    let gsnForwarderAddress: string;
+
     before(async () => {
+        ({ gsnForwarderAddress } = await loadEnvironment(ethers));
+
         // Launch Crafter + implementation
         CrafterMintFactory = (await ethers.getContractFactory('CrafterMint')) as CrafterMint__factory;
         CrafterMintImplementation = await CrafterMintFactory.deploy();
@@ -53,7 +67,7 @@ describe.only('CrafterMint.sol', function () {
         await Promise.all([ERC1167Factory.deployed(), CrafterMintImplementation.deployed()]);
 
         // Get users
-        [owner] = await ethers.getSigners();
+        [owner] = await loadSignersSmart(ethers);
     });
 
     describe('1 ERC20 -> 1 ERC20', () => {
@@ -70,7 +84,7 @@ describe.only('CrafterMint.sol', function () {
         beforeEach(async () => {
             //Deploy ERC20
             //Mints 1,000,000,000 by default
-            [inputERC20, outputERC20] = await createERC20(2);
+            [inputERC20, outputERC20] = await createERC20(2, owner);
 
             // predict address
             CrafterMintAddress = await predictDeployClone(
@@ -98,47 +112,51 @@ describe.only('CrafterMint.sol', function () {
                             tokenIds: [],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
 
             //Set Approval ERC20 Output
-            await outputERC20.connect(owner).approve(CrafterMintAddress, 1);
+            await outputERC20.approve(CrafterMintAddress, 1);
 
             //Deploy Crafter craftableAmount=1
 
-            await deployClone(
-                CrafterMintImplementation,
-                [
-                    owner.address,
-                    burnAddress,
-                    1,
+            crafter = (
+                await deployCloneWrap(
+                    CrafterMintImplementation,
                     [
-                        {
-                            token: TokenType.erc20,
-                            consumableType: ConsumableType.burned,
-                            contractAddr: inputERC20.address,
-                            amounts: [1],
-                            tokenIds: [],
-                        },
+                        owner.address,
+                        burnAddress,
+                        1,
+                        [
+                            {
+                                token: TokenType.erc20,
+                                consumableType: ConsumableType.burned,
+                                contractAddr: inputERC20.address,
+                                amounts: [1],
+                                tokenIds: [],
+                            },
+                        ],
+                        //Output specific token id, output unaffected
+                        [
+                            {
+                                token: TokenType.erc20,
+                                consumableType: ConsumableType.unaffected,
+                                contractAddr: outputERC20.address,
+                                amounts: [1],
+                                tokenIds: [],
+                            },
+                        ],
+                        gsnForwarderAddress, // Forwarder
                     ],
-                    //Output specific token id, output unaffected
-                    [
-                        {
-                            token: TokenType.erc20,
-                            consumableType: ConsumableType.unaffected,
-                            contractAddr: outputERC20.address,
-                            amounts: [1],
-                            tokenIds: [],
-                        },
-                    ],
-                    ZERO_ADDR, // Forwarder
-                ],
-                ERC1167Factory,
-            );
+                    ERC1167Factory,
+                    undefined,
+                    undefined,
+                    owner,
+                )
+            ).contract as CrafterMint;
 
-            crafter = (await ethers.getContractAt('CrafterMint', CrafterMintAddress)) as CrafterMint;
             //Assert not transferred
             originalInputBalance = parseUnits('1000000000.0', 'ether');
             originalOutputBalance = parseUnits('1000000000.0', 'ether');
@@ -169,12 +187,13 @@ describe.only('CrafterMint.sol', function () {
                 amounts: [BigNumber.from(1)],
                 tokenIds: [],
             });
+            expect(CrafterMintAddress).to.equal(crafter.address);
         });
 
         it('craft', async () => {
             //Craft 1
             await inputERC20.connect(owner).approve(CrafterMintAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[]]);
+            await crafter.craft(1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -185,17 +204,20 @@ describe.only('CrafterMint.sol', function () {
             expect(await outputERC20.balanceOf(crafter.address)).to.equal(0);
         });
 
-        it('withdraw', async () => {
-            //Withdraw 1
-            await crafter.withdraw(1);
-            //Check storage
-            expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
-            //Check balances
-            expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance);
-            expect(await inputERC20.balanceOf(crafter.address)).to.equal(0);
-            expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance);
-            expect(await outputERC20.balanceOf(crafter.address)).to.equal(0);
-        });
+        it(
+            'withdraw',
+            assertBalances(ethers, async () => {
+                //Withdraw 1
+                await crafter.withdraw(1);
+                //Check storage
+                expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
+                //Check balances
+                expect(await inputERC20.balanceOf(owner.address)).to.equal(originalInputBalance);
+                expect(await inputERC20.balanceOf(crafter.address)).to.equal(0);
+                expect(await outputERC20.balanceOf(owner.address)).to.equal(originalOutputBalance);
+                expect(await outputERC20.balanceOf(crafter.address)).to.equal(0);
+            }),
+        );
 
         it('deposit', async () => {
             //Deposit 1
@@ -211,7 +233,7 @@ describe.only('CrafterMint.sol', function () {
 
             //Craft 1
             await inputERC20.connect(owner).approve(CrafterMintAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[]]);
+            await crafter.craft(1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -277,7 +299,7 @@ describe.only('CrafterMint.sol', function () {
                             tokenIds: [11],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -312,7 +334,7 @@ describe.only('CrafterMint.sol', function () {
                             tokenIds: [11],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -349,7 +371,7 @@ describe.only('CrafterMint.sol', function () {
         it('craft', async () => {
             //Craft 1
             await inputERC721.connect(owner).approve(CrafterMintAddress, 1);
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
+            await crafter.craft(1, [[1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -431,7 +453,7 @@ describe.only('CrafterMint.sol', function () {
             });
             //Craft 1
             await inputERC721.connect(owner).setApprovalForAll(CrafterMintAddress, true);
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
+            await crafter.craft(1, [[1]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -485,7 +507,7 @@ describe.only('CrafterMint.sol', function () {
                             tokenIds: [outputId],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -520,7 +542,7 @@ describe.only('CrafterMint.sol', function () {
                             tokenIds: [outputId],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -558,7 +580,7 @@ describe.only('CrafterMint.sol', function () {
         it('craft', async () => {
             //Craft 1
             await inputERC1155.connect(owner).setApprovalForAll(CrafterMintAddress, true);
-            await crafter['craft(uint96,uint256[][])'](1, [[]]);
+            await crafter.craft(1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(0);
             //Check balances
@@ -589,7 +611,7 @@ describe.only('CrafterMint.sol', function () {
             expect(await outputERC1155.balanceOf(crafter.address, outputId)).to.equal(0);
             //Craft 1
             await inputERC1155.connect(owner).setApprovalForAll(CrafterMintAddress, true);
-            await crafter['craft(uint96,uint256[][])'](1, [[]]);
+            await crafter.craft(1, [[]]);
             //Check storage
             expect(await crafter.craftableAmount(), 'craftableAmount').to.equal(1);
         });
@@ -706,7 +728,7 @@ describe.only('CrafterMint.sol', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -771,7 +793,7 @@ describe.only('CrafterMint.sol', function () {
                             tokenIds: [outputId1155],
                         },
                     ],
-                    ZERO_ADDR, // forwarder addr
+                    gsnForwarderAddress, // forwarder addr
                 ],
                 ERC1167Factory,
             );
@@ -855,7 +877,7 @@ describe.only('CrafterMint.sol', function () {
 
         it('craft', async () => {
             //Craft 1
-            await crafter['craft(uint96,uint256[][])'](1, [[1]]);
+            await crafter.craft(1, [[1]]);
 
             //Check balances
             expect(await inputERC20.balanceOf(burnAddress)).to.equal(1);

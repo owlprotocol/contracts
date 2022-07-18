@@ -9,13 +9,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
-
+import '../OwlBase.sol';
 import './AuctionLib.sol';
 
 /*
@@ -27,13 +21,7 @@ import './AuctionLib.sol';
  * owner must claim the asset back from the contract and no one is eligible to buy the asset
  * after the auction duration has passed.
  */
-contract FixedPriceAuction is
-    BaseRelayRecipient,
-    ERC721HolderUpgradeable,
-    ERC1155HolderUpgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable
-{
+contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG =
@@ -133,7 +121,8 @@ contract FixedPriceAuction is
         address payable _saleFeeAddress,
         address _forwarder
     ) internal onlyInitializing {
-        _transferOwnership(_seller);
+        __OwlBase_init(_seller, _forwarder);
+
         __FixedPriceAuction_init_unchained(
             _seller,
             _asset,
@@ -141,8 +130,7 @@ contract FixedPriceAuction is
             _price,
             _auctionDuration,
             _saleFee,
-            _saleFeeAddress,
-            _forwarder
+            _saleFeeAddress
         );
     }
 
@@ -153,8 +141,7 @@ contract FixedPriceAuction is
         uint256 _price,
         uint256 _auctionDuration,
         uint256 _saleFee,
-        address payable _saleFeeAddress,
-        address _forwarder
+        address payable _saleFeeAddress
     ) internal onlyInitializing {
         require(_seller != _saleFeeAddress, 'FixedPriceAuction: seller cannot be the same as the owner!');
         require(saleFee <= 100, 'FixedPriceAuction: sale fee cannot be greater than 100 percent!');
@@ -169,9 +156,6 @@ contract FixedPriceAuction is
         isBought = false;
         saleFee = _saleFee;
         saleFeeAddress = _saleFeeAddress;
-
-        //Setting trusted forwarder for open GSN
-        _setTrustedForwarder(_forwarder);
 
         //transferring ERC 721 to contract
         if (_asset.token == AuctionLib.TokenType.erc721)
@@ -235,7 +219,7 @@ contract FixedPriceAuction is
      * @notice must be the owner to call this function
      * @dev allows the owner to reclaim their asset if no one buys
      */
-    function claim() external onlyOwner {
+    function claim() external onlyRole(DEFAULT_ADMIN_ROLE) {
         //owner withdraws asset if nobody buys
         require(
             block.timestamp >= startTime + auctionDuration,
@@ -260,35 +244,17 @@ contract FixedPriceAuction is
     }
 
     /**
-    Upgradeable functions
-    */
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
-    }
-
-    /**
      * @dev ERC165 Support
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        returns (bool)
+    {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
     }
 }

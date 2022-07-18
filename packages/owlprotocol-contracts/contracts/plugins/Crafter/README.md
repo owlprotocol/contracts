@@ -4,7 +4,7 @@
 
 Through a front-end, a player will interact primarily with the `craft()` function, as well as with the getter functions to access information regarding the recipe (input and output ingredients).
 
-Calling craft in all cases takes an integer, craftAmount, of the number of times to execute the recipe. In the case of ERC-721 inputs, a 2-dimensional array - an array of token ID arrays for each ingredient - is required as input.
+Calling craft in all cases takes an unsigned integer, `craftAmount`, of the number of times to execute the recipe. In the case of ERC-721 inputs, a 2-dimensional array - an array of token ID arrays for each ingredient - is required as input.
 
 ## How should a game developer interact with Crafter?
 

@@ -130,6 +130,8 @@ describe('RosalindDNA.sol', async () => {
             offspringDNA = await dnaLib.setGenCount(offspringDNA, [parent2, parent3]);
             const offspringGenes = decodeGenesUint256(offspringDNA, genes);
 
+            expect(await dnaLib.getGenCount(offspringDNA)).to.equal(101)
+
             // Assert generation == 3
             const nextGeneration = Math.max(parent2Age, parent3Age) + 1; // 101
             assert.isTrue(offspringGenes[0].eq(nextGeneration), 'offspring generation not incremented!');

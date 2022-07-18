@@ -31,8 +31,9 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
         address _vrf,
         bytes32 _keyHash,
         uint32 _callbackGasLimit,
-        uint256 _epochPeriod
+        uint8 _epochPeriod
     ) VRFConsumerBaseV2(_vrf) RandomBeacon(_epochPeriod) {
+        require(_epochPeriod < 100 && _epochPeriod > 3, 'VRFBeaocn: invalid number for _epoch period');
         s_subscriptionId = _subscriptionId;
         COORDINATOR = VRFCoordinatorV2Interface(_vrf);
         keyHash = _keyHash;
@@ -53,22 +54,25 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
     /**
      * Requests randomness from a block hash
      */
-    function requestRandomness(uint256 blockNumber) public returns (uint256) {
-        require(blockNumber > block.number, 'VRFBeacon: block is already past');
+    function requestRandomness() public returns (uint256, uint256) {
         // Max request per EPOCH
-        uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
-        require(blockNumberToRequestId[epochBlockNumber] == 0, 'VRFBeacon: Already requested!');
+        uint256 epochBlockNumber = block.number - (block.number % EPOCH_PERIOD);
+
+        uint256 currRequestId = blockNumberToRequestId[epochBlockNumber];
+        if (currRequestId != 0) return (currRequestId, epochBlockNumber);
+
+        uint16 reqConf = uint16(uint256(EPOCH_PERIOD) - (block.number % uint256(EPOCH_PERIOD)));
 
         uint256 requestId = COORDINATOR.requestRandomWords(
             keyHash,
             s_subscriptionId,
-            uint16(EPOCH_PERIOD - (blockNumber % EPOCH_PERIOD)),
+            reqConf < 3 ? 3 : reqConf > 200 ? 200 : reqConf,
             callbackGasLimit,
             numWords
         );
         blockNumberToRequestId[epochBlockNumber] = requestId;
 
-        return requestId;
+        return (requestId, epochBlockNumber);
     }
 
     /**

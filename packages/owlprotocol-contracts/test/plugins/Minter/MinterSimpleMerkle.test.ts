@@ -112,11 +112,15 @@ describe('MinterSimpleMerkle.sol', function () {
 
         it('Bad proof', async () => {
             // Mint denied (bad proof)
-            await expect(minter.connect(user)['mint(address,bytes32[])'](user.address, badProof)).to.be.revertedWith('Not member of merkleTree!');
+            await expect(minter.connect(user)['mint(address,bytes32[])'](user.address, badProof)).to.be.revertedWith(
+                'Not member of merkleTree!',
+            );
         });
 
         it('Wrong user', async () => {
-            await expect(minter['mint(address,bytes32[])'](user.address, proof)).to.be.revertedWith('Not member of merkleTree!');
+            await expect(minter['mint(address,bytes32[])'](user.address, proof)).to.be.revertedWith(
+                'Not member of merkleTree!',
+            );
         });
 
         it('Successful mint', async () => {

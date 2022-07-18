@@ -2,7 +2,6 @@ import { ethers, network } from 'hardhat';
 const { utils } = ethers;
 const { keccak256, toUtf8Bytes } = utils;
 import { expect } from 'chai';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
     BeaconProxyInitializable,
     BeaconProxyInitializable__factory,
@@ -13,22 +12,30 @@ import {
     UpgradeableBeaconInitializable,
     UpgradeableBeaconInitializable__factory,
 } from '../../typechain';
-import { deployClone } from '../utils';
+import { deployClone, deployCloneWrap } from '../utils';
+import { loadSignersSmart, TestingSigner, loadForwarder } from '@owlprotocol/contract-helpers-opengsn/src';
 
 const salt = ethers.utils.formatBytes32String('1');
 const expireTime = 500;
 
 describe('ERC721Expiring.sol', () => {
-    let signer1: SignerWithAddress;
-    let signer2: SignerWithAddress;
+    let signer1: TestingSigner;
+    let signer2: TestingSigner;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
 
     let ERC721OwlExpiringImpl: ERC721OwlExpiring;
     let contrInst: ERC721OwlExpiring;
+
+    let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
+
     beforeEach(async () => {
-        [signer1, signer2] = await ethers.getSigners();
+        //Setup Test Environment
+        gsnForwarderAddress = await loadForwarder(ethers);
+
+        [signer1, signer2] = await loadSignersSmart(ethers);
+
         const ERC721OwlExpiringFactory = (await ethers.getContractFactory(
             'ERC721OwlExpiring',
         )) as ERC721OwlExpiring__factory;
@@ -36,13 +43,16 @@ describe('ERC721Expiring.sol', () => {
 
         ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
-        const { address } = await deployClone(
-            ERC721OwlExpiringImpl,
-            [signer1.address, 'n', 's', 'u'],
-            ERC1167Factory,
-            salt,
-        );
-        contrInst = (await ethers.getContractAt('ERC721OwlExpiring', address)) as ERC721OwlExpiring;
+        contrInst = (
+            await deployCloneWrap(
+                ERC721OwlExpiringImpl,
+                [signer1.address, 'n', 's', 'u', gsnForwarderAddress],
+                ERC1167Factory,
+                salt,
+                'initialize(address,string,string,string,address)', // must use full signature
+                signer1,
+            )
+        ).contract as ERC721OwlExpiring;
     });
 
     describe('ownerOf()', async () => {
@@ -173,7 +183,9 @@ describe('ERC721Expiring.sol', () => {
 
     describe('approve()', async () => {
         beforeEach(async () => {
-            await expect(contrInst.approve(signer2.address, 1)).to.be.revertedWith('ERC721: invalid token ID');
+            await expect(contrInst.approve(signer2.address, 1)).to.be.revertedWith(
+                'ERC721: invalid token ID',
+            );
 
             await network.provider.send('evm_setAutomine', [false]);
 

@@ -14,7 +14,7 @@ import '../MinterCore.sol';
  * @dev Decentralized NFT Minter contract
  *
  */
-contract MinterSimple is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUPSUpgradeable {
+contract MinterSimple is MinterCore {
     // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimple/', version)));
@@ -55,14 +55,10 @@ contract MinterSimple is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
         address _nftContractAddr,
         address _forwarder
     ) internal onlyInitializing {
-        __MinterCore_init(_mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr);
-        __MinterSimple_init_unchained(_admin, _forwarder);
+        __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
-    function __MinterSimple_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        _transferOwnership(_admin);
-        _setTrustedForwarder(_forwarder);
-    }
+    function __MinterSimple_init_unchained() internal onlyInitializing {}
 
     /**
      * @dev
@@ -80,27 +76,6 @@ contract MinterSimple is BaseRelayRecipient, MinterCore, OwnableUpgradeable, UUP
     function safeMint(address buyer, uint256 tokenId) public {
         // Mint Operation
         MinterCore._safeMintForFee(buyer, tokenId);
-    }
-
-    /**
-     * @notice the following 3 functions are all required for OpenGSN integration
-     */
-    function _msgSender() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
-    }
-
-    function _msgData() internal view override(BaseRelayRecipient, ContextUpgradeable) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
-    }
-
-    function versionRecipient() external pure override returns (string memory) {
-        return '2.2.6';
-    }
-
-    function _authorizeUpgrade(address) internal override onlyOwner {}
-
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
     }
 
     /**

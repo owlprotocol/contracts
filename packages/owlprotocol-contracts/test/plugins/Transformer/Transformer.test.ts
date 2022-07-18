@@ -1,22 +1,25 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import {
-    ERC1155,
+    FactoryERC1155,
     ERC1167Factory,
     ERC1167Factory__factory,
-    ERC20,
-    ERC721,
+    FactoryERC20,
+    FactoryERC721,
     ERC721OwlAttributes,
     ERC721OwlAttributes__factory,
-    FactoryERC20,
     Transformer,
     Transformer__factory,
+    UpgradeableBeaconInitializable__factory,
+    UpgradeableBeaconInitializable,
+    BeaconProxyInitializable__factory,
+    BeaconProxyInitializable,
 } from '../../../typechain';
 import { createERC1155, createERC20, createERC721, deployClone, encodeGenesUint256 } from '../../utils';
 import { pick } from 'lodash';
 import { BigNumber } from 'ethers';
 import { parseUnits } from 'ethers/lib/utils';
+import { loadSignersSmart, loadForwarder, TestingSigner } from '@owlprotocol/contract-helpers-opengsn/src';
 
 const salt = ethers.utils.formatBytes32String('1');
 
@@ -26,8 +29,6 @@ enum GeneTransformType {
     sub,
     mult,
     set,
-    // ,
-    // random
 }
 
 enum ConsumableType {
@@ -36,27 +37,40 @@ enum ConsumableType {
     NTime,
 }
 
+enum TokenType {
+    erc20,
+    erc721,
+    erc1155,
+}
+
 const vals = [1, 1, 1];
 const genes = [250, 252, 254];
 
 describe('Transformer.sol; genes [2, 4, 6]', () => {
     let adminAddress: string;
     let burnAddress: string;
-    let inputERC20: ERC20;
-    let inputERC721: ERC721;
-    let inputERC1155: ERC1155;
+    let inputERC20: FactoryERC20;
+    let inputERC721: FactoryERC721;
+    let inputERC1155: FactoryERC1155;
 
-    let signer1: SignerWithAddress;
-    let signer2: SignerWithAddress;
-    let burnSigner: SignerWithAddress;
+    let signer1: TestingSigner;
+    let signer2: TestingSigner;
+    let burnSigner: TestingSigner;
+    let forwarder: TestingSigner;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
 
     let transformerImpl: Transformer;
     let ERC721Inst: ERC721OwlAttributes;
+
+    let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
+
     beforeEach(async () => {
-        [signer1, signer2, burnSigner] = await ethers.getSigners();
+        //Setup Test Environment
+        gsnForwarderAddress = await loadForwarder(ethers);
+
+        [signer1, signer2, burnSigner] = await loadSignersSmart(ethers);
         adminAddress = signer1.address;
         burnAddress = burnSigner.address;
 
@@ -73,11 +87,19 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
 
         ERC1167FactoryFactory = (await ethers.getContractFactory('ERC1167Factory')) as ERC1167Factory__factory;
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
-        const { address } = await deployClone(ERC721OwlAttributes, [adminAddress, 'n', 's', 'u'], ERC1167Factory, salt);
+        const { address } = await deployClone(
+            ERC721OwlAttributes,
+            [adminAddress, 'n', 's', 'u', gsnForwarderAddress],
+            ERC1167Factory,
+            salt,
+        );
 
         ERC721Inst = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
-        ERC721Inst.connect(signer1).mint(signer1.address, encodeGenesUint256(vals, genes));
+
+        await ERC721Inst.connect(signer1).mint(signer1.address, encodeGenesUint256(vals, genes));
+
         expect(await ERC721Inst.ownerOf(0)).to.equal(signer1.address);
+
         //await expect(ERC721Inst.ownerOf(63)).to.be.revertedWith('ERC721: owner query for nonexistent token');
     });
 
@@ -92,7 +114,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     burnAddress,
                     [
                         {
-                            token: 0,
+                            token: TokenType.erc20,
                             consumableType: ConsumableType.burned,
                             contractAddr: inputERC20.address,
                             amounts: [10],
@@ -115,10 +137,12 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
             );
+
             await ERC721Inst.grantDna(address);
 
             transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
@@ -156,7 +180,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     burnAddress,
                     [
                         {
-                            token: 0,
+                            token: TokenType.erc20,
                             consumableType: ConsumableType.burned,
                             contractAddr: inputERC20.address,
                             amounts: [10],
@@ -179,6 +203,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -240,7 +265,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     burnAddress,
                     [
                         {
-                            token: 0,
+                            token: TokenType.erc20,
                             consumableType: ConsumableType.unaffected,
                             contractAddr: inputERC20.address,
                             amounts: [10],
@@ -263,6 +288,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -319,7 +345,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     burnAddress,
                     [
                         {
-                            token: 1,
+                            token: TokenType.erc721,
                             consumableType: ConsumableType.NTime,
                             contractAddr: inputERC721.address,
                             amounts: [2],
@@ -342,6 +368,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -390,7 +417,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             await transformerInst.connect(signer1).transform(0, [[1]]);
             await transformerInst.connect(signer1).transform(0, [[1]]);
             await expect(transformerInst.connect(signer1).transform(0, [[1]])).to.be.revertedWith(
-                'Transformer: Used over the limit of n',
+                'PluginsCore: Used over the limit of n',
             );
 
             expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
@@ -408,7 +435,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     burnAddress,
                     [
                         {
-                            token: 1,
+                            token: TokenType.erc721,
                             consumableType: ConsumableType.burned,
                             contractAddr: inputERC721.address,
                             amounts: [],
@@ -431,6 +458,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -471,7 +499,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     burnAddress,
                     [
                         {
-                            token: 2,
+                            token: TokenType.erc1155,
                             consumableType: ConsumableType.burned,
                             contractAddr: inputERC1155.address,
                             amounts: [1, 5],
@@ -494,6 +522,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -524,6 +553,71 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
         });
     });
 
+    describe('consumableType: unaffected; input: 1155; modification: set', () => {
+        let transformerInst: Transformer;
+
+        beforeEach(async () => {
+            const { address } = await deployClone(
+                transformerImpl,
+                [
+                    adminAddress,
+                    burnAddress,
+                    [
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: inputERC1155.address,
+                            amounts: [1, 5],
+                            tokenIds: [1, 2],
+                        },
+                    ],
+                    [250, 252, 254],
+                    [
+                        {
+                            geneTransformType: GeneTransformType.set, //add
+                            value: 3,
+                        },
+                        {
+                            geneTransformType: GeneTransformType.set,
+                            value: 3,
+                        },
+                        {
+                            geneTransformType: GeneTransformType.set,
+                            value: 1,
+                        },
+                    ],
+                    ERC721Inst.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+                salt,
+            );
+
+            await ERC721Inst.grantDna(address);
+            transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
+
+            // approvals
+            await inputERC1155.connect(signer1).setApprovalForAll(transformerInst.address, true);
+        });
+        it('transform()', async () => {
+            const tx = await transformerInst.connect(signer1).transform(0, [[]]);
+            const receipt = await tx.wait();
+
+            const { nftAddr, tokenId, oldDna, newDna } = pick(
+                receipt.events?.find((e) => e.event === 'Transform')?.args,
+                ['nftAddr', 'tokenId', 'oldDna', 'newDna'],
+            );
+
+            expect(oldDna).to.equal(encodeGenesUint256([1, 1, 1], genes));
+            expect(newDna).to.equal(encodeGenesUint256([3, 3, 1], genes));
+
+            const attributeNft = (await ethers.getContractAt('ERC721OwlAttributes', nftAddr)) as ERC721OwlAttributes;
+            expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
+            expect(await inputERC1155.balanceOf(signer1.address, 1)).to.equal(100);
+            expect(await inputERC1155.balanceOf(signer1.address, 2)).to.equal(100);
+        });
+    });
+
     describe('consumableType: NTime; modification: add, mult, set', () => {
         let transformerInst: Transformer;
         beforeEach(async () => {
@@ -534,7 +628,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                     burnAddress,
                     [
                         {
-                            token: 1,
+                            token: TokenType.erc721,
                             consumableType: ConsumableType.NTime,
                             contractAddr: inputERC721.address,
                             amounts: [2],
@@ -557,6 +651,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
                         },
                     ],
                     ERC721Inst.address,
+                    gsnForwarderAddress,
                 ],
                 ERC1167Factory,
                 salt,
@@ -605,10 +700,301 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
             expect(await attributeNft.getDna(tokenId)).to.equal(newDna);
 
             await expect(transformerInst.connect(signer1).transform(0, [[1]])).to.be.revertedWith(
-                'Transformer: Used over the limit of n',
+                'PluginsCore: Used over the limit of n',
             );
 
             expect(await inputERC721.ownerOf(1)).to.equal(signer1.address);
         });
+    });
+
+    describe('Check reverts', async () => {
+        it('burn address is zero address', async () => {
+            await expect(
+                deployClone(
+                    transformerImpl,
+                    [
+                        adminAddress,
+                        ethers.constants.AddressZero,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.NTime,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        gsnForwarderAddress,
+                    ],
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: burn address must not be 0');
+        });
+        it('inputs length is empty', async () => {
+            await expect(
+                deployClone(
+                    transformerImpl,
+                    [
+                        adminAddress,
+                        burnAddress,
+                        [],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        gsnForwarderAddress,
+                    ],
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: A crafting input must be given!');
+        });
+        it('genes length different from modifications length', async () => {
+            await expect(
+                deployClone(
+                    transformerImpl,
+                    [
+                        adminAddress,
+                        burnAddress,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.NTime,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [210, 250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        gsnForwarderAddress,
+                    ],
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('Transformer: length of genes must be the same as length of modifications');
+        });
+
+        it('caller of unlock not owner of tokenid', async () => {
+            const { address } = await deployClone(
+                transformerImpl,
+                [
+                    adminAddress,
+                    burnAddress,
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.NTime,
+                            contractAddr: inputERC721.address,
+                            amounts: [2],
+                            tokenIds: [],
+                        },
+                    ],
+                    [250, 252, 254],
+                    [
+                        {
+                            geneTransformType: GeneTransformType.add, //add
+                            value: 1,
+                        },
+                        {
+                            geneTransformType: GeneTransformType.mult,
+                            value: 0,
+                        },
+                        {
+                            geneTransformType: GeneTransformType.set,
+                            value: 1,
+                        },
+                    ],
+                    ERC721Inst.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+                salt,
+            );
+
+            const transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
+
+            await expect(transformerInst.connect(signer2).transform(0, [[]])).to.be.revertedWith(
+                'Transformer: you are not the owner of that ID!',
+            );
+        });
+
+        it('input ingredient ERC721 with consumable type undefined', async () => {
+            await expect(
+                deployClone(
+                    transformerImpl,
+                    [
+                        adminAddress,
+                        burnAddress,
+                        [
+                            {
+                                token: TokenType.erc721,
+                                consumableType: ConsumableType.unaffected,
+                                contractAddr: inputERC721.address,
+                                amounts: [2],
+                                tokenIds: [],
+                            },
+                        ],
+                        [250, 252, 254],
+                        [
+                            {
+                                geneTransformType: GeneTransformType.add, //add
+                                value: 1,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.mult,
+                                value: 0,
+                            },
+                            {
+                                geneTransformType: GeneTransformType.set,
+                                value: 1,
+                            },
+                        ],
+                        ERC721Inst.address,
+                        gsnForwarderAddress,
+                    ],
+                    ERC1167Factory,
+                    salt,
+                ),
+            ).to.be.revertedWith('PluginsLib: ERC721 consumableType not burned or NTime');
+        });
+        it('user doesnt have NTime token', async () => {
+            ERC721Inst.transferFrom(signer1.address, signer2.address, 0);
+            const { address } = await deployClone(
+                transformerImpl,
+                [
+                    adminAddress,
+                    burnAddress,
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.NTime,
+                            contractAddr: inputERC721.address,
+                            amounts: [2],
+                            tokenIds: [],
+                        },
+                    ],
+                    [250, 252, 254],
+                    [
+                        {
+                            geneTransformType: GeneTransformType.add, //add
+                            value: 1,
+                        },
+                        {
+                            geneTransformType: GeneTransformType.mult,
+                            value: 0,
+                        },
+                        {
+                            geneTransformType: GeneTransformType.set,
+                            value: 1,
+                        },
+                    ],
+                    ERC721Inst.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+                salt,
+            );
+
+            const transformerInst = (await ethers.getContractAt('Transformer', address)) as Transformer;
+            await expect(transformerInst.connect(signer2).transform(0, [[0]])).to.be.revertedWith(
+                'PluginsCore: User does not own token(s)!',
+            );
+        });
+    });
+
+    it('beacon proxy initialization', async () => {
+        const beaconFactory = (await ethers.getContractFactory(
+            'UpgradeableBeaconInitializable',
+        )) as UpgradeableBeaconInitializable__factory;
+        const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+        const beaconProxyFactory = (await ethers.getContractFactory(
+            'BeaconProxyInitializable',
+        )) as BeaconProxyInitializable__factory;
+        const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+        const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, transformerImpl.address]);
+        //@ts-ignore
+        const data = transformerImpl.interface.encodeFunctionData('proxyInitialize', [
+            adminAddress,
+            burnAddress,
+            [
+                {
+                    token: TokenType.erc721,
+                    consumableType: ConsumableType.NTime,
+                    contractAddr: inputERC721.address,
+                    amounts: [2],
+                    tokenIds: [],
+                },
+            ],
+            [250, 252, 254],
+            [
+                {
+                    geneTransformType: GeneTransformType.add, //add
+                    value: 1,
+                },
+                {
+                    geneTransformType: GeneTransformType.mult,
+                    value: 0,
+                },
+                {
+                    geneTransformType: GeneTransformType.set,
+                    value: 1,
+                },
+            ],
+            ERC721Inst.address,
+            gsnForwarderAddress,
+        ]);
+        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data]);
+        const contrInst = (await ethers.getContractAt('Transformer', beaconProxyAddr)) as Transformer;
+
+        //transformer doesn't have only dna role
+        await expect(contrInst.transform(0, [[1]])).to.be.revertedWith(
+            `AccessControl: account ${beaconProxyAddr.toLowerCase()} is missing role 0xd81e3d287dc343b6afbd738eeed3ca0a2b77921a595a475a4e43ed25b38ceb2f`,
+        );
     });
 });

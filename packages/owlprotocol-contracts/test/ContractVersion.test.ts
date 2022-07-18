@@ -6,7 +6,8 @@ describe('Contract Version Testing', async () => {
         // Get contract factory
         const factory = await ethers.getContractFactory(name);
         const contract = await factory.deploy();
-        const version = await contract.version();
+        console.log(name)
+        const version = contract.version ? await contract.version() : await contract.VERSION()
         expect(version, `${name}/${contractVersion} incorrect!`).to.equal(contractVersion);
         // console.log(`Version: ${name}/${version}`);
     };
