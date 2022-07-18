@@ -4,7 +4,7 @@ import { ethers, web3, network } from 'hardhat';
 import {
     BeaconProxyInitializable,
     ERC1167Factory,
-    NFTOwnershipPaymaster,
+    NaivePaymaster,
     UpgradeableBeaconInitializable,
     FactoryERC721,
 } from '../../typechain';
@@ -12,7 +12,7 @@ import {
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const salt = ethers.utils.formatBytes32String('1');
-let NFTOwnershipPaymasterBeaconAddr = '';
+let NaivePaymasterBeaconAddr = '';
 let ERC721Contract: FactoryERC721;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -25,7 +25,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { address: proxyAddr } = await deployments.get('ERC1167Factory');
     const { address: beaconProxyAddr } = await deployments.get('BeaconProxyInitializable');
     const { address: beaconAddr } = await deployments.get('UpgradeableBeaconInitializable');
-    const { address: NFTOwnershipPaymasterAddr } = await deployments.get('NFTOwnershipPaymaster');
+    const { address: NaivePaymasterAddr } = await deployments.get('NaivePaymaster');
 
     const proxy = (await ethers.getContractAt('ERC1167Factory', proxyAddr)) as ERC1167Factory;
     const beaconProxy = (await ethers.getContractAt(
@@ -33,82 +33,67 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         beaconProxyAddr,
     )) as BeaconProxyInitializable;
 
-    let acceptableTokenAddr = '';
-    const limit = 10;
-
     if (network.name === 'hardhat') {
-        NFTOwnershipPaymasterBeaconAddr = await getBeaconAddr(
-            proxy,
-            otherSigner,
-            beaconAddr,
-            NFTOwnershipPaymasterAddr,
-        );
+        NaivePaymasterBeaconAddr = await getBeaconAddr(proxy, otherSigner, beaconAddr, NaivePaymasterAddr);
 
-        const { address } = await deployments.get('FactoryERC721');
-        acceptableTokenAddr = address;
         const { address: address2 } = await deployments.get('FactoryERC721');
         ERC721Contract = (await ethers.getContractAt('FactoryERC721', address2)) as FactoryERC721;
     }
 
-    const NFTOwnershipPaymasterImpl = (await ethers.getContractAt(
-        'NFTOwnershipPaymaster',
-        NFTOwnershipPaymasterAddr,
-    )) as NFTOwnershipPaymaster;
+    const NaivePaymasterImpl = (await ethers.getContractAt('NaivePaymaster', NaivePaymasterAddr)) as NaivePaymaster;
 
-    const NFTOwnershipPaymasterData = NFTOwnershipPaymasterImpl.interface.encodeFunctionData('proxyinitialize', [
+    const NaivePaymasterData = NaivePaymasterImpl.interface.encodeFunctionData('proxyinitialize', [
         other,
-        acceptableTokenAddr,
-        limit,
+        other,
         other,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory
     const beaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
         other,
-        NFTOwnershipPaymasterBeaconAddr,
-        NFTOwnershipPaymasterData,
+        NaivePaymasterBeaconAddr,
+        NaivePaymasterData,
     ]);
 
-    const NFTOwnershipPaymasterBPInstAddr = await proxy
+    const NaivePaymasterBPInstAddr = await proxy
         .connect(otherSigner)
         .predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
 
-    if (network.name === 'hardhat')
-        await ERC721Contract.connect(otherSigner).approve(NFTOwnershipPaymasterBPInstAddr, 2);
+    if (network.name === 'hardhat') await ERC721Contract.connect(otherSigner).approve(NaivePaymasterBPInstAddr, 2);
 
-    if ((await web3.eth.getCode(NFTOwnershipPaymasterBPInstAddr)) !== '0x') {
-        console.log(`ERC721 beacon proxy already deployed ${network.name} at ${NFTOwnershipPaymasterBPInstAddr}`);
+    if ((await web3.eth.getCode(NaivePaymasterBPInstAddr)) !== '0x') {
+        console.log(`ERC721 beacon proxy already deployed ${network.name} at ${NaivePaymasterBPInstAddr}`);
         return;
     }
 
     const deployTx = await proxy.connect(otherSigner).cloneDeterministic(beaconProxyAddr, salt, beaconProxyData);
     const receipt = await deployTx.wait();
 
-    console.log(`ERC721 beacon proxy deployed to ${NFTOwnershipPaymasterBPInstAddr} with ${receipt.gasUsed} gas`);
+    console.log(`ERC721 beacon proxy deployed to ${NaivePaymasterBPInstAddr} with ${receipt.gasUsed} gas`);
 };
 
 async function getBeaconAddr(
     proxy: ERC1167Factory,
     otherSigner: SignerWithAddress,
     beaconAddr: string,
-    NFTOwnershipPaymasterAddr: string,
+    NaivePaymasterAddr: string,
 ) {
     const beacon = (await ethers.getContractAt(
         'UpgradeableBeaconInitializable',
         beaconAddr,
     )) as UpgradeableBeaconInitializable;
 
-    const NFTOwnershipPaymasterBeaconData = beacon.interface.encodeFunctionData('initialize', [
+    const NaivePaymasterBeaconData = beacon.interface.encodeFunctionData('initialize', [
         otherSigner.address,
-        NFTOwnershipPaymasterAddr,
+        NaivePaymasterAddr,
     ]);
 
-    const NFTOwnershipPaymasterBeaconAddr = await proxy
+    const NaivePaymasterBeaconAddr = await proxy
         .connect(otherSigner)
-        .predictDeterministicAddress(beaconAddr, salt, NFTOwnershipPaymasterBeaconData);
-    return NFTOwnershipPaymasterBeaconAddr;
+        .predictDeterministicAddress(beaconAddr, salt, NaivePaymasterBeaconData);
+    return NaivePaymasterBeaconAddr;
 }
 
 export default deploy;
-deploy.tags = ['NFTOwnershipPaymasterInst', 'NFTOwnershipPaymaster', 'BeaconProxy', 'Instance'];
-deploy.dependencies = ['BeaconImpl', 'BeaconProxyImpl', 'NFTOwnershipPaymasterImpl', 'NFTOwnershipPaymasterBeacon'];
+deploy.tags = ['NaivePaymasterInst', 'NaivePaymaster', 'BeaconProxy', 'Instance'];
+deploy.dependencies = ['BeaconImpl', 'BeaconProxyImpl', 'NaivePaymasterImpl', 'NaivePaymasterBeacon'];

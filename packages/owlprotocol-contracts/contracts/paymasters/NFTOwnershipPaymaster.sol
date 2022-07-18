@@ -9,8 +9,9 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol'
 import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol';
 
 import '../OwlBase.sol';
+import './OwlPaymasterBase.sol';
 
-contract NFTOwnershipPaymaster is OwlBase, BasePaymaster {
+contract NFTOwnershipPaymaster is OwlPaymasterBase {
     event PreRelayed();
     event PostRelayed();
 
@@ -98,13 +99,5 @@ contract NFTOwnershipPaymaster is OwlBase, BasePaymaster {
 
     function getNumTransactions(uint256 tokenId) external view returns (uint256) {
         return numTimes[tokenId];
-    }
-
-    function _msgSender() internal view virtual override(OwlBase, Context) returns (address ret) {
-        return OwlBase._msgSender();
-    }
-
-    function _msgData() internal view virtual override(OwlBase, Context) returns (bytes calldata) {
-        return OwlBase._msgData();
     }
 }
