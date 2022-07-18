@@ -178,7 +178,7 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
 
         craftableAmount += depositAmount;
 
-        _addOutputs(depositAmount, _outputsERC721Ids, from, true);
+        _addOutputs(depositAmount, _outputsERC721Ids, from);
 
         emit Update(craftableAmount);
     }
@@ -187,42 +187,145 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
      * @notice Must be `DEFAULT_ADMIN_ROLE`
      * @dev Used to withdraw configuration outputs out of contract to the
      * caller. Will also decrease `craftableAmount`
-     * @param withdrawAmount How many sets of outputs should be withdrawn
+     * @param amount How many sets of outputs should be withdrawn
      */
-    function withdraw(uint96 withdrawAmount) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // Requires
-        require(withdrawAmount > 0, 'CrafterTransfer: withdrawAmount cannot be 0!');
-        require(withdrawAmount <= craftableAmount, 'CrafterTransfer: Not enough resources!');
-
-        // Decrease craftableAmount (check-effects)
-        craftableAmount -= withdrawAmount;
-
+    function withdraw(uint96 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // Will take outputs out of contract and transfer
         // them to caller
-        _removeOutputs(withdrawAmount, _msgSender(), true);
+        _removeOutputs(amount, _msgSender());
 
         emit Update(craftableAmount);
     }
 
     /**
-     * @notice Craft `craftAmount`
+     * @notice Craft `amount`
      * @dev Used to craft. Consumes inputs and transfers outputs.
-     * @param craftAmount How many times to craft
+     * @param amount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
-        require(craftAmount > 0, 'CrafterTransfer: craftAmount cannot be 0!');
-        require(craftAmount <= craftableAmount, 'CrafterTransfer: Not enough resources to craft!');
-
-        craftableAmount -= craftAmount;
-
-        _useInputs(_inputERC721Ids, craftAmount);
-
+    function craft(uint96 amount, uint256[][] calldata _inputERC721Ids) external {
         // This will remove a `withdrawAmount` of outputs and ERC721 `tokenId`
-        // by transferring to the address `to`
-        _removeOutputs(craftAmount, _msgSender(), true);
+        // by transferring to the _msgSender()
+        _removeOutputs(amount, _msgSender());
 
-        emit Craft(craftAmount, craftableAmount, _msgSender());
+        _useInputs(_inputERC721Ids, amount);
+
+        emit Craft(amount, craftableAmount, _msgSender());
+    }
+
+    /**
+     * @dev adds outputs to the contract balances and transers the outputs into
+     * the contract
+     * @param amount sets of outputs to add
+     * @param _outputsERC721Ids if there are ERC721 tokens present, supply their
+     * `tokenId`s
+     * @param from address to transfer assets from
+     */
+    function _addOutputs(
+        uint256 amount,
+        uint256[][] memory _outputsERC721Ids,
+        address from
+    ) internal override {
+        // Keep count of the amount of erc721Outputs so if there
+        // are multiple `tokenId`s in `_outputsERC721Ids`, next
+        // element in the array is only used when iteration is
+        // at next ERC721
+        uint256 erc721Outputs = 0;
+
+        // Go through all `PluginsCore.Ingredient`s in `outputs` and
+        // call appropriate function to transfer the outputs in from
+        // `from`
+        for (uint256 i = 0; i < outputs.length; i++) {
+            PluginsCore.Ingredient storage ingredient = outputs[i];
+            if (ingredient.token == PluginsCore.TokenType.erc20) {
+                SafeERC20Upgradeable.safeTransferFrom(
+                    IERC20Upgradeable(ingredient.contractAddr),
+                    from,
+                    address(this),
+                    ingredient.amounts[0] * amount
+                );
+            } else if (ingredient.token == PluginsCore.TokenType.erc721) {
+                require(
+                    _outputsERC721Ids[erc721Outputs].length == amount,
+                    'CrafterTransfer: _outputsERC721Ids[i] != amount'
+                );
+                for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
+                    IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
+                        from,
+                        address(this),
+                        _outputsERC721Ids[erc721Outputs][j]
+                    );
+
+                    //Update ingredient `tokenIds`, push additional ERC721 tokenId
+                    ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
+                }
+                erc721Outputs += 1;
+            } else if (ingredient.token == PluginsCore.TokenType.erc1155) {
+                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
+
+                // Calculate amount of each `tokenId` to transfer
+                for (uint256 j = 0; j < ingredient.amounts.length; j++) {
+                    amounts[j] = ingredient.amounts[j] * amount;
+                }
+
+                // Use batch transfer to save gas
+                IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
+                    from,
+                    address(this),
+                    ingredient.tokenIds,
+                    amounts,
+                    new bytes(0)
+                );
+            }
+        }
+    }
+
+    /**
+     * @dev removes outputs from contract balances and send the
+     * assets to address `to`
+     * @param amount sets of outputs to remove
+     * @param to address to send outputs to
+     */
+    function _removeOutputs(uint96 amount, address to) internal override {
+        require(amount > 0, 'CrafterTransfer: amount cannot be 0!');
+        require(amount <= craftableAmount, 'CrafterTransfer: Not enough resources to craft!');
+
+        craftableAmount -= amount;
+
+        for (uint256 i = 0; i < outputs.length; i++) {
+            PluginsCore.Ingredient storage ingredient = outputs[i];
+            if (ingredient.token == PluginsCore.TokenType.erc20)
+                SafeERC20Upgradeable.safeTransfer(
+                    IERC20Upgradeable(ingredient.contractAddr),
+                    to,
+                    ingredient.amounts[0] * amount
+                );
+            else if (ingredient.token == PluginsCore.TokenType.erc721) {
+                for (uint256 j = 0; j < amount; j++) {
+                    IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
+                        address(this),
+                        to,
+                        ingredient.tokenIds[ingredient.tokenIds.length - 1]
+                    );
+
+                    // Pop `tokenId`s from the back
+                    ingredient.tokenIds.pop();
+                }
+            } else if (ingredient.token == PluginsCore.TokenType.erc1155) {
+                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
+                for (uint256 j = 0; j < ingredient.amounts.length; j++) {
+                    amounts[j] = ingredient.amounts[j] * amount;
+                }
+
+                IERC1155Upgradeable(ingredient.contractAddr).safeBatchTransferFrom(
+                    address(this),
+                    to,
+                    ingredient.tokenIds,
+                    amounts,
+                    new bytes(0)
+                );
+            }
+        }
     }
 
     /**********************

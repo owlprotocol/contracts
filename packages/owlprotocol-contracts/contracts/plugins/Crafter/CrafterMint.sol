@@ -170,7 +170,7 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
 
         // address from parameter irrelevant in CrafterMint... passing
         // 0 address will suffice
-        _addOutputs(depositAmount, _outputsERC721Ids, address(0), false);
+        _addOutputs(depositAmount, _outputsERC721Ids, address(0));
 
         emit Update(craftableAmount);
     }
@@ -181,39 +181,108 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
      * @param withdrawAmount How many sets of outputs should be withdrawn
      */
     function withdraw(uint96 withdrawAmount) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // Requires
-        require(withdrawAmount > 0, 'CrafterMint: withdrawAmount cannot be 0!');
-        require(withdrawAmount <= craftableAmount, 'CrafterMint: Not enough resources!');
-
-        // Decrease craftableAmount (check-effects)
-        craftableAmount -= withdrawAmount;
-
         // This will remove a `withdrawAmount` of outputs and ERC721 `tokenId`
         // without doing any minting
-        _removeOutputs(withdrawAmount, address(0), false);
+        _removeOutputs(withdrawAmount, address(0));
 
         emit Update(craftableAmount);
     }
 
     /**
-     * @notice Craft `craftAmount`
+     * @notice Craft `amount`
      * @dev Used to craft. Consumes inputs and mints outputs.
-     * @param craftAmount How many times to craft
+     * @param amount How many times to craft
      * @param _inputERC721Ids Array of pre-approved NFTs for crafting usage.
      */
-    function craft(uint96 craftAmount, uint256[][] calldata _inputERC721Ids) external {
-        require(craftAmount > 0, 'CrafterMint: craftAmount cannot be 0!');
-        require(craftAmount <= craftableAmount, 'CrafterMint: Not enough resources to craft!');
-
-        craftableAmount -= craftAmount;
-
-        _useInputs(_inputERC721Ids, craftAmount);
-
+    function craft(uint96 amount, uint256[][] calldata _inputERC721Ids) external {
         // This will remove a `withdrawAmount` of outputs and ERC721 `tokenId`
-        // while also minting to the address `to`
-        _removeOutputs(craftAmount, _msgSender(), false);
+        // while also minting to the _msgSender()
+        _removeOutputs(amount, _msgSender());
 
-        emit Craft(craftAmount, craftableAmount, _msgSender());
+        _useInputs(_inputERC721Ids, amount);
+
+        emit Craft(amount, craftableAmount, _msgSender());
+    }
+
+    /**
+     * @dev adds outputs to the contract balances
+     * @param amount sets of outputs to add
+     * @param _outputsERC721Ids if there are ERC721 tokens present, supply their
+     * `tokenId`s
+     */
+    function _addOutputs(
+        uint256 amount,
+        uint256[][] memory _outputsERC721Ids,
+        address /* from */
+    ) internal override {
+        // Keep count of the amount of erc721Outputs so if there
+        // are multiple `tokenId`s in `_outputsERC721Ids`, next
+        // element in the array is only used when iteration is
+        // at next ERC721
+        uint256 erc721Outputs = 0;
+
+        // Go through all `PluginsCore.Ingredient`s in `outputs` and
+        // find ERC721 outputs. Then update `tokenId`s inside the
+        // `outputs` array. ERC20 and ERC1155 changes do not need
+        // to be made as their balances are only dependent on the
+        // `craftableAmount` variable
+        for (uint256 i = 0; i < outputs.length; i++) {
+            PluginsCore.Ingredient storage ingredient = outputs[i];
+            if (ingredient.token == PluginsCore.TokenType.erc721) {
+                require(
+                    _outputsERC721Ids[erc721Outputs].length == amount,
+                    'CrafterTransfer: _outputsERC721Ids[i] != amount'
+                );
+                for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
+                    require(
+                        !ERC721Owl(ingredient.contractAddr).exists(_outputsERC721Ids[erc721Outputs][j]),
+                        'CrafterCore: tokenId already minted'
+                    );
+
+                    //Update ingredient `tokenIds`, push additional ERC721 tokenId
+                    ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
+                }
+                erc721Outputs += 1;
+            }
+        }
+    }
+
+    /**
+     * @dev removes outputs from the contract balances. If to != address(0),
+     * then assets are also minted to that address
+     * @param amount sets of outputs to remove
+     * @param to address to send outputs to, if applicable
+     */
+    function _removeOutputs(uint96 amount, address to) internal override {
+        require(amount > 0, 'CrafterMint: amount cannot be 0!');
+        require(amount <= craftableAmount, 'CrafterMint: Not enough resources to craft!');
+
+        craftableAmount -= amount;
+
+        for (uint256 i = 0; i < outputs.length; i++) {
+            PluginsCore.Ingredient storage ingredient = outputs[i];
+            if (ingredient.token == PluginsCore.TokenType.erc20 && to != address(0))
+                ERC20Owl(ingredient.contractAddr).mint(_msgSender(), ingredient.amounts[0] * amount);
+            else if (ingredient.token == PluginsCore.TokenType.erc721) {
+                for (uint256 j = 0; j < amount; j++) {
+                    if (to != address(0))
+                        ERC721Owl(ingredient.contractAddr).mint(
+                            _msgSender(),
+                            ingredient.tokenIds[ingredient.tokenIds.length - 1]
+                        );
+
+                    // Pop `tokenId`s from the back
+                    ingredient.tokenIds.pop();
+                }
+            } else if (ingredient.token == PluginsCore.TokenType.erc1155 && to != address(0)) {
+                uint256[] memory amounts = new uint256[](ingredient.amounts.length);
+                for (uint256 j = 0; j < ingredient.amounts.length; j++) {
+                    amounts[j] = ingredient.amounts[j] * amount;
+                }
+
+                ERC1155Owl(ingredient.contractAddr).mintBatch(_msgSender(), ingredient.tokenIds, amounts, new bytes(0));
+            }
+        }
     }
 
     /**********************

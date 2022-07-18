@@ -66,6 +66,9 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
         uint256 requestId = COORDINATOR.requestRandomWords(
             keyHash,
             s_subscriptionId,
+            // If reqConf is lower than 3, submit 3.
+            // If reqConf is higher than 200, submit 200.
+            // Otherwise, submit reqConf
             reqConf < 3 ? 3 : reqConf > 200 ? 200 : reqConf,
             callbackGasLimit,
             numWords
