@@ -8,9 +8,14 @@ import '@opengsn/contracts/src/BasePaymaster.sol';
 import './OwlPaymasterBase.sol';
 
 /**
+ * @dev This paymaster will approve transactions sent through a relay provider
+ * by the target contracts that are updated in the 'targets' mapping. This
+ * mapping maps an address to a boolean to indicate whether or not the address
+ * can be approved or not for gasless transactions
  * https://docs.opengsn.org/tutorials/integration.html#creating_a_paymaster
  */
 contract NaivePaymaster is OwlPaymasterBase {
+    //maps addresses to bool to indicate if they are approved for gasless transactions
     mapping(address => bool) targets;
 
     // allow the owner to set ourTarget
@@ -21,6 +26,12 @@ contract NaivePaymaster is OwlPaymasterBase {
         _disableInitializers();
     }
 
+    /**
+     * @dev initializes a paymaster contract
+     * @param _admin admin of the paymaster
+     * @param _target the target address that should be approved for gasless transactions
+     * @param _forwarder address for the trusted forwarder for open GSN
+     */
     function initialize(
         address _admin,
         address _target,
@@ -51,11 +62,19 @@ contract NaivePaymaster is OwlPaymasterBase {
         emit TargetSet(_target);
     }
 
+    /**
+     * @dev updates the mapping of target addresses to approve
+     * the passed in address
+     */
     function setTarget(address target) external onlyRole(DEFAULT_ADMIN_ROLE) {
         targets[target] = true;
         emit TargetSet(target);
     }
 
+    /**
+     * @dev updates the mapping of target addresses to disapprove
+     * the passed in address
+     */
     function removeTarget(address target) external onlyRole(DEFAULT_ADMIN_ROLE) {
         targets[target] = false;
     }
@@ -63,6 +82,11 @@ contract NaivePaymaster is OwlPaymasterBase {
     event PreRelayed(uint256);
     event PostRelayed(uint256);
 
+    /**
+     * @dev function that performs all access control. It verifies that
+     * the relay request passes in an address that has been set as a
+     * target address and is approved for a gasless transaction
+     */
     function preRelayedCall(
         GsnTypes.RelayRequest calldata relayRequest,
         bytes calldata signature,
@@ -77,6 +101,10 @@ contract NaivePaymaster is OwlPaymasterBase {
         return (abi.encode(block.timestamp), false);
     }
 
+    /**
+     * @dev function that performs all bookkeeping after a function call
+     * has been made.
+     */
     function postRelayedCall(
         bytes calldata context,
         bool success,
@@ -87,6 +115,9 @@ contract NaivePaymaster is OwlPaymasterBase {
         emit PostRelayed(abi.decode(context, (uint256)));
     }
 
+    /**
+     * @dev function that is required for open GSN paymasters
+     */
     function versionPaymaster() external view virtual override returns (string memory) {
         return '2.0.3';
     }

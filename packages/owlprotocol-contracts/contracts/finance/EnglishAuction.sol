@@ -13,12 +13,14 @@ import '../OwlBase.sol';
 import './AuctionLib.sol';
 
 /**
- * @dev This contract is a standard English Auction smart contract that allows bidders
- * to keep bidding until the highest bidder wins the asset. In an English Auction, the owner
- * defines the starting price and bidders can make bids that are higher than the current price.
- * The auction duration is defined by the bids being made and if they are made within the resetTime.
- * Theoretically, the auction can go on forever if higher bids continue to be made within the resetTime period.
- * Once the ending time is passed, the auction finishes and the NFT is transferred to the highest bidder.
+ * @dev This contract is a standard English Auction smart contract that allows
+ * bidders to keep bidding until the highest bidder wins the asset. In an
+ * English Auction, the owner defines the starting price and bidders can make
+ * bids that are higher than the current price.* The auction duration is defined
+ * by the bids being made and if they are made within the resetTime.
+ * Theoretically, the auction can go on forever if higher bids continue to be
+ * made within the resetTime period.* Once the ending time is passed, the
+ * auction finishes and the NFT is transferred to the highest bidder.
  */
 contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
@@ -292,9 +294,9 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
             );
     }
 
-    /**
-    Getters
-    */
+    /**********************
+            Getters
+    **********************/
 
     /**
      * @dev Returns the current highest bid
