@@ -73,11 +73,12 @@ describe('MinterSimpleMerkle.sol', function () {
                     mintFeeAmount,
                     nftAddress,
                     '0x' + 'a'.repeat(64), // dummy proof
+                    '0x' + 'b'.repeat(64), // dummy uri
                     '0x' + '0'.repeat(40), // dummy forwarder
                 ],
                 undefined,
                 undefined,
-                'initialize(address,address,address,uint256,address,bytes32,address)',
+                'initialize(address,address,address,uint256,address,bytes32,string,address)',
             );
 
             minter = (await ethers.getContractAt('MinterSimpleMerkle', address)) as MinterSimpleMerkle;
@@ -129,7 +130,7 @@ describe('MinterSimpleMerkle.sol', function () {
             await erc20.connect(user).increaseAllowance(minter.address, '10');
 
             // Set root
-            await minter.updateMerkleRoot(root);
+            await minter.updateMerkleRoot(root, '0xaaaa');
 
             // Mint Specimen
             await minter.connect(user)['mint(address,bytes32[])'](user.address, proof);

@@ -15,6 +15,7 @@ contract MinterSimpleMerkle is MinterAutoId {
 
     // Merkle Root
     bytes32 public merkleRoot;
+    string public uri;
 
     event SetMerkleRoot(bytes32 merkleRoot);
 
@@ -26,6 +27,7 @@ contract MinterSimpleMerkle is MinterAutoId {
         uint256 _mintFeeAmount,
         address _nftContractAddr,
         bytes32 _merkleRoot,
+        string calldata _uri,
         address _forwarder
     ) external initializer {
         __MinterSimpleMerkle_init(
@@ -35,6 +37,7 @@ contract MinterSimpleMerkle is MinterAutoId {
             _mintFeeAmount,
             _nftContractAddr,
             _merkleRoot,
+            _uri,
             _forwarder
         );
     }
@@ -46,6 +49,7 @@ contract MinterSimpleMerkle is MinterAutoId {
         uint256 _mintFeeAmount,
         address _nftContractAddr,
         bytes32 _merkleRoot,
+        string calldata _uri,
         address _forwarder
     ) external onlyInitializing {
         __MinterSimpleMerkle_init(
@@ -55,6 +59,7 @@ contract MinterSimpleMerkle is MinterAutoId {
             _mintFeeAmount,
             _nftContractAddr,
             _merkleRoot,
+            _uri,
             _forwarder
         );
     }
@@ -66,24 +71,28 @@ contract MinterSimpleMerkle is MinterAutoId {
         uint256 _mintFeeAmount,
         address _nftContractAddr,
         bytes32 _merkleRoot,
+        string calldata _uri,
         address _forwarder
     ) internal onlyInitializing {
         __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
-        __MinterSimpleMerkle_init_unchained(_merkleRoot);
+        __MinterSimpleMerkle_init_unchained(_merkleRoot, _uri);
     }
 
-    function __MinterSimpleMerkle_init_unchained(bytes32 _merkleRoot) internal onlyInitializing {
+    function __MinterSimpleMerkle_init_unchained(bytes32 _merkleRoot, string calldata _uri) internal onlyInitializing {
         merkleRoot = _merkleRoot;
+        uri = _uri;
         emit SetMerkleRoot(merkleRoot);
     }
 
     // Disable MinterAutoId.mint()
-    function mint(address buyer) public override returns (uint256) {
+    function mint(address buyer) public pure override returns (uint256) {
+        (buyer);
         revert('Must include merkleProof');
     }
 
     // Disable MinterAutoId.safeMint()
-    function safeMint(address buyer) public override returns (uint256) {
+    function safeMint(address buyer) public pure override returns (uint256) {
+        (buyer);
         revert('Must include merkleProof');
     }
 
@@ -103,8 +112,9 @@ contract MinterSimpleMerkle is MinterAutoId {
         MinterAutoId.mint(buyer);
     }
 
-    function updateMerkleRoot(bytes32 _merkleRoot) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function updateMerkleRoot(bytes32 _merkleRoot, string calldata _uri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         merkleRoot = _merkleRoot;
+        uri = _uri;
     }
 
     function _verifyMerkle(bytes32[] calldata merkleProof) internal view returns (bool) {
