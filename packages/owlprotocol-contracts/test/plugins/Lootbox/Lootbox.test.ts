@@ -71,7 +71,7 @@ describe('Lootbox.sol', () => {
                 {
                     forking: {
                         jsonRpcUrl: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-                        blockNumber: 11017810,
+                        epochBlockNumber: 11046840,
                     },
                 },
             ],
@@ -227,7 +227,7 @@ describe('Lootbox.sol', () => {
     async function stateChecks(tokenId: number, epochBlock: BigNumber) {
         const { randomness: randomness, receipt: receipt } = await simulateKeeper(epochBlock);
         const { events } = receipt;
-        const transferEvent = events ? events[2] : undefined;
+        const transferEvent = events ? events[0] : undefined;
 
         expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
@@ -250,22 +250,23 @@ describe('Lootbox.sol', () => {
     }
 
     it('1 Lootbox', async () => {
-        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        const { requestId, epochBlockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
-            'blockNumber',
+            'epochBlockNumber',
         ]);
         await lootbox.requestUnlock(lootboxToUnlock1);
-        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber)).to.equal(requestId);
 
         const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(false);
 
         await mineUpTo(getEpochBlockNumber(await time.latestBlock()));
-        await coordinatorRespond(requestId, blockNumber);
+        await coordinatorRespond(requestId, epochBlockNumber);
 
-        const { randomness, receipt } = await simulateKeeper(blockNumber);
+        const { randomness, receipt } = await simulateKeeper(epochBlockNumber);
         const { events } = receipt;
-        const transferEvent = events ? events[2] : undefined;
+        const transferEvent = events ? events[0] : undefined;
 
         expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
@@ -276,6 +277,7 @@ describe('Lootbox.sol', () => {
         );
 
         const randContract = await lootbox.getRandomContract(lootboxToUnlock1, randomness);
+
         if (randContract.eq(0)) {
             expect(await reward1.ownerOf(tokenIdMinted)).to.equal(signer1.address);
             expect(await reward2.exists(tokenIdMinted)).to.equal(false);
@@ -300,30 +302,31 @@ describe('Lootbox.sol', () => {
     });
 
     it('2 Lootboxes, same EPOCH_PERIOD', async () => {
-        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        const { requestId, epochBlockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
-            'blockNumber',
+            'epochBlockNumber',
         ]);
         await lootbox.requestUnlock(lootboxToUnlock1);
-        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber)).to.equal(requestId);
 
         const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(false);
 
-        await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'blockNumber'];
+        await lootbox.callStatic.requestUnlock(lootboxToUnlock2), ['requestId', 'epochBlockNumber'];
         await lootbox.requestUnlock(lootboxToUnlock2);
-        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber)).to.equal(requestId);
 
         //check that both requestUnlocks are in the same epoch on VRFBeacon
         expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
 
-        await mineUpTo(getEpochBlockNumber(blockNumber.toNumber()));
-        await coordinatorRespond(requestId, blockNumber);
+        await mineUpTo(getEpochBlockNumber(epochBlockNumber.toNumber()));
+        await coordinatorRespond(requestId, epochBlockNumber);
 
         //state checks
-        const { randomness: randomness, receipt: receipt } = await simulateKeeper(blockNumber);
+        const { randomness: randomness, receipt: receipt } = await simulateKeeper(epochBlockNumber);
         const { events } = receipt;
-        const transferEvent = events ? events[2] : undefined;
+        const transferEvent = events ? events[0] : undefined;
 
         expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
@@ -356,16 +359,16 @@ describe('Lootbox.sol', () => {
         }
 
         expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
-        await stateChecks(lootboxToUnlock2, blockNumber);
+        await stateChecks(lootboxToUnlock2, epochBlockNumber);
         expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(false);
     });
 
     it('3 Lootboxes, all in same epoch', async () => {
         if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
-        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
+        const { requestId, epochBlockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
-            'blockNumber',
-        ]);
+            'epochBlockNumber',
+        ]); network
 
         await network.provider.send('evm_setAutomine', [false]);
 
@@ -373,23 +376,23 @@ describe('Lootbox.sol', () => {
         lootbox.requestUnlock(lootboxToUnlock2);
         lootbox.requestUnlock(lootboxToUnlock3)
 
-        await ethers.provider.send('evm_increaseTime', [10]);
-        await ethers.provider.send('evm_mine', []);
+        await network.provider.send('evm_increaseTime', [10]);
+        await network.provider.send('evm_mine', []);
         await network.provider.send('evm_setAutomine', [true]);
 
-        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber)).to.equal(requestId);
 
         //check that all requestUnlocks are in the same epoch on VRFBeacon
         expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
         expect(await lootbox.getEpochBlock(lootboxToUnlock2)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock3));
 
-        await mineUpTo(getEpochBlockNumber(blockNumber.toNumber()));
-        await coordinatorRespond(requestId, blockNumber);
+        await mineUpTo(getEpochBlockNumber(epochBlockNumber.toNumber()));
+        await coordinatorRespond(requestId, epochBlockNumber);
 
         //state checks
-        const { randomness: randomness, receipt: receipt } = await simulateKeeper(blockNumber);
+        const { randomness: randomness, receipt: receipt } = await simulateKeeper(epochBlockNumber);
         const { events } = receipt;
-        const transferEvent = events ? events[2] : undefined;
+        const transferEvent = events ? events[0] : undefined;
 
         expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
@@ -422,9 +425,9 @@ describe('Lootbox.sol', () => {
         }
 
         expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
-        await stateChecks(lootboxToUnlock2, blockNumber);
+        await stateChecks(lootboxToUnlock2, epochBlockNumber);
         expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
-        await stateChecks(lootboxToUnlock3, blockNumber);
+        await stateChecks(lootboxToUnlock3, epochBlockNumber);
         expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(false);
     });
 
@@ -432,9 +435,10 @@ describe('Lootbox.sol', () => {
         const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(false);
 
-        const { requestId: reqId1, blockNumber: blockNumber1 } = pick(
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        const { requestId: reqId1, epochBlockNumber: epochBlockNumber1 } = pick(
             await lootbox.callStatic.requestUnlock(lootboxToUnlock1),
-            ['requestId', 'blockNumber'],
+            ['requestId', 'epochBlockNumber'],
         );
 
         await network.provider.send('evm_setAutomine', [false]);
@@ -446,28 +450,28 @@ describe('Lootbox.sol', () => {
         await ethers.provider.send('evm_mine', []);
         await network.provider.send('evm_setAutomine', [true]);
 
-        expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
-        expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber1)).to.equal(reqId1);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber1)).to.equal(reqId1);
 
         //check that both requestUnlocks are in the same epoch on VRFBeacon
         expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
 
-        await mineUpTo(getEpochBlockNumber(blockNumber1.toNumber()));
+        await mineUpTo(getEpochBlockNumber(epochBlockNumber1.toNumber()));
 
-        const { blockNumber: blockNumber2, requestId: reqId2 } = pick(
+        const { requestId: reqId2, epochBlockNumber: epochBlockNumber2 } = pick(
             await lootbox.callStatic.requestUnlock(lootboxToUnlock3),
-            ['requestId', 'blockNumber'],
+            ['requestId', 'epochBlockNumber'],
         );
         await lootbox.requestUnlock(lootboxToUnlock3);
 
-        await coordinatorRespond(reqId1, blockNumber1);
-        await mineUpTo(getEpochBlockNumber(blockNumber2.toNumber()));
-        await coordinatorRespond(reqId2, blockNumber2);
+        await coordinatorRespond(reqId1, epochBlockNumber1);
+        await mineUpTo(getEpochBlockNumber(epochBlockNumber2.toNumber()));
+        await coordinatorRespond(reqId2, epochBlockNumber2);
 
         //state checks
-        const { randomness: randomness, receipt: receipt } = await simulateKeeper(blockNumber1);
+        const { randomness: randomness, receipt: receipt } = await simulateKeeper(epochBlockNumber1);
         const { events } = receipt;
-        const transferEvent = events ? events[2] : undefined;
+        const transferEvent = events ? events[0] : undefined;
 
         expect(transferEvent).to.not.equal(undefined);
         if (transferEvent === undefined) return;
@@ -500,42 +504,44 @@ describe('Lootbox.sol', () => {
         }
 
         expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
-        await stateChecks(lootboxToUnlock2, blockNumber1);
+        await stateChecks(lootboxToUnlock2, epochBlockNumber1);
         expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(true);
-        await stateChecks(lootboxToUnlock3, blockNumber2);
+        await stateChecks(lootboxToUnlock3, epochBlockNumber2);
         expect((await lootbox.checkUpkeep('0x')).upkeepNeeded).to.equal(false);
     });
 
     it('Request unlock multiple times', async () => {
-        const { requestId: reqId1, blockNumber: blockNumber1 } = pick(
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        const { requestId: reqId1, epochBlockNumber: epochBlockNumber1 } = pick(
             await lootbox.callStatic.requestUnlock(lootboxToUnlock1),
-            ['requestId', 'blockNumber'],
+            ['requestId', 'epochBlockNumber'],
         );
         await lootbox.requestUnlock(lootboxToUnlock1);
-        expect(await VRFBeacon.getRequestId(blockNumber1)).to.equal(reqId1);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber1)).to.equal(reqId1);
 
-        const { requestId: reqId2, blockNumber: blockNumber2 } = await lootbox.callStatic.requestUnlock(
+        const { requestId: reqId2, epochBlockNumber: epochBlockNumber2 } = await lootbox.callStatic.requestUnlock(
             lootboxToUnlock1,
         );
         await lootbox.requestUnlock(lootboxToUnlock1);
-        expect(await VRFBeacon.getRequestId(blockNumber2)).to.equal(reqId2);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber2)).to.equal(reqId2);
 
         expect(reqId1).to.equal(reqId2);
     });
 
     it('Multiple performUpkeep() calls with same queueIndex should fail', async () => {
-        const { requestId, blockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        const { requestId, epochBlockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
-            'blockNumber',
+            'epochBlockNumber',
         ]);
         await lootbox.requestUnlock(lootboxToUnlock1);
-        expect(await VRFBeacon.getRequestId(blockNumber)).to.equal(requestId);
+        expect(await VRFBeacon.getRequestId(epochBlockNumber)).to.equal(requestId);
 
         let { upkeepNeeded, performData } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(false);
 
         await mineUpTo(getEpochBlockNumber(await time.latestBlock()));
-        await coordinatorRespond(requestId, blockNumber);
+        await coordinatorRespond(requestId, epochBlockNumber);
 
         //simulating keeper
         //checkUpkeep
@@ -546,7 +552,7 @@ describe('Lootbox.sol', () => {
             performData,
         );
 
-        expect(await VRFBeacon.getRandomness(blockNumber)).to.equal(randomness);
+        expect(await VRFBeacon.getRandomness(epochBlockNumber)).to.equal(randomness);
         expect(await lootbox.queueIndex()).to.equal(queueIndex);
 
         //performUpkeep (real)
@@ -584,6 +590,6 @@ describe('Lootbox.sol', () => {
     });
 });
 
-function getEpochBlockNumber(blockNumber: number) {
-    return blockNumber - (blockNumber % EPOCH_PERIOD) + EPOCH_PERIOD;
+function getEpochBlockNumber(epochBlockNumber: number) {
+    return epochBlockNumber - (epochBlockNumber % EPOCH_PERIOD) + EPOCH_PERIOD;
 }
