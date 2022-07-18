@@ -1,0 +1,11 @@
+{
+    "parallel": true,
+    "jobs": 8,
+    "timeout": 5000,
+    "colors": true,
+    "recursive": true,
+    "node-option": [
+        "experimental-specifier-resolution=node",
+        "loader=ts-node/register"
+    ]
+}
