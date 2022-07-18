@@ -42,6 +42,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
 
     let NFTPaymaster: NFTOwnershipPaymaster;
     let NFTOwnershipPaymasterFactory: NFTOwnershipPaymaster__factory;
+    let NFTPaymasterImplementation: NFTOwnershipPaymaster;
 
     let etherProvider: Web3Provider;
     const tokenId = 0; // this is the starting token id
@@ -74,7 +75,16 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         NFTOwnershipPaymasterFactory = (await ethers.getContractFactory(
             'NFTOwnershipPaymaster',
         )) as NFTOwnershipPaymaster__factory;
-        NFTPaymaster = await NFTOwnershipPaymasterFactory.deploy(testNFT.address, tokenUseLimit);
+        NFTPaymasterImplementation = await NFTOwnershipPaymasterFactory.deploy();
+
+        // Paymaster Contract
+        NFTPaymaster = (
+            await deployClone2({
+                implementation: NFTPaymasterImplementation,
+                initializerArgs: [signer1.address, testNFT.address, tokenUseLimit, gsnForwarderAddress],
+                signer: signer1,
+            })
+        ).contract as NFTOwnershipPaymaster;
 
         // Set relay hub and fund
         await NFTPaymaster.setRelayHub(relayHubAddress);

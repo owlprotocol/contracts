@@ -8,7 +8,9 @@ import '@opengsn/contracts/src/forwarder/IForwarder.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol';
 
-contract NFTOwnershipPaymaster is BasePaymaster {
+import '../OwlBase.sol';
+
+contract NFTOwnershipPaymaster is OwlBase, BasePaymaster {
     event PreRelayed();
     event PostRelayed();
 
@@ -19,12 +21,43 @@ contract NFTOwnershipPaymaster is BasePaymaster {
 
     mapping(uint256 => uint256) numTimes; //keeps track how many times a tokenId has minted
 
-    /**
-     * @dev constructor for the paymaster
-     * @param _acceptableToken acceptable ERC721 for approving a transaction
-     * @param _limit number of times a tokenId can be minted
-     */
-    constructor(address _acceptableToken, uint256 _limit) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        address _admin,
+        address _acceptableToken,
+        uint256 _limit,
+        address _forwarder
+    ) external initializer {
+        __NFTOwnershipPaymaster_init(_admin, _acceptableToken, _limit, _forwarder);
+    }
+
+    function proxyinitialize(
+        address _admin,
+        address _acceptableToken,
+        uint256 _limit,
+        address _forwarder
+    ) external onlyInitializing {
+        __NFTOwnershipPaymaster_init(_admin, _acceptableToken, _limit, _forwarder);
+    }
+
+    function __NFTOwnershipPaymaster_init(
+        address _admin,
+        address _acceptableToken,
+        uint256 _limit,
+        address _forwarder
+    ) internal onlyInitializing {
+        __OwlBase_init(_admin, _forwarder);
+        __NFTOwnershipPaymaster_init_unchained(_acceptableToken, _limit);
+    }
+
+    function __NFTOwnershipPaymaster_init_unchained(address _acceptableToken, uint256 _limit)
+        internal
+        onlyInitializing
+    {
         acceptableToken = IERC721Upgradeable(_acceptableToken);
         limit = _limit;
     }
@@ -65,5 +98,13 @@ contract NFTOwnershipPaymaster is BasePaymaster {
 
     function getNumTransactions(uint256 tokenId) external view returns (uint256) {
         return numTimes[tokenId];
+    }
+
+    function _msgSender() internal view virtual override(OwlBase, Context) returns (address ret) {
+        return OwlBase._msgSender();
+    }
+
+    function _msgData() internal view virtual override(OwlBase, Context) returns (bytes calldata) {
+        return OwlBase._msgData();
     }
 }
