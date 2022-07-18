@@ -56,6 +56,7 @@
         "@openzeppelin/contracts-upgradeable": "^4.6.0",
         "@openzeppelin/hardhat-upgrades": "^1.17.0",
         "@owlprotocol/contract-helpers-opengsn": "../../packages/owlprotocol-contract-helpers/opengsn",
+        "@owlprotocol/contract-helpers-dna-codec": "../../packages/owlprotocol-contract-helpers/dna-codec",
         "@owlprotocol/networks": "^1.0.0",
         "@typechain/ethers-v5": "^7.2.0",
         "@typechain/hardhat": "^2.3.1",
