@@ -1,12 +1,17 @@
 {
-    "editor.formatOnSave": true,
-    "[json]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "[typescript]": {
-        "editor.defaultFormatter": "vscode.typescript-language-features"
-    },
-    "[solidity]": {
-        "editor.defaultFormatter": "JuanBlanco.solidity"
-    }
+  "editor.formatOnSave": true,
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[solidity]": {
+    "editor.defaultFormatter": "JuanBlanco.solidity"
+  },
+
+  "solidity.remappings": [
+    "ds-test/=packages/owlprotocol-contracts/lib/forge-std/lib/ds-test/src/",
+    "forge-std/=packages/owlprotocol-contracts/lib/forge-std/src/"
+  ]
 }

@@ -1,0 +1,14 @@
+[profile.default]
+src = 'src'
+out = 'artifacts'
+libs = ["node_modules", "lib"]
+remappings = [
+    '@chainlink/=node_modules/@chainlink/',
+    '@opengsn/=node_modules/@opengsn/',
+    '@openzeppelin/=node_modules/@openzeppelin/',
+    'hardhat-deploy/=node_modules/hardhat-deploy/',
+    'hardhat/=node_modules/hardhat/',
+    'truffle/=node_modules/truffle/',
+]
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
