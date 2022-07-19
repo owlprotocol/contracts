@@ -24,6 +24,9 @@ dotenv.config();
 // TODO - auto doc generation
 
 const config: HardhatUserConfig = {
+    paths: {
+        tests: "test/hardhat"
+    },
     preprocess: {
         eachLine: removeConsoleLog((hre) => hre.network.name !== 'hardhat' && hre.network.name !== 'localhost'),
     },
