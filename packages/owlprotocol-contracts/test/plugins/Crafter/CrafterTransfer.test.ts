@@ -1,6 +1,7 @@
 import { ethers } from 'hardhat';
-const { utils } = ethers;
+const { utils, constants } = ethers;
 const { parseUnits } = utils;
+const { AddressZero } = constants;
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { pick } from 'lodash';
@@ -9,9 +10,13 @@ import {
     CrafterTransfer__factory,
     ERC1167Factory,
     ERC1167Factory__factory,
-    ERC20,
-    ERC721,
-    ERC1155,
+    FactoryERC20,
+    FactoryERC721,
+    FactoryERC1155,
+    UpgradeableBeaconInitializable__factory,
+    UpgradeableBeaconInitializable,
+    BeaconProxyInitializable__factory,
+    BeaconProxyInitializable,
 } from '../../../typechain';
 import { createERC20, createERC721, createERC1155, deployClone, predictDeployClone } from '../../utils';
 import { loadSignersSmart, TestingSigner, loadForwarder } from '@owlprotocol/contract-helpers-opengsn/src';
@@ -23,6 +28,7 @@ enum ConsumableType {
     burned,
     NTime,
 }
+
 
 enum TokenType {
     erc20,
@@ -63,8 +69,8 @@ describe('CrafterTransfer.sol', function () {
     describe('1 ERC20 -> 1 ERC20', () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC20: ERC20;
-        let outputERC20: ERC20;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -251,8 +257,8 @@ describe('CrafterTransfer.sol', function () {
     describe('1 ERC721 -> 1 ERC721', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -680,8 +686,8 @@ describe('CrafterTransfer.sol', function () {
     describe('1 ERC1155 -> 1 ERC1155', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC1155: ERC1155;
-        let outputERC1155: ERC1155;
+        let inputERC1155: FactoryERC1155;
+        let outputERC1155: FactoryERC1155;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -865,17 +871,17 @@ describe('CrafterTransfer.sol', function () {
         let CrafterTransferAddress: string;
         let crafter: CrafterTransfer;
 
-        let inputERC20: ERC20;
-        let outputERC20: ERC20;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
 
         let originalInputBalance: BigNumber;
         let originalOutputBalance: BigNumber;
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
 
-        let inputERC1155: ERC1155;
-        let outputERC1155: ERC1155;
+        let inputERC1155: FactoryERC1155;
+        let outputERC1155: FactoryERC1155;
 
         const inputAmount1155 = BigNumber.from(10);
         const inputId1155 = BigNumber.from(5);
@@ -1160,4 +1166,376 @@ describe('CrafterTransfer.sol', function () {
             );
         });
     });
+
+    describe('Validate outputs', async () => {
+        const burnAddress = '0x0000000000000000000000000000000000000001';
+
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
+        let outputERC721: FactoryERC721;
+        let outputERC1155: FactoryERC1155;
+
+        beforeEach(async () => {
+            //Deploy ERC20
+            //Mints 1,000,000,000 by default
+            [inputERC20, outputERC20] = await createERC20(2);
+            [outputERC721] = await createERC721(1);
+            [outputERC1155] = await createERC1155(1);
+        });
+
+        it('ERC20 output tokenIDs not empty', async () => {
+            await expect(deployClone(
+                CrafterTransferImplementation,
+                [
+                    //admin address
+                    //array of recipe inputs
+                    //array of recipe outputs
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC20.address,
+                            amounts: [1],
+                            tokenIds: [1, 2, 3],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('CrafterCore: tokenids.length != 0');
+        });
+
+        it('ERC20 output amounts length not 1', async () => {
+            await expect(deployClone(
+                CrafterTransferImplementation,
+                [
+                    //admin address
+                    //array of recipe inputs
+                    //array of recipe outputs
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC20.address,
+                            amounts: [1, 2, 3],
+                            tokenIds: [],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('CrafterCore: amounts.length != 1');
+        });
+
+        it('ERC721 output tokenIDs and craftableamount mismatch', async () => {
+            await expect(deployClone(
+                CrafterTransferImplementation,
+                [
+                    //admin address
+                    //array of recipe inputs
+                    //array of recipe outputs
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [1],
+                            tokenIds: [1, 2, 3],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('CrafterCore: tokenids.length != _craftableAmount');
+        });
+
+        it('ERC721 output amounts length not 0', async () => {
+            await expect(deployClone(
+                CrafterTransferImplementation,
+                [
+                    //admin address
+                    //array of recipe inputs
+                    //array of recipe outputs
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [1],
+                            tokenIds: [1],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('CrafterCore: amounts.length != 0');
+        });
+
+        it('ERC1155 output amounts length not equal to token ids length', async () => {
+            await expect(deployClone(
+                CrafterTransferImplementation,
+                [
+                    //admin address
+                    //array of recipe inputs
+                    //array of recipe outputs
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc1155,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC1155.address,
+                            amounts: [1],
+                            tokenIds: [1, 2],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('CrafterCore: tokenids.length != amounts.length');
+        });
+    });
+
+    describe('Initialization reverts', async () => {
+        let burnAddress: string;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
+        let outputERC721: FactoryERC721;
+        let outputERC1155: FactoryERC1155;
+
+        beforeEach(async () => {
+            //Deploy ERC20
+            //Mints 1,000,000,000 by default
+            [inputERC20, outputERC20] = await createERC20(2);
+            [outputERC721] = await createERC721(1);
+            [outputERC1155] = await createERC1155(1);
+        });
+
+        it('Burn address zero', async () => {
+            burnAddress = AddressZero;
+            await expect(deployClone(
+                CrafterTransferImplementation,
+                [
+                    //admin address
+                    //array of recipe inputs
+                    //array of recipe outputs
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [1],
+                            tokenIds: [1],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('CrafterCore: burn address must not be 0');
+        });
+
+        it('No crafting input given', async () => {
+            burnAddress = '0x0000000000000000000000000000000000000001';
+            await expect(deployClone(
+                CrafterTransferImplementation,
+                [
+                    //admin address
+                    //array of recipe inputs
+                    //array of recipe outputs
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [1],
+                            tokenIds: [1],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('CrafterCore: A crafting input must be given!');
+        });
+
+        it('No crafting output given', async () => {
+            burnAddress = '0x0000000000000000000000000000000000000001'
+            await expect(deployClone(
+                CrafterTransferImplementation,
+                [
+                    //admin address
+                    //array of recipe inputs
+                    //array of recipe outputs
+                    owner.address,
+                    burnAddress,
+                    1,
+                    [
+                        {
+                            token: TokenType.erc20,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC20.address,
+                            amounts: [1],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('CrafterCore: A crafting output must be given!');
+        });
+
+        it('beacon proxy initialization', async () => {
+            const burnAddress = '0x0000000000000000000000000000000000000001';
+            const beaconFactory = (await ethers.getContractFactory(
+                'UpgradeableBeaconInitializable',
+            )) as UpgradeableBeaconInitializable__factory;
+            const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+            const beaconProxyFactory = (await ethers.getContractFactory(
+                'BeaconProxyInitializable',
+            )) as BeaconProxyInitializable__factory;
+            const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+            const { address: beaconAddr } = await deployClone(beaconImpl, [
+                owner.address,
+                CrafterTransferImplementation.address,
+            ]);
+
+            const crafterTransferArgs = [
+                //admin address
+                //array of recipe inputs
+                //array of recipe outputs
+                owner.address,
+                burnAddress,
+                1,
+                [
+                    {
+                        token: TokenType.erc20,
+                        consumableType: ConsumableType.burned,
+                        contractAddr: inputERC20.address,
+                        amounts: [1],
+                        tokenIds: [],
+                    },
+                ],
+                //Output specific token id, output unaffected
+                [
+                    {
+                        token: TokenType.erc20,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: outputERC20.address,
+                        amounts: [1],
+                        tokenIds: [],
+                    },
+                ],
+                gsnForwarderAddress, // forwarder addr
+            ];
+
+            //@ts-ignore
+            const data = CrafterTransferImplementation.interface.encodeFunctionData('proxyInitialize', crafterTransferArgs);
+            const beaconProxyAddr = await predictDeployClone(beaconProxyImpl, [
+                owner.address,
+                beaconAddr,
+                data,
+            ], ERC1167Factory);
+            await outputERC20.connect(owner).approve(beaconProxyAddr, 999);
+            await inputERC20.connect(owner).approve(beaconProxyAddr, 999);
+
+
+
+            await deployClone(beaconProxyImpl, [
+                owner.address,
+                beaconAddr,
+                data,
+            ], ERC1167Factory);
+            const contrInst = (await ethers.getContractAt('CrafterTransfer', beaconProxyAddr)) as CrafterTransfer;
+
+            await contrInst.craft(1, [[]]);
+        });
+    });
+
 });

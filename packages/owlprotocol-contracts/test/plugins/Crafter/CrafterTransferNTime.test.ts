@@ -12,6 +12,9 @@ import {
     ERC1155,
     ERC1167Factory,
     ERC1167Factory__factory,
+    FactoryERC721,
+    FactoryERC20,
+    FactoryERC1155,
 } from '../../../typechain';
 import { createERC20, createERC721, createERC1155, predictDeployClone, deployClone } from '../../utils';
 import { BigNumber } from 'ethers';
@@ -67,8 +70,8 @@ describe('CrafterTransfer.sol NTime', function () {
     describe('ERC721 (amount[0] = 0, craftableAmount = 2)', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -276,8 +279,8 @@ describe('CrafterTransfer.sol NTime', function () {
     describe('ERC721 (amount[0] = 1, craftableAmount = 2)', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -490,8 +493,8 @@ describe('CrafterTransfer.sol NTime', function () {
     describe('(amount[0] = 2, craftableAmount = 2)', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -701,10 +704,10 @@ describe('CrafterTransfer.sol NTime', function () {
     describe('multiple ingredients, craftableAmount = 3)', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC721: ERC721;
-        let input2ERC721: ERC721;
-        let outputERC721: ERC721;
-        let output2ERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let input2ERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
+        let output2ERC721: FactoryERC721;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -1021,8 +1024,8 @@ describe('CrafterTransfer.sol NTime', function () {
     describe('1 ERC20 -> 1 ERC20', () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC20: ERC20;
-        let outputERC20: ERC20;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -1200,8 +1203,8 @@ describe('CrafterTransfer.sol NTime', function () {
     describe('1 ERC721 -> 1 ERC721', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -1404,8 +1407,8 @@ describe('CrafterTransfer.sol NTime', function () {
     describe('1 ERC1155 -> 1 ERC1155', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC1155: ERC1155;
-        let outputERC1155: ERC1155;
+        let inputERC1155: FactoryERC1155;
+        let outputERC1155: FactoryERC1155;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -1588,17 +1591,17 @@ describe('CrafterTransfer.sol NTime', function () {
         let CrafterTransferAddress: string;
         let crafter: CrafterTransfer;
 
-        let inputERC20: ERC20;
-        let outputERC20: ERC20;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
 
         let originalInputBalance: BigNumber;
         let originalOutputBalance: BigNumber;
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
 
-        let inputERC1155: ERC1155;
-        let outputERC1155: ERC1155;
+        let inputERC1155: FactoryERC1155;
+        let outputERC1155: FactoryERC1155;
 
         const inputAmount1155 = BigNumber.from(10);
         const inputId1155 = BigNumber.from(5);

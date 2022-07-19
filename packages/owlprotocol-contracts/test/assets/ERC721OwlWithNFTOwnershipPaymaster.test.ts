@@ -9,7 +9,7 @@ import {
 } from '../../typechain';
 import { deployClone2, createERC721 } from '../utils';
 import { Web3Provider, ExternalProvider } from '@ethersproject/providers';
-import { RelayProvider } from '@opengsn/provider';
+import { RelayProvider, GSNConfig } from '@opengsn/provider';
 import { RelayRequest } from '@opengsn/common/dist/EIP712/RelayRequest';
 import {
     loadEnvironment,

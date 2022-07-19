@@ -29,7 +29,7 @@ import './CrafterCore.sol';
  * However, `craftableAmount` can be dynamically updated through the {deposit}
  * and {withdraw} functions which are only accessible to `DEFAULT_ADMIN_ROLE`
  *
- * Each Ingredient has a `consumableType` field.* This field is for the `inputs`
+ * Each Ingredient has a `consumableType` field. This field is for the `inputs`
  * elements and ignored by the `outputs` elements. ERC20 and ERC1155 `inputs`
  * elements can be `unaffected` or `burned`. `unaffected` will check for
  * ownership/balance while `burned` will send the asset(s) to the `burnAddress`.
@@ -229,7 +229,7 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
     }
 
     /**
-     * @dev adds outputs to the contract balances and transers the outputs into
+     * @dev adds outputs to the contract balances and transfers the outputs into
      * the contract
      * @param amount sets of outputs to add
      * @param _outputsERC721Ids if there are ERC721 tokens present, supply their
@@ -260,8 +260,7 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
         for (uint256 i = 0; i < outputs.length; i++) {
             PluginsCore.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == PluginsCore.TokenType.erc20) {
-                SafeERC20Upgradeable.safeTransferFrom(
-                    IERC20Upgradeable(ingredient.contractAddr),
+                IERC20Upgradeable(ingredient.contractAddr).transferFrom(
                     from,
                     address(this),
                     ingredient.amounts[0] * amount
@@ -282,7 +281,8 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
                     ingredient.tokenIds.push(_outputsERC721Ids[erc721Outputs][j]);
                 }
                 erc721Outputs += 1;
-            } else if (ingredient.token == PluginsCore.TokenType.erc1155) {
+            } else {
+                // This is TokenType ERC1155 by way of validateOutputs
                 uint256[] memory amounts = new uint256[](ingredient.amounts.length);
 
                 // Calculate amount of each `tokenId` to transfer
@@ -317,11 +317,7 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
         for (uint256 i = 0; i < outputs.length; i++) {
             PluginsCore.Ingredient storage ingredient = outputs[i];
             if (ingredient.token == PluginsCore.TokenType.erc20)
-                SafeERC20Upgradeable.safeTransfer(
-                    IERC20Upgradeable(ingredient.contractAddr),
-                    to,
-                    ingredient.amounts[0] * amount
-                );
+                IERC20Upgradeable(ingredient.contractAddr).transfer(to, ingredient.amounts[0] * amount);
             else if (ingredient.token == PluginsCore.TokenType.erc721) {
                 for (uint256 j = 0; j < amount; j++) {
                     IERC721Upgradeable(ingredient.contractAddr).safeTransferFrom(
@@ -333,7 +329,8 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
                     // Pop `tokenId`s from the back
                     ingredient.tokenIds.pop();
                 }
-            } else if (ingredient.token == PluginsCore.TokenType.erc1155) {
+            } else {
+                //ERC1155, by way of validate inputs
                 uint256[] memory amounts = new uint256[](ingredient.amounts.length);
                 for (uint256 j = 0; j < ingredient.amounts.length; j++) {
                     amounts[j] = ingredient.amounts[j] * amount;

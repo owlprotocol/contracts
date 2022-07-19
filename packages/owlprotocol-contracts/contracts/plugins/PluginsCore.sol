@@ -170,41 +170,42 @@ abstract contract PluginsCore is OwlBase {
         for (uint256 i = 0; i < _inputs.length; i++) {
             TokenType token = _inputs[i].token;
             if (token == TokenType.erc20) {
-                require(_inputs[i].tokenIds.length == 0, 'PluginsLib: tokenids.length != 0');
-                require(_inputs[i].amounts.length == 1, 'PluginsLib: amounts.length != 1');
+                require(_inputs[i].tokenIds.length == 0, 'PluginsCore: tokenids.length != 0');
+                require(_inputs[i].amounts.length == 1, 'PluginsCore: amounts.length != 1');
                 require(
                     _inputs[i].consumableType == ConsumableType.unaffected ||
                         _inputs[i].consumableType == ConsumableType.burned,
-                    'PluginsLib: ERC20 consumableType not unaffected or burned'
+                    'PluginsCore: ERC20 consumableType not unaffected or burned'
                 );
             } else if (token == TokenType.erc721) {
                 //accept all token ids as inputs
-                require(_inputs[i].tokenIds.length == 0, 'PluginsLib: tokenIds.length != 0');
+                require(_inputs[i].tokenIds.length == 0, 'PluginsCore: tokenIds.length != 0');
                 require(
                     _inputs[i].consumableType == ConsumableType.burned ||
                         _inputs[i].consumableType == ConsumableType.NTime,
-                    'PluginsLib: ERC721 consumableType not burned or NTime'
+                    'PluginsCore: ERC721 consumableType not burned or NTime'
                 );
 
                 if (_inputs[i].consumableType == ConsumableType.NTime) {
                     require(
                         _inputs[i].amounts.length == 1,
-                        'PluginsLib: amounts.length != 1; required for NTime ConsumableType'
+                        'PluginsCore: amounts.length != 1; required for NTime ConsumableType'
                     );
 
                     nUse[i] = _inputs[i].amounts[0];
-                } else require(_inputs[i].amounts.length == 0, 'PluginsLib: amounts.length != 0');
-            } else if (token == TokenType.erc1155) {
+                } else require(_inputs[i].amounts.length == 0, 'PluginsCore: amounts.length != 0');
+            } else {
+                // Solidity compiler ensures this is TokenType 1155
                 require(
                     _inputs[i].tokenIds.length == _inputs[i].amounts.length,
-                    'PluginsLib: tokenids.length != amounts.length'
+                    'PluginsCore: tokenids.length != amounts.length'
                 );
                 require(
                     _inputs[i].consumableType == ConsumableType.unaffected ||
                         _inputs[i].consumableType == ConsumableType.burned,
-                    'PluginsLib: ERC1155 consumableType not unaffected or burned'
+                    'PluginsCore: ERC1155 consumableType not unaffected or burned'
                 );
-            } else revert(); //revert if not valid token type
+            }
 
             inputs.push(_inputs[i]);
         }

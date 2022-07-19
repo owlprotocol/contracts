@@ -11,6 +11,13 @@ import {
     ERC20,
     ERC721,
     ERC1155,
+    FactoryERC721,
+    FactoryERC20,
+    FactoryERC1155,
+    UpgradeableBeaconInitializable__factory,
+    UpgradeableBeaconInitializable,
+    BeaconProxyInitializable__factory,
+    BeaconProxyInitializable,
 } from '../../../typechain';
 import {
     createERC20,
@@ -20,13 +27,14 @@ import {
     deployClone,
     predictDeployClone,
 } from '../../utils';
-import { BigNumber } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 import {
     loadSignersSmart,
     loadEnvironment,
     TestingSigner,
     assertBalances,
 } from '@owlprotocol/contract-helpers-opengsn/src';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 enum ConsumableType {
     unaffected,
@@ -44,6 +52,7 @@ describe('CrafterMint.sol', function () {
     this.timeout(10000);
 
     let owner: TestingSigner;
+    let signer2: TestingSigner;
 
     let CrafterMintFactory: CrafterMint__factory;
     let CrafterMintImplementation: CrafterMint;
@@ -67,7 +76,7 @@ describe('CrafterMint.sol', function () {
         await Promise.all([ERC1167Factory.deployed(), CrafterMintImplementation.deployed()]);
 
         // Get users
-        [owner] = await loadSignersSmart(ethers);
+        [owner, signer2] = await loadSignersSmart(ethers);
     });
 
     describe('1 ERC20 -> 1 ERC20', () => {
@@ -262,8 +271,8 @@ describe('CrafterMint.sol', function () {
     describe('1 ERC721 -> 1 ERC721', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
         let crafter: CrafterMint;
 
         let CrafterMintAddress: string;
@@ -643,17 +652,17 @@ describe('CrafterMint.sol', function () {
         let CrafterMintAddress: string;
         let crafter: CrafterMint;
 
-        let inputERC20: ERC20;
-        let outputERC20: ERC20;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
 
         let originalInputBalance: BigNumber;
         let originalOutputBalance: BigNumber;
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
 
-        let inputERC1155: ERC1155;
-        let outputERC1155: ERC1155;
+        let inputERC1155: FactoryERC1155;
+        let outputERC1155: FactoryERC1155;
 
         const inputAmount1155 = BigNumber.from(10);
         const inputId1155 = BigNumber.from(5);
@@ -930,6 +939,350 @@ describe('CrafterMint.sol', function () {
             expect(await outputERC20.balanceOf(crafter.address)).to.equal(0);
 
             expect(await outputERC1155.balanceOf(crafter.address, outputId1155)).to.equal(0);
+        });
+
+        it('deposit arg mismatch', async () => {
+            await expect(crafter.deposit(2, [[12]])).to.be.revertedWith('CrafterMint: _outputsERC721Ids[i] != amount');
+        });
+
+        it('deposit ERC721 already minted', async () => {
+            outputERC721.mint(owner.address, 1)
+            await expect(crafter.deposit(1, [[1]])).to.be.revertedWith('CrafterMint: tokenId already minted');
+        });
+
+        it('withdraw 0 revert', async () => {
+            //Withdraw 1
+            await expect(crafter.withdraw(0)).to.be.revertedWith('CrafterMint: amount cannot be 0!');
+        });
+    });
+
+
+    describe('Craftable Amount 0', async () => {
+        const burnAddress = '0x0000000000000000000000000000000000000001';
+
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
+        let crafter: CrafterMint;
+
+        let CrafterMintAddress: string;
+
+        beforeEach(async () => {
+            //Deploy ERC721
+            [inputERC721, outputERC721] = await createERC721(2);
+
+            //Predict address
+            CrafterMintAddress = await predictDeployClone(
+                CrafterMintImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    0,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            );
+
+            //Set Approval ERC721 Output
+            await outputERC721.connect(owner).approve(CrafterMintAddress, 1);
+
+            //Deploy Crafter craftableAmount=1
+            await deployClone(
+                CrafterMintImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    0,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            );
+            crafter = await (ethers.getContractAt('CrafterMint', CrafterMintAddress) as Promise<CrafterMint>);
+        });
+
+        it('deposit with 0 amount', async () => {
+            //Deposit 1
+            await expect(crafter.deposit(0, [[]])).to.be.revertedWith('CrafterMint: amount cannot be 0!');
+
+        });
+
+        it('withdraw more than craftable amount', async () => {
+            await expect(crafter.withdraw(1)).to.be.revertedWith('CrafterMint: Not enough resources to craft!')
+        });
+
+        it('beacon proxy initialization', async () => {
+            [inputERC20, outputERC20] = await createERC20(2);
+            const burnAddress = '0x0000000000000000000000000000000000000001';
+            const beaconFactory = (await ethers.getContractFactory(
+                'UpgradeableBeaconInitializable',
+            )) as UpgradeableBeaconInitializable__factory;
+            const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+            const beaconProxyFactory = (await ethers.getContractFactory(
+                'BeaconProxyInitializable',
+            )) as BeaconProxyInitializable__factory;
+            const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+            const { address: beaconAddr } = await deployClone(beaconImpl, [
+                owner.address,
+                CrafterMintImplementation.address,
+            ]);
+
+            const crafterMintArgs = [
+                //admin address
+                //array of recipe inputs
+                //array of recipe outputs
+                owner.address,
+                burnAddress,
+                3,
+                [
+                    {
+                        token: TokenType.erc20,
+                        consumableType: ConsumableType.burned,
+                        contractAddr: inputERC20.address,
+                        amounts: [1],
+                        tokenIds: [],
+                    },
+                ],
+                //Output specific token id, output unaffected
+                [
+                    {
+                        token: TokenType.erc721,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: outputERC721.address,
+                        amounts: [],
+                        tokenIds: [100, 99, 98],
+                    },
+                ],
+                gsnForwarderAddress, // forwarder addr
+            ];
+
+            //@ts-ignore
+            const data = CrafterMintImplementation.interface.encodeFunctionData('proxyInitialize', crafterMintArgs);
+            const beaconProxyAddr = await predictDeployClone(beaconProxyImpl, [
+                owner.address,
+                beaconAddr,
+                data,
+            ], ERC1167Factory);
+            await inputERC20.connect(owner).approve(beaconProxyAddr, 999);
+            await outputERC721.connect(owner).setApprovalForAll(beaconProxyAddr, true);
+
+            await deployClone(beaconProxyImpl, [
+                owner.address,
+                beaconAddr,
+                data,
+            ], ERC1167Factory);
+            const contrInst = (await ethers.getContractAt('CrafterMint', beaconProxyAddr)) as CrafterMint;
+
+            await contrInst.craft(1, [[]]);
+        });
+    });
+
+    describe('Transfer input reverts', async () => {
+        const burnAddress = '0x0000000000000000000000000000000000000001';
+
+        let inputERC20: FactoryERC20;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
+        let inputERC1155: FactoryERC1155;
+        let crafter: CrafterMint;
+
+        let CrafterMintAddress: string;
+
+        it('Craft signer does not have enough unaffected ERC20 input to craft', async () => {
+            //Deploy ERC721
+            [inputERC721, outputERC721] = await createERC721(2, 0);
+            [inputERC20] = await createERC20(1);
+            [inputERC1155] = await createERC1155(1);
+
+            // await inputERC20.connect(owner).approve()
+            await inputERC20.connect(owner).transfer(signer2.address, parseUnits('1.0', 27));
+
+            const crafterArgs = [
+                owner.address,
+                burnAddress,
+                3,
+                //Input any token id, input burned
+                [
+                    {
+                        token: TokenType.erc20,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: inputERC20.address,
+                        amounts: [5],
+                        tokenIds: [],
+                    },
+                ],
+                //Output specific token id, output unaffected
+                [
+                    {
+                        token: TokenType.erc721,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: outputERC721.address,
+                        amounts: [],
+                        tokenIds: [1, 2, 3],
+                    },
+                ],
+                gsnForwarderAddress, // forwarder addr
+            ];
+
+            //Predict address
+            CrafterMintAddress = await predictDeployClone(
+                CrafterMintImplementation,
+                crafterArgs,
+                ERC1167Factory,
+            );
+
+            //Deploy Crafter craftableAmount=1
+            await deployClone(
+                CrafterMintImplementation,
+                crafterArgs,
+                ERC1167Factory,
+            );
+            crafter = await (ethers.getContractAt('CrafterMint', CrafterMintAddress) as Promise<CrafterMint>);
+            await expect(crafter.craft(1, [[]])).to.be.revertedWith('PluginsCore: User missing minimum token balance(s)!');
+        });
+
+        it('ERC721 craft input mismatch', async () => {
+            //Deploy ERC721
+            [outputERC721] = await createERC721(1, 0);
+            [inputERC721] = await createERC721(1);
+            [inputERC20] = await createERC20(1);
+            [inputERC1155] = await createERC1155(1);
+
+            const crafterArgs = [
+                owner.address,
+                burnAddress,
+                3,
+                //Input any token id, input burned
+                [
+                    {
+                        token: TokenType.erc721,
+                        consumableType: ConsumableType.burned,
+                        contractAddr: inputERC721.address,
+                        amounts: [],
+                        tokenIds: [],
+                    },
+                ],
+                //Output specific token id, output unaffected
+                [
+                    {
+                        token: TokenType.erc721,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: outputERC721.address,
+                        amounts: [],
+                        tokenIds: [1, 2, 3],
+                    },
+                ],
+                gsnForwarderAddress, // forwarder addr
+            ];
+
+            //Predict address
+            CrafterMintAddress = await predictDeployClone(
+                CrafterMintImplementation,
+                crafterArgs,
+                ERC1167Factory,
+            );
+
+            //Deploy Crafter craftableAmount=1
+            await deployClone(
+                CrafterMintImplementation,
+                crafterArgs,
+                ERC1167Factory,
+            );
+            crafter = await (ethers.getContractAt('CrafterMint', CrafterMintAddress) as Promise<CrafterMint>);
+            await expect(crafter.craft(1, [[1, 2]])).to.be.revertedWith('PluginsCore: _inputERC721Ids[i] != amount');
+        });
+
+        it('Craft signer does not have enough ERC1155 unaffected input to craft', async () => {
+            //Deploy ERC721
+            [outputERC721] = await createERC721(1, 0);
+            [inputERC721] = await createERC721(1);
+            [inputERC20] = await createERC20(1);
+            [inputERC1155] = await createERC1155(1);
+
+            const crafterArgs = [
+                owner.address,
+                burnAddress,
+                3,
+                //Input any token id, input burned
+                [
+                    {
+                        token: TokenType.erc1155,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: inputERC1155.address,
+                        amounts: [999, 1],
+                        tokenIds: [1, 2],
+                    },
+                ],
+                //Output specific token id, output unaffected
+                [
+                    {
+                        token: TokenType.erc721,
+                        consumableType: ConsumableType.unaffected,
+                        contractAddr: outputERC721.address,
+                        amounts: [],
+                        tokenIds: [1, 2, 3],
+                    },
+                ],
+                gsnForwarderAddress, // forwarder addr
+            ];
+
+            //Predict address
+            CrafterMintAddress = await predictDeployClone(
+                CrafterMintImplementation,
+                crafterArgs,
+                ERC1167Factory,
+            );
+
+            //Deploy Crafter craftableAmount=1
+            await deployClone(
+                CrafterMintImplementation,
+                crafterArgs,
+                ERC1167Factory,
+            );
+            crafter = await (ethers.getContractAt('CrafterMint', CrafterMintAddress) as Promise<CrafterMint>);
+            await expect(crafter.craft(1, [[]])).to.be.revertedWith('PluginsCore: User missing minimum token balance(s)!');
         });
     });
 });
