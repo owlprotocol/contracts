@@ -23,7 +23,7 @@ describe('VRFRandom beacon', () => {
                 {
                     forking: {
                         jsonRpcUrl: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-                        blockNumber: 11011599,
+                        blockNumber: 11053770,
                     },
                 },
             ],

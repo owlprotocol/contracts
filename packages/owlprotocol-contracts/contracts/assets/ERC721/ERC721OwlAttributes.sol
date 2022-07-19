@@ -60,7 +60,6 @@ contract ERC721OwlAttributes is ERC721Owl {
     using StringsUpgradeable for uint256;
 
     bytes32 private constant DNA_ROLE = keccak256('DNA_ROLE');
-    string private constant VERSION = 'v0.1';
     bytes4 private constant ERC165TAG =
         bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlAttributes/', VERSION)));
 

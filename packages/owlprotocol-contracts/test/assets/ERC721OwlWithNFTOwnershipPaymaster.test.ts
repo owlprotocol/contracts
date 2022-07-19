@@ -20,7 +20,7 @@ import {
     describeGSN,
     JsonRpcSignerTesting,
 } from '@owlprotocol/contract-helpers-opengsn/src';
-import web3 from 'Web3';
+import web3 from 'web3';
 import { BigNumber } from 'ethers';
 import { Web3ProviderBaseInterface } from '@opengsn/common/dist/types/Aliases';
 
