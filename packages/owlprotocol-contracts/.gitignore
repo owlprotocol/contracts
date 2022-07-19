@@ -31,7 +31,11 @@ yarn.lock
 
 # production
 /build
-/lib
+
+# forge
+forge-cache/
+out/
+
 
 # misc
 .DS_Store
