@@ -77,6 +77,16 @@ describe('codec.ts', function () {
             expect(() => simpleEncoder(genesCustom, [100, 100, 100])).to.throw();
         });
 
+        it('simpleEncoder(...) default naming', async () => {
+            const genesCustom = genes;
+            //@ts-ignore
+            genes[1] = {
+                maxValue: 250,
+            };
+            const decoded = simpleDecoder(genesCustom, dna);
+            expect(decoded['1'].eq(250));
+        });
+
         it('simpleDecoder(...)', async () => {
             // Test decode values
             const decoded = Object.values(simpleDecoder(genes, dna));

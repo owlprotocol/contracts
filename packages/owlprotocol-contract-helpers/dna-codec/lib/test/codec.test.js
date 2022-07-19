@@ -127,6 +127,19 @@ describe('codec.ts', function () {
                 return [2 /*return*/];
             });
         }); });
+        it('simpleEncoder(...) default naming', function () { return __awaiter(_this, void 0, void 0, function () {
+            var genesCustom, decoded;
+            return __generator(this, function (_a) {
+                genesCustom = genes;
+                //@ts-ignore
+                genes[1] = {
+                    maxValue: 250
+                };
+                decoded = (0, __1.simpleDecoder)(genesCustom, dna);
+                (0, chai_1.expect)(decoded['1'].eq(250));
+                return [2 /*return*/];
+            });
+        }); });
         it('simpleDecoder(...)', function () { return __awaiter(_this, void 0, void 0, function () {
             var decoded, decoded2, i;
             return __generator(this, function (_a) {

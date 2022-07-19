@@ -1,1 +1,1 @@
-export { encodeGenesUint256, decodeGenesUint256, simpleEncoder, simpleDecoder } from './codec';
+export { encodeGenesUint256, decodeGenesUint256, simpleEncoder, simpleDecoder, } from './codec';
