@@ -11,7 +11,9 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
     o[k2] = m[k];
 }));
 exports.__esModule = true;
-exports.decodeGenesUint256 = exports.encodeGenesUint256 = void 0;
+exports.simpleDecoder = exports.simpleEncoder = exports.decodeGenesUint256 = exports.encodeGenesUint256 = void 0;
 var codec_1 = require("./codec");
 __createBinding(exports, codec_1, "encodeGenesUint256");
 __createBinding(exports, codec_1, "decodeGenesUint256");
+__createBinding(exports, codec_1, "simpleEncoder");
+__createBinding(exports, codec_1, "simpleDecoder");

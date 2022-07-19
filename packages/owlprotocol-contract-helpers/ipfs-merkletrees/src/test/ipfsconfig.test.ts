@@ -2,12 +2,13 @@ import { expect } from 'chai';
 import { IPFSHTTPClient } from 'ipfs-http-client';
 import { concat, toString } from 'uint8arrays';
 import { getInfuraIPFS } from '../index';
+import { projectId, projectSecret } from './infura.test';
 
 describe('ipfsconfig.ts', async () => {
     let ipfsClient: IPFSHTTPClient;
 
     before(async () => {
-        ipfsClient = getInfuraIPFS();
+        ipfsClient = getInfuraIPFS(projectId, projectSecret);
     });
 
     describe('Test IPFS client', async () => {

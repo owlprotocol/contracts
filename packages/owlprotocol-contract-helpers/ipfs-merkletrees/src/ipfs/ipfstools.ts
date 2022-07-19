@@ -1,12 +1,9 @@
 import { IPFSHTTPClient, CID } from 'ipfs-http-client';
-import { getInfuraIPFS } from './ipfsconfig';
 import { concat, toString } from 'uint8arrays';
 import MerkleTree from 'merkletreejs';
 import { ethers } from 'ethers';
 
-export async function loadFromIpfs(ipfsHash: CID, ipfsClient?: IPFSHTTPClient) {
-    if (ipfsClient === undefined) ipfsClient = getInfuraIPFS();
-
+export async function loadFromIpfs(ipfsHash: CID, ipfsClient: IPFSHTTPClient) {
     const leaves = await fetchIpfsJson(ipfsHash, ipfsClient);
 
     const tree = new MerkleTree(leaves, ethers.utils.keccak256, {
@@ -17,9 +14,7 @@ export async function loadFromIpfs(ipfsHash: CID, ipfsClient?: IPFSHTTPClient) {
     return tree;
 }
 
-export async function dumpToIpfs(tree: MerkleTree, ipfsClient?: IPFSHTTPClient) {
-    if (ipfsClient === undefined) ipfsClient = getInfuraIPFS();
-
+export async function dumpToIpfs(tree: MerkleTree, ipfsClient: IPFSHTTPClient) {
     const treeDump = JSON.stringify(tree.getHexLeaves());
     const upload = await ipfsClient.add(treeDump);
 
@@ -27,7 +22,7 @@ export async function dumpToIpfs(tree: MerkleTree, ipfsClient?: IPFSHTTPClient) 
 }
 
 export async function createMerkleFromUsers(addresses: string[]) {
-    const leaves = formatAddresses(addresses);
+    const leaves = addresses.map((a) => formatAddress(a));
 
     const tree = new MerkleTree(leaves, ethers.utils.keccak256, {
         hashLeaves: true, // first time loading, so hash
@@ -37,12 +32,12 @@ export async function createMerkleFromUsers(addresses: string[]) {
     return tree;
 }
 
-export function formatAddresses(addresses: string[]) {
-    return addresses.map((address) => ethers.utils.hexZeroPad(address.toLowerCase(), 32));
+export function formatAddress(address: string) {
+    return ethers.utils.hexZeroPad(address.toLowerCase(), 32);
 }
 
 export function getLeaf(address: string) {
-    return ethers.utils.keccak256(formatAddresses([address])[0]);
+    return ethers.utils.keccak256(formatAddress(address));
 }
 
 async function fetchIpfsJson(ipfsHash: CID, ipfsClient: IPFSHTTPClient) {
