@@ -1,8 +1,9 @@
 import { IPFSHTTPClient, CID } from 'ipfs-http-client';
 import { expect } from 'chai';
-import { createMerkleFromUsers, dumpToIpfs, formatAddresses, getLeaf, loadFromIpfs } from '../ipfs/ipfstools';
+import { createMerkleFromUsers, dumpToIpfs, formatAddress, getLeaf, loadFromIpfs } from '../ipfs/ipfstools';
 import { getInfuraIPFS } from '..';
 import MerkleTree from 'merkletreejs';
+import { projectId, projectSecret } from './infura.test';
 
 describe('ipfstools.ts', async () => {
     let ipfsClient: IPFSHTTPClient;
@@ -10,19 +11,20 @@ describe('ipfstools.ts', async () => {
     let root: string;
 
     before(async () => {
-        ipfsClient = await getInfuraIPFS();
+        ipfsClient = await getInfuraIPFS(projectId, projectSecret);
     });
 
     describe('Test IPFS Tools', async () => {
         let ipfsHash: CID;
-        const dummyAccounts = formatAddresses([
+        let dummyAccounts = [
             '0x' + '0'.repeat(39) + '0',
             '0x' + '0'.repeat(39) + '1',
             '0x' + '0'.repeat(39) + '2',
             '0x' + '0'.repeat(39) + '3',
             '0x' + '0'.repeat(39) + '4',
-        ]);
-        const nonMember = formatAddresses(['0x' + 'a'.repeat(40)])[0];
+        ];
+        dummyAccounts = dummyAccounts.map((a) => formatAddress(a));
+        const nonMember = formatAddress('0x' + 'a'.repeat(40));
 
         it('createMerkleFromUsers(...)', async () => {
             tree = await createMerkleFromUsers(dummyAccounts);
