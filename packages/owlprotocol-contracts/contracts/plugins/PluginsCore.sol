@@ -13,8 +13,10 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 import '../OwlBase.sol';
 
 /**
- @dev Abstract contract with types and utilities that will be used by many (if
- not all) Plugins contracts
+ * @dev Abstract contract with types and utilities that will be used by many (if
+ * not all) Plugins contracts
+ *
+ *
  */
 abstract contract PluginsCore is OwlBase {
     event RouterError(uint256 indexed routeId, address indexed sender, bytes indexed data);

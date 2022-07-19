@@ -14,15 +14,28 @@ import '../../assets/ERC721/ERC721OwlAttributes.sol';
 import './TransformerCore.sol';
 
 /**
- * @dev Contract module that enables transformation of ERC721Owl assets. The
- * Transformer takes different types of input assets (ERC20, ERC721, ERC1155) 
- * from a caller, who holds the ERC721Owl to be transformed. However, instead 
- * of a new output being transferred or minted to the caller, transformations 
- * are made to the existing ERC721Owl's DNA. Logic regarding ingredient consumable 
- * type follows that of the Crafter:
+ * @dev Contract module that enables "transformation" of {ERC721OwlAttributes}
+ * tokens. The assumption with {ERC721OwlAttributes} is that the attributes of
+ * one individual token are encoded into a number, called "dna". This number is
+ * then mapped to the `tokenId`. Transforming configuration is set by one
+ * {Ingredient}[] (the inputs) and a {GeneMod}[] (the modifications). The inputs
+ * are the cost for the modifications to go through (as set by the contract
+ * deployer).
  *
- * Input configuration is designated by an {Ingredient}[].
  * ```
+ * enum GeneTransformType {
+ *     none,
+ *     add,
+ *     sub,
+ *     mult,
+ *     set
+ * }
+ *
+ * struct GeneMod {
+ *     GeneTransformType geneTransformType;
+ *     uint256 value;
+ * }
+ *
  * struct Ingredient {
  *     TokenType token;
  *     ConsumableType consumableType;
@@ -32,73 +45,12 @@ import './TransformerCore.sol';
  * }
  * ```
  *
- * Configuration is set in the initializers and cannot be edited once the
- * contract has been launched, other configurations will require their own
- * contract to be deployed
- *
- * Each Ingredient has a `consumableType` field.  ERC20 and ERC1155 `inputs`
- * elements can be `unaffected` or `burned`. `unaffected` will check for
- * ownership/balance while `burned` will send the asset(s) to the `burnAddress`.
- * ERC721 inputs can be `NTime` or `burned`. `NTime` allows for a specfic
- * `tokenId` to only be used 'n times', as defined by contract deployer.
- *
- * ERC20 `inputs` elements should have one number in the `amounts`
- * array denoting ERC20 token amount requirement. `tokenIds` should be empty.
- * NTime consumable type ERC721 inputs should have empty `tokenIds` and
- * `amounts[0]` equal to `n` - the maximum number of times the input can be used.
- * Burned ERC721 `inputs` elements should have empty `amounts` and `tokenIds`
- * array. This contract accepts *all* `tokenId`s from an ERC721 contract as
- * inputs.
- *
- * ERC1155 `inputs` elements should have the length of `amounts`
- * and `tokenIds` array be the same. The indices will be linked where each index
- * denotes how much of each ERC1155 `tokenId` is required.
- *
- * This module is used through composition. It can be deployed to create
- * crafting logic with asset contracts that are already on chain and active;
- * plug-and-play, so to speak.
- *
- * Transform configuration is designated by `DEFAULT_ADMIN_ADDRESS`, `burnAddress`, 
- * and an {Ingredient}[] of inputs, as in the Crafter. In addition, it takes an integer
- * array `genes` denoting the start point of each gene within the bit
- * representation of ERC721Owl's DNA. The `modifications` array is of the same
- * length of `genes`, as it describes the modifications that should be made to
- * each gene in the form of a `GeneMod` struct.
- *
- * ```
- * struct GeneMod
- * {
- *   GeneTransformType geneTransformType;
- *   uint256 value;
- * }
- * ```
- *
- * The GeneMod struct refers to a `GeneTransformType`, an enum that can be
- * declared as one of the operations: add, subtract, multiply, divide, or set.
- * The `value` then specifies the amount by which to perform the operation.
- *
- * Since DNA is represented as a uint256, our implementation assumes the last gene
- * described by the genes array will end at bit 255 of the DNA. Let `genes` be
- * the array [0, 64, 128, 192] - indicating there exist 4 genes (consisting of bits 
- * 0-63, 64 - 127, 128 - 191, 192 - 255).
- *
- * Suppose a gene were represented by the 2-bit number `10`. If
- * the modification for this gene was to add 1, the transformed gene would be
- * `11`. This implementation further prevents genes from overflowing and underflowing
- * into other genes. For example, adding `2` to `10` would cap the resulting
- * gene at `11` instead of reaching `100`. This logic applies to all operations,
- * including set.
-
- * Configuration of `genes` and `modifications` is set in the initializers and 
- * cannot be edited once the contract has been launched Other configurations will 
- * require their own contract to be deployed.
- *
- * Upon successful completion of the `transform()` operation, the ERC721Owl with
- * the passed tokenId will have its DNA modified in-place, never having been
- * transferred out of the caller's possession.
+ * Once the {Ingredient}s in the `inputs` array have been used/consumed, the
+ * contract will update the "dna" associated with the `tokenId` submitted by the
+ * user. See {ERC721OwlAttributes} for an in-depth explanation of how "dna"
+ * encodes `tokenId` attributes.
  */
 contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
-    // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Transformer/', version)));
 

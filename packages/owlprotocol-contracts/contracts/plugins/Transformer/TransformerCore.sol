@@ -3,6 +3,10 @@ pragma solidity ^0.8.0;
 
 import '../PluginsCore.sol';
 
+/**
+ * @dev abstract contract that contains all the utilities and types required for
+ * Transformer contract
+ */
 abstract contract TransformerCore is PluginsCore {
     enum GeneTransformType {
         none,
@@ -36,23 +40,35 @@ abstract contract TransformerCore is PluginsCore {
         GeneMod[] memory modifications
     ) internal pure returns (uint256 newDna) {
         for (uint16 geneIdx = 0; geneIdx < genes.length; geneIdx++) {
-            // Gene details
+            // Genes array gives index ranges on the binary format of currDna
             uint16 geneStartIdx = genes[geneIdx];
-            uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 256; // if on last element of genes, set end to 256 
+            // If on last element of genes, set end to 256
+            uint16 geneEndIdx = geneIdx < genes.length - 1 ? genes[geneIdx + 1] : 256;
 
-// bitmask to extract bits of current gene
-            uint256 bitmask = get256Bitmask(geneStartIdx, geneEndIdx); 
+            uint256 bitmask = get256Bitmask(geneStartIdx, geneEndIdx);
+
+            // Once the bitmask extracts the gene that needs to be operated on
+            // in the iteration, the binary data needs to be shifted all the way
+            // to the right so that operations are done on the gene as if it was
+            // its own individual number. If we have dna '01 10 01' and we're
+            // working on the '10'. Adding one needs to yield '11', not '10 01'.
+            // So after bitmask, '10 00' was shifted to '00 10' so operations
+            // are done correctly
             uint256 gene = (currDna & bitmask) >> geneStartIdx;
 
             uint256 maxBits = geneEndIdx - geneStartIdx;
 
+            // Execution of modifications
             GeneMod memory currMod = modifications[geneIdx];
             if (currMod.geneTransformType == GeneTransformType.add) {
                 uint256 sum = gene + currMod.value;
-                if (sum > 2**maxBits - 1) gene = 2**maxBits - 1; //handle overflow with ceiling
+
+                // Handle overflow with ceiling
+                if (sum > 2**maxBits - 1) gene = 2**maxBits - 1;
                 else gene = sum;
             } else if (currMod.geneTransformType == GeneTransformType.sub) {
-                if (currMod.value > gene) gene = 0; //handle underflow with floor
+                // Handle underflow with floor
+                if (currMod.value > gene) gene = 0;
                 else gene = gene - currMod.value;
             } else if (currMod.geneTransformType == GeneTransformType.mult) {
                 uint256 prod = gene * currMod.value;
@@ -63,9 +79,10 @@ abstract contract TransformerCore is PluginsCore {
                 if (currMod.value <= 2**maxBits - 1 && currMod.value >= 0) gene = currMod.value;
             }
 
-            gene = gene << geneStartIdx; //shift back to original representation
+            // Shift back to original representation
+            gene = gene << geneStartIdx;
 
-            newDna = newDna | gene; 
+            newDna = newDna | gene;
         }
     }
 
