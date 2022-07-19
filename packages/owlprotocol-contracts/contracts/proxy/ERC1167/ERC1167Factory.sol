@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {ClonesUpgradeable} from '@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol';
 import {ContextUpgradeable} from '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol';
+import 'hardhat/console.sol';
 
 /**
  * @dev ERC1167 Minimal Proxy Factory

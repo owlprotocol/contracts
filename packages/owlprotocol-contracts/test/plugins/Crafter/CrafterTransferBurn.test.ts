@@ -9,9 +9,9 @@ import {
     CrafterTransfer__factory,
     ERC1167Factory,
     ERC1167Factory__factory,
-    ERC20,
-    ERC721,
-    ERC1155,
+    FactoryERC721,
+    FactoryERC20,
+    FactoryERC1155,
 } from '../../../typechain';
 import { createERC20, createERC721, createERC1155, predictDeployClone, deployClone } from '../../utils';
 import { loadSignersSmart, TestingSigner, loadForwarder } from '@owlprotocol/contract-helpers-opengsn/src';
@@ -63,8 +63,8 @@ describe('CrafterTransfer.sol burn', function () {
     describe('1 ERC20 -> 1 ERC20', () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC20: ERC20;
-        let outputERC20: ERC20;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -242,8 +242,8 @@ describe('CrafterTransfer.sol burn', function () {
     describe('1 ERC721 -> 1 ERC721', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -446,8 +446,8 @@ describe('CrafterTransfer.sol burn', function () {
     describe('1 ERC1155 -> 1 ERC1155', async () => {
         const burnAddress = '0x0000000000000000000000000000000000000001';
 
-        let inputERC1155: ERC1155;
-        let outputERC1155: ERC1155;
+        let inputERC1155: FactoryERC1155;
+        let outputERC1155: FactoryERC1155;
         let crafter: CrafterTransfer;
 
         let CrafterTransferAddress: string;
@@ -630,17 +630,17 @@ describe('CrafterTransfer.sol burn', function () {
         let CrafterTransferAddress: string;
         let crafter: CrafterTransfer;
 
-        let inputERC20: ERC20;
-        let outputERC20: ERC20;
+        let inputERC20: FactoryERC20;
+        let outputERC20: FactoryERC20;
 
         let originalInputBalance: BigNumber;
         let originalOutputBalance: BigNumber;
 
-        let inputERC721: ERC721;
-        let outputERC721: ERC721;
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
 
-        let inputERC1155: ERC1155;
-        let outputERC1155: ERC1155;
+        let inputERC1155: FactoryERC1155;
+        let outputERC1155: FactoryERC1155;
 
         const inputAmount1155 = BigNumber.from(10);
         const inputId1155 = BigNumber.from(5);
@@ -923,6 +923,105 @@ describe('CrafterTransfer.sol burn', function () {
             expect(await outputERC1155.balanceOf(crafter.address, outputId1155)).to.equal(
                 outputAmount1155.toNumber() * 2,
             );
+        });
+    });
+
+    describe('Craftable Amount 0', async () => {
+        const burnAddress = '0x0000000000000000000000000000000000000001';
+
+        let inputERC721: FactoryERC721;
+        let outputERC721: FactoryERC721;
+        let crafter: CrafterTransfer;
+
+        let CrafterTransferAddress: string;
+
+        beforeEach(async () => {
+            //Deploy ERC721
+            [inputERC721, outputERC721] = await createERC721(2);
+
+            //Predict address
+            CrafterTransferAddress = await predictDeployClone(
+                CrafterTransferImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    0,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            );
+
+            //Set Approval ERC721 Output
+            await outputERC721.connect(owner).approve(CrafterTransferAddress, 1);
+
+            //Deploy Crafter craftableAmount=1
+            await deployClone(
+                CrafterTransferImplementation,
+                [
+                    owner.address,
+                    burnAddress,
+                    0,
+                    //Input any token id, input burned
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.burned,
+                            contractAddr: inputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    //Output specific token id, output unaffected
+                    [
+                        {
+                            token: TokenType.erc721,
+                            consumableType: ConsumableType.unaffected,
+                            contractAddr: outputERC721.address,
+                            amounts: [],
+                            tokenIds: [],
+                        },
+                    ],
+                    gsnForwarderAddress, // forwarder addr
+                ],
+                ERC1167Factory,
+            );
+            crafter = await (ethers.getContractAt('CrafterMint', CrafterTransferAddress) as Promise<CrafterTransfer>);
+        });
+
+        it('deposit with 0 amount', async () => {
+            //Deposit 1
+            await expect(crafter.deposit(0, [[]])).to.be.revertedWith('CrafterTransfer: amount cannot be 0!');
+
+        });
+
+        it('deposit args mismatch revert', async () => {
+            //Deposit 1
+            await expect(crafter.deposit(1, [[]])).to.be.revertedWith('CrafterTransfer: _outputsERC721Ids[i] != amount');
+
+        });
+
+        it('withdraw more than craftable amount', async () => {
+            await expect(crafter.withdraw(0)).to.be.revertedWith('CrafterTransfer: amount cannot be 0!')
         });
     });
 });

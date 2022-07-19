@@ -170,7 +170,6 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
      */
     function _deposit(uint96 amount, uint256[][] memory _outputsERC721Ids) internal {
         require(amount > 0, 'CrafterMint: amount cannot be 0!');
-
         craftableAmount += amount;
 
         // address `from` parameter irrelevant in CrafterMint... passing
@@ -255,12 +254,12 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
             if (ingredient.token == PluginsCore.TokenType.erc721) {
                 require(
                     _outputsERC721Ids[erc721Outputs].length == amount,
-                    'CrafterTransfer: _outputsERC721Ids[i] != amount'
+                    'CrafterMint: _outputsERC721Ids[i] != amount'
                 );
                 for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
                     require(
                         !ERC721Owl(ingredient.contractAddr).exists(_outputsERC721Ids[erc721Outputs][j]),
-                        'CrafterCore: tokenId already minted'
+                        'CrafterMint: tokenId already minted'
                     );
 
                     //Update ingredient `tokenIds`, push additional ERC721 tokenId
