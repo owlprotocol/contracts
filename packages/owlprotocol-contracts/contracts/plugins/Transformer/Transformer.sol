@@ -14,19 +14,28 @@ import '../../assets/ERC721/ERC721OwlAttributes.sol';
 import './TransformerCore.sol';
 
 /**
- * @dev Contract module that enables transformation of ERC721Owl assets under
- * the same inputs -> outputs logic defined in the Crafter contracts. The
- * Transformer, like Crafter, takes different types of input assets (ERC20,
- * ERC721, ERC1155) in addition to the ERC721Owl to be transformed. However,
- * instead of a new output being transferred or minted to the caller,
- * transformations are made to the existing ERC721Owl's DNA. Logic regarding
- * ingredient consumable type follows that of the Crafter:
- *
- * Crafting configuration is designated by two {Ingredient}[]. One array is the
- * `inputs` and the other is the `outputs`. The contract allows for the `inputs`
- * to be redeemed for the `outputs`, `craftableAmount` times.
+ * @dev Contract module that enables "transformation" of {ERC721OwlAttributes}
+ * tokens. The assumption with {ERC721OwlAttributes} is that the attributes of
+ * one individual token are encoded into a number, called "dna". This number is
+ * then mapped to the `tokenId`. Transforming configuration is set by one
+ * {Ingredient}[] (the inputs) and a {GeneMod}[] (the modifications). The inputs
+ * are the cost for the modifications to go through (as set by the contract
+ * deployer).
  *
  * ```
+ * enum GeneTransformType {
+ *     none,
+ *     add,
+ *     sub,
+ *     mult,
+ *     set
+ * }
+ *
+ * struct GeneMod {
+ *     GeneTransformType geneTransformType;
+ *     uint256 value;
+ * }
+ *
  * struct Ingredient {
  *     TokenType token;
  *     ConsumableType consumableType;
@@ -36,69 +45,12 @@ import './TransformerCore.sol';
  * }
  * ```
  *
- * Configuration is set in the initializers and cannot be edited once the
- * contract has been launched Other configurations will require their own
- * contract to be deployed
- *
- * However, `craftableAmount` can be dynamically updated through the {deposit}
- * and {withdraw} functions which are only accessible to `DEFAULT_ADMIN_ROLE`
- *
- * Each Ingredient has a `consumableType` field.* This field is for the `inputs`
- * elements and ignored by the `outputs` elements. ERC20 and ERC1155 `inputs`
- * elements can be `unaffected` or `burned`. `unaffected` will check for
- * ownership/balance while `burned` will send the asset(s) to the `burnAddress`.
- * ERC721 inputs can be `NTime` or `burned`. `NTime` allows for a specfic
- * `tokenId` to only be used 'n times', as defined by contract deployer.
- *
- * ERC20 `inputs` and `outputs` elements should have one number in the `amounts`
- * array denoting ERC20 token amount requirement. `tokenIds` should be empty.
- * NTime consumable type ERC721 inputs should have empty `tokenIds` and
- * `amounts[0]` equal to `n` - the maximum number of times the input can be used.
- * Burned ERC721 `inputs` elements should have empty `amounts` and `tokenIds`
- * array. This contract accepts *all* `tokenId`s from an ERC721 contract as
- * inputs. ERC721 `outputs` elements must have empty `amounts` array. `tokenIds`
- * array length should be `craftableAmount`. The `tokenIds` array will contain
- * the `tokenIds` to be transferred out when {craft} is called. Important to
- * note that output transfers will be from the *end* of the array since `.pop()`
- * is used.
- *
- * ERC1155 `inputs` and `outputs` elements should have the length of `amounts`
- * and `tokenIds` array be the same. The indices will be linked where each index
- * denotes how much of each ERC1155 `tokenId` is required.
- *
- * This module is used through composition. It can be deployed to create
- * crafting logic with asset contracts that are already on chain and active;
- * plug-and-play, so to speak.
- *
- * Transform configuration is designated by `admin`, `burnAddress`, and an
- * {Ingredient}[] of inputs, as in the Crafter. In addition, it takes an integer
- * array `genes` denoting the start point of each gene within the bit
- * representation of ERC721Owl's DNA. The `modifications` array is of the same
- * length of `genes`, as it describes the modifications that should be made to
- * each gene in the form of a `GeneMod` struct.
- *
- * ```
- * struct GeneMod
- * {
- *   GeneTransformType geneTransformType;
- *   uint256 value;
- * }
- * ```
- *
- * The GeneMod struct refers to a `GeneTransformType`, an enum that can be
- * declared as one of the operations: add, subtract, multiply, divide, or set.
- * The `value` then specifies the amount by which to perform the operation.
- *
- * This configuration is set in the initializers and cannot be edited once the
- * contract has been launched Other configurations will require their own
- * contract to be deployed.
- *
- * Upon successful completion of the `transform()` operation, the ERC721Owl with
- * the passed tokenId will have its DNA modified in-place, never having been
- * transferred out of the caller's possession.
+ * Once the {Ingredient}s in the `inputs` array have been used/consumed, the
+ * contract will update the "dna" associated with the `tokenId` submitted by the
+ * user. See {ERC721OwlAttributes} for an in-depth explanation of how "dna"
+ * encodes `tokenId` attributes.
  */
 contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
-    // Specification + ERC165
     string public constant version = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Transformer/', version)));
 
@@ -162,7 +114,7 @@ contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderU
     }
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * @dev performs validations that `_inputs` are valid and
      * creates the configuration
      */
     function __Transformer_init(
@@ -182,7 +134,7 @@ contract Transformer is TransformerCore, ERC721HolderUpgradeable, ERC1155HolderU
     }
 
     /**
-     * @dev performs validations that `_inputs` and `_outputs` are valid and
+     * @dev performs validations that `_inputs` and are valid and
      * creates the configuration
      */
     function __Transformer_init_unchained(
