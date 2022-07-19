@@ -27,12 +27,8 @@ contract NFTOwnershipPaymaster is OwlPaymasterBase {
     address public payer; //user who wants to approve a transaction
     uint256 public limit; //maximum number of times a user can transact
 
-    mapping(uint256 => uint256) numTimes; //keeps track how many times a tokenId has been used to approve
-
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
+    mapping(uint256 => uint256) numTimes; //keeps track how many times a tokenId has minted
+    mapping(address => uint256) gasSpent; //maps a user to how much gas it has cost the paymaster
 
     /**
      * @dev initializes a paymaster contract
@@ -103,6 +99,8 @@ contract NFTOwnershipPaymaster is OwlPaymasterBase {
 
         uint256 tokenId = abi.decode(approvalData, (uint256));
 
+        require(gasSpent[payer] <= this.PAYMASTER_ACCEPTANCE_BUDGET(), 'User reached gas limit');
+
         require(numTimes[tokenId] < limit, 'TokenId reached minting limit');
         numTimes[tokenId]++;
 
@@ -121,6 +119,9 @@ contract NFTOwnershipPaymaster is OwlPaymasterBase {
         uint256 gasUseWithoutPost,
         GsnTypes.RelayData calldata relayData
     ) external virtual override {
+        if (success) {
+            gasSpent[payer] += gasUseWithoutPost;
+        }
         (context, success, gasUseWithoutPost, relayData);
     }
 
@@ -129,5 +130,13 @@ contract NFTOwnershipPaymaster is OwlPaymasterBase {
      */
     function versionPaymaster() external view virtual override returns (string memory) {
         return '2.2.0+owlprotocol.paymasters.nftownershippaymaster';
+    }
+
+    function getNumTransactions(uint256 tokenId) external view returns (uint256) {
+        return numTimes[tokenId];
+    }
+
+    function getGasSpent(address user) external view returns (uint256) {
+        return gasSpent[user];
     }
 }
