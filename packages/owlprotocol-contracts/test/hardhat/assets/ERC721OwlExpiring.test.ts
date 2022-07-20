@@ -46,10 +46,10 @@ describe('ERC721Expiring.sol', () => {
         contrInst = (
             await deployCloneWrap(
                 ERC721OwlExpiringImpl,
-                [signer1.address, 'n', 's', 'u', gsnForwarderAddress],
+                [signer1.address, 'n', 's', 'u', gsnForwarderAddress, signer1.address, 0],
                 ERC1167Factory,
                 salt,
-                'initialize(address,string,string,string,address)', // must use full signature
+                'initialize(address,string,string,string,address,address,uint96)', // must use full signature
                 signer1,
             )
         ).contract as ERC721OwlExpiring;
@@ -57,7 +57,6 @@ describe('ERC721Expiring.sol', () => {
 
     describe('ownerOf()', async () => {
         beforeEach(async () => {
-            console.log('1');
             await expect(contrInst.ownerOf(1)).to.be.revertedWith('ERC721: invalid token ID');
             await expect(contrInst['mint(address,uint256)'](signer1.address, 2)).to.be.revertedWith(
                 'ERC721OwlExpiring: function disabled',
@@ -499,6 +498,8 @@ describe('ERC721Expiring.sol', () => {
             symbol,
             uri,
             '0x' + '0'.repeat(40),
+            signer1.address,
+            0
         ]);
         const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data]);
         contrInst = (await ethers.getContractAt('ERC721OwlExpiring', beaconProxyAddr)) as ERC721OwlExpiring;
