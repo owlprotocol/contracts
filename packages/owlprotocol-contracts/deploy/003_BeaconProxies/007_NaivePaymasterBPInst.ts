@@ -9,10 +9,17 @@ import {
     FactoryERC721,
 } from '../../typechain';
 
+import { getGSNConfig } from '@owlprotocol/contract-helpers-opengsn/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const salt = ethers.utils.formatBytes32String('1');
 let NaivePaymasterBeaconAddr = '';
+
+const gsnForwarderAddr = '0x' + '0'.repeat(40);
+//should be changed to below this line eventually
+//const gsnForwarderAddr = getGSNConfig(network).forwarder;
+
+const target = '0x' + '0'.repeat(40); //should be set
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (process.env.PROXY_PRIV_KEY === undefined) return;
@@ -40,8 +47,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const NaivePaymasterData = NaivePaymasterImpl.interface.encodeFunctionData('proxyinitialize', [
         other,
-        other,
-        other,
+        target,
+        gsnForwarderAddr,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory

@@ -9,11 +9,16 @@ import {
     FactoryERC721,
 } from '../../typechain';
 
+import { getGSNConfig } from '@owlprotocol/contract-helpers-opengsn/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const salt = ethers.utils.formatBytes32String('1');
 let NFTOwnershipPaymasterBeaconAddr = '';
 const acceptableTokenAddr = '0xe21EBCD28d37A67757B9Bc7b290f4C4928A430b1'; //let it be filled in
+
+const gsnForwarderAddr = '0x' + '0'.repeat(40);
+//change to below line eventually
+//const gsnForwarderAddr = getGSNConfig(network).forwarder;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (process.env.PROXY_PRIV_KEY === undefined) return;
@@ -53,7 +58,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         acceptableTokenAddr,
         limit,
-        other,
+        gsnForwarderAddr,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory

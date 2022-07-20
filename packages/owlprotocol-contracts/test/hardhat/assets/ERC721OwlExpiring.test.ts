@@ -57,7 +57,6 @@ describe('ERC721Expiring.sol', () => {
 
     describe('ownerOf()', async () => {
         beforeEach(async () => {
-            console.log('1');
             await expect(contrInst.ownerOf(1)).to.be.revertedWith('ERC721: invalid token ID');
             await expect(contrInst['mint(address,uint256)'](signer1.address, 2)).to.be.revertedWith(
                 'ERC721OwlExpiring: function disabled',
