@@ -62,6 +62,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         false,
         300,
         other,
+        other,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory
