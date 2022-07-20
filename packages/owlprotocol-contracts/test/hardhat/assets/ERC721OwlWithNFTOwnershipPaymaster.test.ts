@@ -35,6 +35,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
     let signer3: TestingSigner;
 
     let testNFT: FactoryERC721;
+    //@ts-ignore
     let gsnConfig: Partial<GSNConfig>;
 
     let gsnForwarderAddress = '0x0000000000000000000000000000000000000001';
@@ -153,6 +154,9 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
                 const exists = await Owl.exists(mintTokenId);
                 assert.equal(exists, true, 'Token not minted!');
                 expect(await Owl.ownerOf(mintTokenId)).to.equal(signer1.address);
+
+                //verify that the Paymaster mapping for gas spent is working properly
+                expect(await NFTPaymaster.getGasSpent(signer1.address)).is.greaterThan(0);
             }),
         );
 
@@ -182,6 +186,37 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
     });
 
     describe('Caller Reached Mint Limit', () => {
+        it(
+            'gasless mint()',
+            assertBalances(ethers, async () => {
+                // Use this gas pass
+                gasPassToken = tokenId2;
+
+                // first mint is fine
+                await Owl.connect(signer1).mint(signer1.address, 4, { gasLimit: 3e6 });
+                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(1);
+                const exists = await Owl.exists(4);
+                assert.equal(exists, true, 'Token not minted!');
+
+                // second mint is fine
+                await Owl.connect(signer1).mint(signer1.address, 5, { gasLimit: 3e6 });
+                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(2);
+                const exists2 = await Owl.exists(5);
+                assert.equal(exists2, true, 'Token not minted!');
+
+                // third mint is fine
+                await Owl.connect(signer1).mint(signer1.address, 6, { gasLimit: 3e6 });
+                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(3);
+                const exists3 = await Owl.exists(6);
+                assert.equal(exists3, true, 'Token not minted!');
+
+                // fourth mint throws
+                await expectPaymasterThrows(Owl.connect(signer1).mint(signer1.address, 7, { gasLimit: 3e6 }));
+            }),
+        );
+    });
+
+    describe('Caller Reached Gas Limit', () => {
         it(
             'gasless mint()',
             assertBalances(ethers, async () => {
