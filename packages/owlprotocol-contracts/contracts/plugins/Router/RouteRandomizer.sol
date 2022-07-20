@@ -111,8 +111,6 @@ contract RouteRandomizer is PluginsCore, KeeperCompatibleInterface, ERC721Holder
     function requestRouteRandomize(bytes[] memory argsArr) external returns (uint256 requestId, uint256 blockNumber) {
         (requestId, blockNumber) = VRFBeacon(vrfBeacon).requestRandomness();
 
-        console.log(requestId);
-
         elements.push(RouteElement(blockNumber, argsArr));
     }
 

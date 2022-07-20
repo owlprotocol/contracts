@@ -4,14 +4,30 @@ pragma solidity ^0.8.0;
 import '@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol';
 import '@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol';
 import '@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol';
+// import '@openzeppelin/';
 
 import './RandomBeacon.sol';
 
-import 'hardhat/console.sol';
-
+/**
+ * @dev A contract that acts as a central beacon for fetching random numbers
+ * from Chainlink VRF. Multiple requests within an `EPOCH_PERIOD` (as defined by
+ * VRFBeacon deployer) will be coupled into one request to `VRFCoordiantorV2`.
+ * An `EPOCH_PERIOD` is simply a block range.
+ *
+ * Consumers of `VRFBeacon` will use the one random number as a seed to generate
+ * another random number for the contract's own use case.
+ */
 contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
+    /**********************
+             Events
+    **********************/
+
     event Fulfilled(uint256 indexed requestId, uint256 indexed randomNumber);
     event Requested(uint256 indexed requestId);
+
+    /**********************
+             Storage
+    **********************/
 
     VRFCoordinatorV2Interface COORDINATOR;
     bytes32 internal keyHash;
@@ -20,11 +36,14 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
     uint32 callbackGasLimit;
     uint32 numWords = 1;
 
+    // Mapping from blockNumber to requestId
     mapping(uint256 => uint256) public blockNumberToRequestId;
+
+    // Mapping from requestId to random number (0 if not fulfilled yet)
     mapping(uint256 => uint256) public requestIdToRandomness;
 
     /**
-     * Constructor inherits VRFConsumerBase
+     * @dev Constructor inherits VRFConsumerBase
      */
     constructor(
         uint64 _subscriptionId,
@@ -33,7 +52,8 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
         uint32 _callbackGasLimit,
         uint8 _epochPeriod
     ) VRFConsumerBaseV2(_vrf) RandomBeacon(_epochPeriod) {
-        require(_epochPeriod < 100 && _epochPeriod > 3, 'VRFBeaocn: invalid number for _epoch period');
+        require(_epochPeriod < 100 && _epochPeriod > 3, 'VRFBeacon: invalid number for _epoch period');
+
         s_subscriptionId = _subscriptionId;
         COORDINATOR = VRFCoordinatorV2Interface(_vrf);
         keyHash = _keyHash;
@@ -41,21 +61,28 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
         EPOCH_PERIOD = _epochPeriod;
     }
 
-    function getRequestId(uint256 blockNumber) external view returns (uint256) {
+    /**
+     * @param blockNumber in which request was made
+     * @return requestId of the EPOCH_PERIOD that `blockNumber` is in
+     */
+    function getRequestId(uint256 blockNumber) external view returns (uint256 requestId) {
         uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
-        return blockNumberToRequestId[epochBlockNumber];
-    }
-
-    function getRandomness(uint256 blockNumber) external view override returns (uint256) {
-        uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
-        return requestIdToRandomness[blockNumberToRequestId[epochBlockNumber]];
+        requestId = blockNumberToRequestId[epochBlockNumber];
     }
 
     /**
-     * Requests randomness from a block hash
+     * @param blockNumber in which request was made
+     * @return randomness if not fulfilled yet returns 0
+     */
+    function getRandomness(uint256 blockNumber) external view override returns (uint256 randomness) {
+        uint256 epochBlockNumber = blockNumber - (blockNumber % EPOCH_PERIOD);
+        randomness = requestIdToRandomness[blockNumberToRequestId[epochBlockNumber]];
+    }
+
+    /**
+     * @dev Requests randomness from a block hash
      */
     function requestRandomness() public returns (uint256, uint256) {
-        // Max request per EPOCH
         uint256 epochBlockNumber = block.number - (block.number % EPOCH_PERIOD);
 
         uint256 currRequestId = blockNumberToRequestId[epochBlockNumber];
@@ -79,7 +106,7 @@ contract VRFBeacon is VRFConsumerBaseV2, RandomBeacon {
     }
 
     /**
-     * Callback function used by VRF Coordinator
+     * @dev Callback function used by VRF Coordinator
      */
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
         requestIdToRandomness[requestId] = randomWords[0];

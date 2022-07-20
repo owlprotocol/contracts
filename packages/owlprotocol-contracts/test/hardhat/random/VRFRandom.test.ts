@@ -47,7 +47,7 @@ describe('VRFRandom beacon', () => {
                 50000, //gas limit
                 1,
             )
-        ).to.be.revertedWith('VRFBeaocn: invalid number for _epoch period')
+        ).to.be.revertedWith('VRFBeacon: invalid number for _epoch period')
     });
 
     it('full test', async () => {
