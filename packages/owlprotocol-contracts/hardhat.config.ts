@@ -4,6 +4,7 @@
  * @type import('hardhat/config').HardhatUserConfig
  */
 
+import fs from 'fs';
 import { HardhatUserConfig, HardhatNetworkAccountsUserConfig } from 'hardhat/types/config';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-web3';
@@ -25,7 +26,7 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
     paths: {
-        tests: "test/hardhat"
+        tests: 'test/hardhat',
     },
     preprocess: {
         eachLine: removeConsoleLog((hre) => hre.network.name !== 'hardhat' && hre.network.name !== 'localhost'),
