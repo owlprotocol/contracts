@@ -13,7 +13,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const salt = ethers.utils.formatBytes32String('1');
 let NFTOwnershipPaymasterBeaconAddr = '';
-let ERC721Contract: FactoryERC721;
+const acceptableTokenAddr = '0xe21EBCD28d37A67757B9Bc7b290f4C4928A430b1'; //let it be filled in
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (process.env.PROXY_PRIV_KEY === undefined) return;
@@ -33,7 +33,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         beaconProxyAddr,
     )) as BeaconProxyInitializable;
 
-    let acceptableTokenAddr = '';
     const limit = 10;
 
     if (network.name === 'hardhat') {
@@ -43,11 +42,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
             beaconAddr,
             NFTOwnershipPaymasterAddr,
         );
-
-        const { address } = await deployments.get('FactoryERC721');
-        acceptableTokenAddr = address;
-        const { address: address2 } = await deployments.get('FactoryERC721');
-        ERC721Contract = (await ethers.getContractAt('FactoryERC721', address2)) as FactoryERC721;
     }
 
     const NFTOwnershipPaymasterImpl = (await ethers.getContractAt(
@@ -72,9 +66,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const NFTOwnershipPaymasterBPInstAddr = await proxy
         .connect(otherSigner)
         .predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
-
-    if (network.name === 'hardhat')
-        await ERC721Contract.connect(otherSigner).approve(NFTOwnershipPaymasterBPInstAddr, 2);
 
     if ((await web3.eth.getCode(NFTOwnershipPaymasterBPInstAddr)) !== '0x') {
         console.log(`ERC721 beacon proxy already deployed ${network.name} at ${NFTOwnershipPaymasterBPInstAddr}`);

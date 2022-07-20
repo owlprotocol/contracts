@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { burnNonce } from '../../constants';
 
-const address = '0x81b1f0a20a7f74058A916827d3D643cbA6e70b2D';
+const address = '0x9A820a3aE9EA89a5a7953bdAC937242C4E147756';
 const nonceToDeploy = 20;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
