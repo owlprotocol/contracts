@@ -5,7 +5,6 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
 import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
 
 import '../MinterCore.sol';

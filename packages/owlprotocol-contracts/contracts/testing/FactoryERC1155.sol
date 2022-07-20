@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '../OwlBase.sol';
 
 /**
  * @dev **INTERNAL TOOL**
  * Used to factory ERC721 NFTs for unit testing
  */
-contract FactoryERC1155 is BaseRelayRecipient, ERC1155 {
+contract FactoryERC1155 is OwlBase, ERC1155 {
     // ID Tracking
     uint256 lastTokenId = 0;
     uint256 constant defaultTokenMint = 10;
@@ -69,21 +69,30 @@ contract FactoryERC1155 is BaseRelayRecipient, ERC1155 {
 
     // Used for testing ONLY
     function setTrustedForwarder(address forwarder) public {
-        _setTrustedForwarder(forwarder);
+        grantRouter(forwarder);
     }
 
     /**
      * @notice the following 3 functions are all required for OpenGSN integration
      */
-    function _msgSender() internal view override(BaseRelayRecipient, Context) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
+    function _msgSender() internal view override(OwlBase, Context) returns (address sender) {
+        sender = OwlBase._msgSender();
     }
 
-    function _msgData() internal view override(BaseRelayRecipient, Context) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
+    function _msgData() internal view override(OwlBase, Context) returns (bytes calldata) {
+        return OwlBase._msgData();
     }
 
     function versionRecipient() external pure override returns (string memory) {
         return '2.2.6';
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(AccessControlUpgradeable, ERC1155)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 }
