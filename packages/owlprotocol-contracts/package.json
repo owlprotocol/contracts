@@ -53,7 +53,7 @@
         "@opengsn/dev": "^2.2.6",
         "@opengsn/provider": "^2.2.6",
         "@openzeppelin/contracts": "^4.4.2",
-        "@openzeppelin/contracts-upgradeable": "^4.6.0",
+        "@openzeppelin/contracts-upgradeable": "^4.7.0",
         "@openzeppelin/hardhat-upgrades": "^1.17.0",
         "@owlprotocol/contract-helpers-dna-codec": "../../packages/owlprotocol-contract-helpers/dna-codec",
         "@owlprotocol/contract-helpers-opengsn": "../../packages/owlprotocol-contract-helpers/opengsn",
