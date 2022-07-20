@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import '@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol';
 
 import './ERC721Owl.sol';
+import 'hardhat/console.sol';
 
 /**
  * @dev This implementation is an extension of OwlProtocol's base {ERC721Owl}
