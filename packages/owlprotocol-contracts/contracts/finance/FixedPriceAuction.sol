@@ -9,6 +9,8 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
+import '@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol';
+
 import '../OwlBase.sol';
 import './AuctionLib.sol';
 import 'hardhat/console.sol';
@@ -64,7 +66,7 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
      * @param ERC20contractAddress address of ERC20 token accepted as payment
      * @param _price price to start the auction
      * @param _auctionDuration how long the auction should last
-     * @param _saleFee the percentage of the sale to be sent to the original owner as commission
+     * @param _saleFee the percentage of the sale to be sent to the marketplace as commission
      * @param _saleFeeAddress the address to which the sale fee is sent
      * @param _forwarder address for the trusted forwarder for open GSN integration
      */
@@ -185,19 +187,36 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
         require(block.timestamp < startTime + auctionDuration, 'FixedPriceAuction: ended');
         require(!isBought, 'FixedPriceAuction: somebody has already bought this item!');
 
-        isBought = true;
+        uint256 marketplaceCommission = (saleFee * price) / 100;
+        address royaltyReceiver;
+        uint256 royaltyAmount;
 
+        // Marketplace commission
         SafeERC20Upgradeable.safeTransferFrom(
             IERC20Upgradeable(acceptableToken),
             _msgSender(),
             saleFeeAddress,
-            (saleFee * price) / 100
+            marketplaceCommission
         );
+        // Royalty
+        if (IERC165Upgradeable(asset.contractAddr).supportsInterface(type(IERC2981Upgradeable).interfaceId)) {
+            (royaltyReceiver, royaltyAmount) = IERC2981Upgradeable(asset.contractAddr).royaltyInfo(
+                asset.tokenId,
+                price
+            );
+            SafeERC20Upgradeable.safeTransferFrom(
+                IERC20Upgradeable(acceptableToken),
+                _msgSender(),
+                royaltyReceiver,
+                royaltyAmount
+            );
+        }
+        // Transfer remainder to seller
         SafeERC20Upgradeable.safeTransferFrom(
             IERC20Upgradeable(acceptableToken),
             _msgSender(),
             seller,
-            price - (saleFee * price) / 100
+            price - marketplaceCommission - royaltyAmount // Royalty amount defaults to zero if no royalty
         );
 
         // Transfer asset to buyer
@@ -213,6 +232,8 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
                 new bytes(0)
             );
         }
+
+        isBought = true;
 
         emit Buy(_msgSender(), price);
     }

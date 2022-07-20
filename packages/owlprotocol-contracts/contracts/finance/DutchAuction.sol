@@ -9,6 +9,8 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
+import '@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol';
+
 import '../OwlBase.sol';
 
 import '../utils/FractionalExponents.sol';
@@ -67,7 +69,7 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
      * @param _endPrice lowest price that seller is willing to accept
      * @param _auctionDuration duration of auction (in seconds)
      * @param _isNonLinear set true if the seller wants to set a nonlinear decrease in price
-     * @param _saleFee the percentage of the sale to be sent to the original owner as commission
+     * @param _saleFee the percentage of the sale to be sent to the marketplace as commission
      * @param _saleFeeAddress the address to which the sale fee is sent
      * @param _forwarder the address for the Trusted Forwarder for Open GSN integration
      */
@@ -228,20 +230,39 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
         require(!isBought, 'DutchAuction: somebody has already bought this item!');
 
         uint256 bidPrice = getCurrentPrice();
+        uint256 marketplaceCommission = (saleFee * bidPrice) / 100;
+        address royaltyReceiver;
+        uint256 royaltyAmount;
 
+        // Marketplace commission
         SafeERC20Upgradeable.safeTransferFrom(
             IERC20Upgradeable(acceptableToken),
             _msgSender(),
             saleFeeAddress,
-            (saleFee * bidPrice) / 100
+            marketplaceCommission
         );
+        // Royalty
+        if (IERC165Upgradeable(asset.contractAddr).supportsInterface(type(IERC2981Upgradeable).interfaceId)) {
+            (royaltyReceiver, royaltyAmount) = IERC2981Upgradeable(asset.contractAddr).royaltyInfo(
+                asset.tokenId,
+                bidPrice
+            );
+            SafeERC20Upgradeable.safeTransferFrom(
+                IERC20Upgradeable(acceptableToken),
+                _msgSender(),
+                royaltyReceiver,
+                royaltyAmount
+            );
+        }
+        // Transfer remainder to seller
         SafeERC20Upgradeable.safeTransferFrom(
             IERC20Upgradeable(acceptableToken),
             _msgSender(),
             seller,
-            bidPrice - (saleFee * bidPrice) / 100
+            bidPrice - marketplaceCommission - royaltyAmount // Royalty amount is default 0 if not set
         );
 
+        // Transfer asset to buyer
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
         else if (asset.token == AuctionLib.TokenType.erc1155)
