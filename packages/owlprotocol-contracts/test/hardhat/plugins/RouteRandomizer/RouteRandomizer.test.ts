@@ -161,7 +161,7 @@ describe('RouteRandomizer.sol', async () => {
         const ERC721OwlAttributes = await ERC721OwlAttributesFactory.deploy();
         const { address: attributesAddr } = await deployClone(
             ERC721OwlAttributes,
-            [signer1.address, 'n', 's', 'u', forwarder.address],
+            [signer1.address, 'n', 's', 'u', forwarder.address, signer1.address, 0],
             ERC1167Factory,
         );
 

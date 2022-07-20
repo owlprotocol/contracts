@@ -219,6 +219,8 @@ describe('MinterBreeding.sol', function () {
             'owl',
             'abcd',
             '0x' + '0'.repeat(40),
+            owner.address,
+            0
         ]));
         const nft = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
 

@@ -89,7 +89,7 @@ describe('Transformer.sol; genes [2, 4, 6]', () => {
         ERC1167Factory = await ERC1167FactoryFactory.deploy();
         const { address } = await deployClone(
             ERC721OwlAttributes,
-            [adminAddress, 'n', 's', 'u', gsnForwarderAddress],
+            [adminAddress, 'n', 's', 'u', gsnForwarderAddress, adminAddress, 0],
             ERC1167Factory,
             salt,
         );
