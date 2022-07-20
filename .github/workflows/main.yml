@@ -25,7 +25,7 @@ env:
 
 jobs:
   run-coverage:
-    name: Run Tests
+    name: Run Coverage
     # Required to pass env secrets
     environment: test-runners
     runs-on: ubuntu-latest
