@@ -1,0 +1,6 @@
+export default {
+    relayHub: '0x6f00F1A7BdB7E2E407385263B239090bCdb6b442',
+    forwarder: '0x67097a676FCb14dc0Ff337D0D1F564649aD94715',
+    versionRegistry: '0xD8Cf3315FFD1A3ec74Dc2B02908AF60e5E330472',
+    acceptEverythingPaymaster: '0x28E036dB9727a9d5ee9373DBAAe14B422D83a017'
+}

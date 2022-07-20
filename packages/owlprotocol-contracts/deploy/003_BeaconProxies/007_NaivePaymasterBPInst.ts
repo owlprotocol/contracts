@@ -9,11 +9,17 @@ import {
     FactoryERC721,
 } from '../../typechain';
 
+import { getGSNConfig } from '@owlprotocol/contract-helpers-opengsn/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const salt = ethers.utils.formatBytes32String('1');
 let NaivePaymasterBeaconAddr = '';
-let ERC721Contract: FactoryERC721;
+
+const gsnForwarderAddr = '0x' + '0'.repeat(40);
+//should be changed to below this line eventually
+//const gsnForwarderAddr = getGSNConfig(network).forwarder;
+
+const target = '0x' + '0'.repeat(40); //should be set
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (process.env.PROXY_PRIV_KEY === undefined) return;
@@ -35,17 +41,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     if (network.name === 'hardhat') {
         NaivePaymasterBeaconAddr = await getBeaconAddr(proxy, otherSigner, beaconAddr, NaivePaymasterAddr);
-
-        const { address: address2 } = await deployments.get('FactoryERC721');
-        ERC721Contract = (await ethers.getContractAt('FactoryERC721', address2)) as FactoryERC721;
     }
 
     const NaivePaymasterImpl = (await ethers.getContractAt('NaivePaymaster', NaivePaymasterAddr)) as NaivePaymaster;
 
     const NaivePaymasterData = NaivePaymasterImpl.interface.encodeFunctionData('proxyinitialize', [
         other,
-        other,
-        other,
+        target,
+        gsnForwarderAddr,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory
@@ -59,7 +62,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         .connect(otherSigner)
         .predictDeterministicAddress(beaconProxyAddr, salt, beaconProxyData);
 
-    if (network.name === 'hardhat') await ERC721Contract.connect(otherSigner).approve(NaivePaymasterBPInstAddr, 2);
 
     if ((await web3.eth.getCode(NaivePaymasterBPInstAddr)) !== '0x') {
         console.log(`ERC721 beacon proxy already deployed ${network.name} at ${NaivePaymasterBPInstAddr}`);

@@ -3,8 +3,8 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { burnNonce } from '../../constants';
 
-const address = '0x1Fd2b65F7e23abC6f69EAf5ABf8db73e5a73B73b';
-const nonceToDeploy = 19;
+const address = '0x7F78a4ef1FcbF7CdD26380589B26b490387bEc9d';
+const nonceToDeploy = 22;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;

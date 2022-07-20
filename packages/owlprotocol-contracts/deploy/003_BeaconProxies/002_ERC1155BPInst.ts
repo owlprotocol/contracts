@@ -7,6 +7,9 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const salt = ethers.utils.formatBytes32String('1');
 let ERC1155BeaconAddr = ERC1155BeaconInstAddr;
+const gsnForwarderAddr = '0x' + '0'.repeat(40);
+//should be changed to below this line eventually
+//const gsnForwarderAddr = getGSNConfig(network).forwarder;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
@@ -37,6 +40,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu/{id}.json',
         'newContractURI',
+        gsnForwarderAddr,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory
