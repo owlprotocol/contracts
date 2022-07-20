@@ -32,7 +32,7 @@ contract FactoryERC1155 is BaseRelayRecipient, ERC1155 {
     function mintTokens(uint256[] memory amounts) public {
         // Loop and assign tokens
         for (uint256 i = 0; i < amounts.length; i++) {
-            _mint(_msgSender(), ++lastTokenId, amounts[i], new bytes(0));
+            _mint(_msgSender(), lastTokenId++, amounts[i], new bytes(0));
         }
     }
 

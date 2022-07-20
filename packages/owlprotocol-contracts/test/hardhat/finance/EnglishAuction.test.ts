@@ -65,7 +65,6 @@ describe('EnglishAuction.sol No Fee', function () {
 
     describe('Auction Tests with ERC721', () => {
         //define setup
-
         let testNFT: ERC721;
         let acceptableERC20Token: ERC20;
         let EnglishAuctionAddress: string;
@@ -169,7 +168,6 @@ describe('EnglishAuction.sol No Fee', function () {
 
         itNoGSN('simple auction - 1 bidder - Regular', async () => {
             const initialBalance = await ethers.provider.getBalance(bidder1.address);
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -192,7 +190,6 @@ describe('EnglishAuction.sol No Fee', function () {
 
         itGSN('simple auction - 1 bidder - GSN', async () => {
             const initialBalance = await ethers.provider.getBalance(bidder1.address);
-            await auctionGSN.start();
             expect(await testNFT.balanceOf(auctionGSN.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -214,8 +211,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('complex auction - two bidders', async () => {
-            await auction.start();
-
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -255,8 +250,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('error: bid too low', async () => {
-            await auction.start();
-
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -268,7 +261,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('error: bid after auction ends', async () => {
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -284,7 +276,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('error: withdraw as highest bidder before ended', async () => {
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -312,7 +303,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('test reset time', async () => {
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -344,11 +334,11 @@ describe('EnglishAuction.sol No Fee', function () {
 
     describe('Auction Tests with ERC1155', () => {
         //define setup
-
         let testNFT: ERC1155;
         let acceptableERC20Token: ERC20;
         let EnglishAuctionAddress: string;
         let auction: EnglishAuction;
+        let tokenId = 1;
 
         let originalERC20Balance: number;
 
@@ -371,7 +361,7 @@ describe('EnglishAuction.sol No Fee', function () {
                     {
                         token: TokenType.erc1155,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId: tokenId,
                     },
                     acceptableERC20Token.address,
                     2,
@@ -385,7 +375,6 @@ describe('EnglishAuction.sol No Fee', function () {
             );
 
             //Set Approval ERC1155 for sale
-
             await testNFT.connect(seller).setApprovalForAll(EnglishAuctionAddress, true);
             await acceptableERC20Token.connect(bidder1).approve(EnglishAuctionAddress, 100);
             await acceptableERC20Token.connect(bidder2).approve(EnglishAuctionAddress, 100);
@@ -412,7 +401,7 @@ describe('EnglishAuction.sol No Fee', function () {
                     {
                         token: TokenType.erc1155,
                         contractAddr: testNFT.address,
-                        tokenId: 1,
+                        tokenId: tokenId,
                     },
                     acceptableERC20Token.address,
                     2,
@@ -436,7 +425,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('simple auction - 1 bidder', async () => {
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address, 1)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address, 1)).to.equal(99);
 
@@ -456,8 +444,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('complex auction - two bidders', async () => {
-            await auction.start();
-
             expect(await testNFT.balanceOf(auction.address, 1)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address, 1)).to.equal(99);
 
@@ -497,9 +483,13 @@ describe('EnglishAuction.sol No Fee', function () {
             expect(await acceptableERC20Token.balanceOf(bidder3.address)).to.equal(100);
         });
 
-        it('error: bid too low', async () => {
-            await auction.start();
+        it('Owner claims with no bidder', async () => {
+            await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
+            await auction.ownerClaim();
+            expect(await testNFT.balanceOf(seller.address, 0)).to.equal(100);
+        });
 
+        it('error: bid too low', async () => {
             expect(await testNFT.balanceOf(auction.address, 1)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address, 1)).to.equal(99);
 
@@ -511,7 +501,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('error: bid after auction ends', async () => {
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address, 1)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address, 1)).to.equal(99);
 
@@ -527,7 +516,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('error: withdraw as highest bidder before ended', async () => {
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address, 1)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address, 1)).to.equal(99);
 
@@ -555,7 +543,6 @@ describe('EnglishAuction.sol No Fee', function () {
         });
 
         it('test reset time', async () => {
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address, 1)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address, 1)).to.equal(99);
 
@@ -623,7 +610,7 @@ describe('EnglishAuction.sol 20% Fee', function () {
         //define setup
 
         let testNFT: ERC721;
-        const tokenId = 0;
+        let tokenId = 0;
         let acceptableERC20Token: ERC20;
         let EnglishAuctionAddress: string;
         let auction: EnglishAuction;
@@ -678,7 +665,6 @@ describe('EnglishAuction.sol 20% Fee', function () {
             expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(totalERC20Minted.sub(300));
 
             //deploy auction
-
             await deployClone(
                 EnglishAuctionImplementation,
                 [
@@ -720,7 +706,6 @@ describe('EnglishAuction.sol 20% Fee', function () {
         });
 
         it('simple auction - 1 bidder', async () => {
-            await auction.start();
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -741,8 +726,6 @@ describe('EnglishAuction.sol 20% Fee', function () {
         });
 
         it('complex auction - two bidders', async () => {
-            await auction.start();
-
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
@@ -781,6 +764,191 @@ describe('EnglishAuction.sol 20% Fee', function () {
             expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(80);
             expect(await acceptableERC20Token.balanceOf(bidder2.address)).to.equal(100);
             expect(await acceptableERC20Token.balanceOf(bidder3.address)).to.equal(100);
+        });
+
+        it('Owner claims with no bidder', async () => {
+            await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
+            await auction.ownerClaim();
+            expect(await testNFT.ownerOf(0)).to.equal(seller.address);
+        });
+    });
+
+    describe('Initialization revert tests', () => {
+        //define setup
+        let testNFT: ERC721;
+        let tokenId = 0;
+        let acceptableERC20Token: ERC20;
+        let EnglishAuctionAddress: string;
+        let auction: EnglishAuction;
+
+        let originalERC20Balance: number;
+
+        beforeEach(async () => {
+            //Deploy ERC20 and ERC721
+            [acceptableERC20Token] = await createERC20(1); //mints 1,000,000,000 by default
+            [testNFT] = await createERC721(1, 1); //minting one token
+        });
+
+        it('Unsupported token type', async () => {
+            await expect(deployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: 5,
+                        contractAddr: testNFT.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    20,
+                    owner.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('');
+        });
+
+        it('Sale fee over 100', async () => {
+            await expect(deployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    200,
+                    owner.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('EnglishAuction: saleFee cannot be above 100 percent!');
+        });
+    });
+
+    describe('Function revert tests', () => {
+        //define setup
+        let testNFT: ERC721;
+        let tokenId = 0;
+        let acceptableERC20Token: ERC20;
+        let EnglishAuctionAddress: string;
+        let auction: EnglishAuction;
+
+        beforeEach(async () => {
+            //Deploy ERC20 and ERC721
+            [acceptableERC20Token] = await createERC20(1); //mints 1,000,000,000 by default
+            [testNFT] = await createERC721(1, 1); //minting one token
+            //predict deployment address
+            EnglishAuctionAddress = await predictDeployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    0,
+                    owner.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            );
+
+            //Set Approval
+            await testNFT.connect(seller).setApprovalForAll(EnglishAuctionAddress, true);
+
+            //deploy auction
+            await deployClone(
+                EnglishAuctionImplementation,
+                [
+                    //seller address
+                    //NFT
+                    //ERC20 Contract address (acceptable token)
+                    //starting bid
+                    //auction duration
+                    //reset time
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId: tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    2,
+                    86400,
+                    3600,
+                    0,
+                    owner.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            );
+            auction = (await ethers.getContractAt('EnglishAuction', EnglishAuctionAddress)) as EnglishAuction;
+        });
+
+        it('Owner claims when already claimed', async () => {
+            await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
+            await auction.ownerClaim();
+            await expect(auction.ownerClaim()).to.be.revertedWith('EnglishAuction: owner has already claimed');
+        });
+
+        it('Winner claims when auction not ended', async () => {
+            await expect(auction.winnerClaim()).to.be.revertedWith('EnglishAuction: not ended');
+        });
+
+        it('Winner claims when already claimed', async () => {
+            await acceptableERC20Token.connect(seller).approve(auction.address, 999);
+            expect(await auction.getRemainingTime()).to.equal(86399);
+            await (await auction.bid(5));
+            expect(await auction.getCurrentBid()).to.equal(5);
+            await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
+            await auction.winnerClaim();
+            await expect(auction.winnerClaim()).to.be.revertedWith('EnglishAuction: winner has already claimed');
+        });
+        it('Non highest bidder attempts to claim', async () => {
+            await acceptableERC20Token.connect(seller).approve(auction.address, 999);
+            await auction.bid(5);
+            await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
+            await expect(auction.connect(bidder2).winnerClaim()).to.be.revertedWith('EnglishAuction: you are not the winner, you cannot claim!');
         });
     });
 });

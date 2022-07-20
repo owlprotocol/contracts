@@ -11,6 +11,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 
 import '../OwlBase.sol';
 import './AuctionLib.sol';
+import 'hardhat/console.sol';
 
 /*
  * @dev This contract executes a simple fixed price, sell-buy auction.
@@ -144,7 +145,7 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
         address payable _saleFeeAddress
     ) internal onlyInitializing {
         require(_seller != _saleFeeAddress, 'FixedPriceAuction: seller cannot be the same as the owner!');
-        require(saleFee <= 100, 'FixedPriceAuction: sale fee cannot be greater than 100 percent!');
+        require(_saleFee <= 100, 'FixedPriceAuction: sale fee cannot be greater than 100 percent!');
         asset = _asset;
         startTime = block.timestamp;
 
@@ -157,11 +158,11 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
         saleFee = _saleFee;
         saleFeeAddress = _saleFeeAddress;
 
-        //transferring ERC 721 to contract
-        if (_asset.token == AuctionLib.TokenType.erc721)
+        // Transferring ERC721 to contract
+        if (_asset.token == AuctionLib.TokenType.erc721) {
             IERC721Upgradeable(_asset.contractAddr).transferFrom(seller, address(this), _asset.tokenId);
-        else if (_asset.token == AuctionLib.TokenType.erc1155) {
-            //transferring ERC 1155
+        } else if (_asset.token == AuctionLib.TokenType.erc1155) {
+            // Transferring ERC1155
             IERC1155Upgradeable(_asset.contractAddr).safeTransferFrom(
                 seller,
                 address(this),
@@ -169,7 +170,7 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
                 1,
                 new bytes(0)
             );
-        }
+        } else revert('FixedPriceAuction: invalid asset token type');
     }
 
     /**********************
@@ -199,10 +200,11 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
             price - (saleFee * price) / 100
         );
 
-        //transfer asset to buyer
+        // Transfer asset to buyer
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
-        else if (asset.token == AuctionLib.TokenType.erc1155) {
+        else {
+            // Asset token type must be ERC1155 as no revert during initialization
             IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                 address(this),
                 _msgSender(),
@@ -221,16 +223,17 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
      */
     function claim() external onlyRole(DEFAULT_ADMIN_ROLE) {
         //owner withdraws asset if nobody buys
+        require(!isBought, 'FixedPriceAuction: cannot claim when the token has been sold already!');
         require(
             block.timestamp >= startTime + auctionDuration,
             'FixedPriceAuction: cannot claim when auction is ongoing!'
         );
-        require(!isBought, 'FixedPriceAuction: cannot claim when the token has been sold already!');
 
         //transfer asset back to owner
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);
-        else if (asset.token == AuctionLib.TokenType.erc1155) {
+        else {
+            // Asset token type must be ERC1155 as no revert during initialization
             IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                 address(this),
                 seller,
