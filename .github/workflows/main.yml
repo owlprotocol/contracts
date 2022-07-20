@@ -8,9 +8,9 @@ on:
   pull_request: ~
 
 env:
-  PRIV_KEY: {{ secrets.PRIV_KEY }}
-  PROXY_PRIV_KEY: {{ secrets.PROXY_PRIV_KEY }}
-  INFURA_API_KEY: {{ secrets.INFURA_API_KEY }}
+  PRIV_KEY: ${{ secrets.PRIV_KEY }}
+  PROXY_PRIV_KEY: ${{ secrets.PROXY_PRIV_KEY }}
+  INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
 jobs:
   run-coverage:
     name: Run Tests
