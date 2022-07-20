@@ -2,13 +2,14 @@
 pragma solidity ^0.8.9;
 
 import '@opengsn/contracts/src/BasePaymaster.sol';
+import './OwlPaymasterBase.sol';
 
 // accept everything.
 // this paymaster accepts any request.
 //
 // NOTE: Do NOT use this contract on a mainnet: it accepts anything, so anyone can "grief" it and drain its account
 
-contract AcceptEverythingPaymaster is BasePaymaster {
+contract AcceptEverythingPaymaster is OwlPaymasterBase {
     function versionPaymaster() external view virtual override returns (string memory) {
         return '2.2.0+opengsn.accepteverything.ipaymaster';
     }
