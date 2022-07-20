@@ -26,6 +26,8 @@ env:
 jobs:
   run-coverage:
     name: Run Tests
+    # Required to pass env secrets
+    environment: test-runners
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
