@@ -7,3 +7,6 @@
 [submodule "packages/owlprotocol-contracts/lib/openzeppelin-contracts-upgradeable"]
 	path = packages/owlprotocol-contracts/lib/openzeppelin-contracts-upgradeable
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
+[submodule "packages/owlprotocol-contracts/lib/chainlink"]
+	path = packages/owlprotocol-contracts/lib/chainlink
+	url = https://github.com/smartcontractkit/chainlink
