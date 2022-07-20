@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/**
+ @dev Random beacon interface
+ */
 interface IRandomBeacon {
     event Update(uint256 blockNumber, uint256 value);
 
