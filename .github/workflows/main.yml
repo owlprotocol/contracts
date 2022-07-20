@@ -11,6 +11,18 @@ env:
   PRIV_KEY: ${{ secrets.PRIV_KEY }}
   PROXY_PRIV_KEY: ${{ secrets.PROXY_PRIV_KEY }}
   INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
+  MOONBEAM_API_KEY: ${{ secrets.MOONBEAM_API_KEY }}
+  MOONRIVER_API_KEY: ${{ secrets.MOONRIVER_API_KEY }}
+  AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+  FANTOM_API_KEY: ${{ secrets.FANTOM_API_KEY }}
+  AVAX_API_KEY: ${{ secrets.AVAX_API_KEY }}
+  OPTIMISM_API_KEY: ${{ secrets.OPTIMISM_API_KEY }}
+  ARBITRUM_API_KEY: ${{ secrets.ARBITRUM_API_KEY }}
+  BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+  POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+  MAINNET_API_KEY: ${{ secrets.MAINNET_API_KEY }}
+  OTHER_PRIV_KEY: ${{ secrets.OTHER_PRIV_KEY }}
+
 jobs:
   run-coverage:
     name: Run Tests
