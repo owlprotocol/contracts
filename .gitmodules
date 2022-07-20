@@ -10,3 +10,6 @@
 [submodule "packages/owlprotocol-contracts/lib/chainlink"]
 	path = packages/owlprotocol-contracts/lib/chainlink
 	url = https://github.com/smartcontractkit/chainlink
+[submodule "packages/owlprotocol-contracts/lib/gsn"]
+	path = packages/owlprotocol-contracts/lib/gsn
+	url = https://github.com/opengsn/gsn
