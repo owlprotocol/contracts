@@ -37,6 +37,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         'CryptoOwls',
         'OWL',
         'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
+        other,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory

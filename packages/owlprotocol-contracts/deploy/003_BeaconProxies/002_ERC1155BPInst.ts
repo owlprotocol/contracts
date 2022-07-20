@@ -37,6 +37,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu/{id}.json',
         'newContractURI',
+        other,
     ]);
 
     //Deploy BeaconProxy Instance with ProxyFactory
