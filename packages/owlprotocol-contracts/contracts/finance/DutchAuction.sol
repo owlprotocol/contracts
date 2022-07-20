@@ -191,12 +191,8 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
     }
 
     /**********************
-         Interaction
+            Getters
     **********************/
-
-    /**
-    Getters
-    */
 
     /**
      * @dev Returns the current price of the asset based on the timestamp and type of function
@@ -218,6 +214,10 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
             startPrice -
             (((1e18 * (block.timestamp - startTime)) / (auctionDuration)) * ((startPrice - endPrice))));
     }
+
+    /**********************
+         Interaction
+    **********************/
 
     /**
      * @notice The required ERC20 tokens must be pre-approved before calling!

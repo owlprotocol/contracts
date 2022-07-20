@@ -34,12 +34,12 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
     }
 
     /**
-     * @dev Initializes contract (replaces constructor in proxy pattern)
-     * @param _admin owner
-     * @param _name name
-     * @param _symbol symbol
-     * @param baseURI_ uri
-     * @param _forwarder trusted forwarder address for openGSN
+     * @dev Initializes an ERC721Owl contract
+     * @param _admin admin for contract
+     * @param _name name for contract
+     * @param _symbol symbol for contract
+     * @param baseURI_ base URI for contract
+     * @param _forwarder address for trusted forwarder for open GSN
      */
     function initialize(
         address _admin,
