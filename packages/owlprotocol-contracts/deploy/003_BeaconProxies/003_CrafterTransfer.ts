@@ -20,6 +20,10 @@ let ERC721BeaconAddr = ERC721BeaconInstAddr;
 let ERC1155BeaconAddr = ERC1155BeaconInstAddr;
 let crafterTransferBeaconAddr = crafterTransferBeaconInstAddr;
 
+const gsnForwarderAddr = '0x' + '0'.repeat(40);
+//should be changed to below this line eventually
+//const gsnForwarderAddr = getGSNConfig(network).forwarder;
+
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
 
@@ -69,7 +73,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         'CryptoOwls',
         'OWL',
         'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
-        other,
+        gsnForwarderAddr,
     ]);
     const ERC721BeaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
         other,
@@ -88,7 +92,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         'ipfs://QmaWCmXshn6Tk81hpape3kCvTgpjkTQAnDamVuHeY46Tnu/{id}.json',
         'newContractURI',
-        other,
+        gsnForwarderAddr,
     ]);
     const ERC1155BeaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
         other,
@@ -125,7 +129,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
                 tokenIds: [],
             },
         ],
-        other,
+        gsnForwarderAddr,
     ]);
 
     const beaconProxyData = beaconProxy.interface.encodeFunctionData('initialize', [
