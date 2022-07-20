@@ -37,7 +37,6 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
 
     address payable public seller;
     address payable public saleFeeAddress;
-    bool public started;
     bool public ownerClaimed;
     bool public winnerClaimed;
 
@@ -166,11 +165,11 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
         saleFee = _saleFee;
         saleFeeAddress = _saleFeeAddress;
 
-        //transferring ERC 721
+        // Transferring ERC721
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).transferFrom(seller, address(this), asset.tokenId);
         else if (asset.token == AuctionLib.TokenType.erc1155)
-            //transferring ERC 1155
+            // Transferring ERC1155
             IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                 seller,
                 address(this),
@@ -178,32 +177,19 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
                 1,
                 new bytes(0)
             );
+        else revert();
+
+        endAt = block.timestamp + _auctionDuration * 1 seconds;
     }
 
     /**********************
          Interaction
     **********************/
-
-    /**
-     * @notice Must be called by owner!
-     * @dev Allows the owner to start the auction
-     * this function also defines the starting endAt time based on auctionDuration
-     */
-    function start() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(!started, 'EnglishAuction: started');
-
-        started = true;
-        endAt = block.timestamp + auctionDuration * 1 seconds;
-
-        emit Start(block.timestamp);
-    }
-
     /**
      * @dev Allow a user to place a bid that must be higher than the highest bid
      * @param amount to bid by the bidder
      */
     function bid(uint256 amount) external {
-        require(started, 'EnglishAuction: not started');
         require(block.timestamp < endAt, 'EnglishAuction: ended');
         require(amount > bids[highestBidder], 'EnglishAuction: value <= highest');
 
@@ -229,7 +215,7 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
      * @dev Allows a user to withdraw their bid.
      */
     function withdraw() external {
-        //added from parameter as above
+        // Added from parameter as above
         require(_msgSender() != highestBidder, 'EnglishAuction: the highest bidder cannot withdraw!');
 
         uint256 bal = bids[_msgSender()];
@@ -245,7 +231,6 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
      * The seller must call to transfer the ERC20 to themselves
      */
     function ownerClaim() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(started, 'EnglishAuction: not started');
         require(block.timestamp >= endAt, 'EnglishAuction: not ended');
         require(!ownerClaimed, 'EnglishAuction: owner has already claimed');
 
@@ -260,7 +245,8 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
         } else {
             if (asset.token == AuctionLib.TokenType.erc721)
                 IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);
-            else if (asset.token == AuctionLib.TokenType.erc1155)
+            else {
+                // Asset token type is 1155 as initialization did not revert
                 IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                     address(this),
                     seller,
@@ -268,6 +254,7 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
                     1,
                     new bytes(0)
                 );
+            }
         }
     }
 
@@ -275,14 +262,15 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
      * @dev Allows auction winner to claim the asset they won and transfers ownership
      */
     function winnerClaim() external {
-        require(started, 'EnglishAuction: not started');
         require(block.timestamp >= endAt, 'EnglishAuction: not ended');
         require(!winnerClaimed, 'EnglishAuction: winner has already claimed');
         require(_msgSender() == highestBidder, 'EnglishAuction: you are not the winner, you cannot claim!'); //highestBidder at end is the winning address
 
+        winnerClaimed = true;
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), highestBidder, asset.tokenId);
-        else if (asset.token == AuctionLib.TokenType.erc1155)
+        else {
+            // Asset token type is 1155 as initialization did not revert
             IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                 address(this),
                 highestBidder,
@@ -290,6 +278,7 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
                 1,
                 new bytes(0)
             );
+        }
     }
 
     /**
