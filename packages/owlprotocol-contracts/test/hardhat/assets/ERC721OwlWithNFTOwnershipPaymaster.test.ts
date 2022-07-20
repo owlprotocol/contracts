@@ -139,7 +139,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         await Owl.connect(await ethers.getSigner(signer1.address)).grantMinter(signer3.address);
     });
 
-    describe('Caller Approved', () => {
+    describeGSN('Caller Approved', () => {
         it(
             'gasless mint()',
             assertBalances(ethers, async () => {
@@ -181,7 +181,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         );
     });
 
-    describe('Caller Reached Mint Limit', () => {
+    describeGSN('Caller Reached Mint Limit', () => {
         it(
             'gasless mint()',
             assertBalances(ethers, async () => {
@@ -212,7 +212,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         );
     });
 
-    describe('Caller Not Approved', () => {
+    describeGSN('Caller Not Approved', () => {
         it(
             'paymaster rejects',
             assertBalances(ethers, async () => {
