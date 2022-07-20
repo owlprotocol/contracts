@@ -7,18 +7,33 @@ on:
       - develop
   pull_request: ~
 
-env: 
-  PRIV_KEY: f40d99a142302f3ee15ba30339fb30dd0e5073dfa49f449f02982e68915562fa
-  PROXY_PRIV_KEY: 4688f661095f699be837a99b5c857a99b51a8659ee87b3f9a1f04d244df763ba
+env:
+  PRIV_KEY: ${{ secrets.PRIV_KEY }}
+  PROXY_PRIV_KEY: ${{ secrets.PROXY_PRIV_KEY }}
+  INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
+  MOONBEAM_API_KEY: ${{ secrets.MOONBEAM_API_KEY }}
+  MOONRIVER_API_KEY: ${{ secrets.MOONRIVER_API_KEY }}
+  AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+  FANTOM_API_KEY: ${{ secrets.FANTOM_API_KEY }}
+  AVAX_API_KEY: ${{ secrets.AVAX_API_KEY }}
+  OPTIMISM_API_KEY: ${{ secrets.OPTIMISM_API_KEY }}
+  ARBITRUM_API_KEY: ${{ secrets.ARBITRUM_API_KEY }}
+  BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+  POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+  MAINNET_API_KEY: ${{ secrets.MAINNET_API_KEY }}
+  OTHER_PRIV_KEY: ${{ secrets.OTHER_PRIV_KEY }}
+
 jobs:
-  run-tests:
+  run-coverage:
     name: Run Tests
+    # Required to pass env secrets
+    environment: test-runners
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: "14.19"
+          node-version: "16.16"
       # PNPM Cache
       - run: npm i --global pnpm
       - name: Cache pnpm store
@@ -34,4 +49,28 @@ jobs:
       # Install
       - run: pnpm i
       - run: pnpm run build
-      - run: npm run test
+      - run: pnpm run coverage
+  # run-tests:
+  #   name: Run Tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-node@v1
+  #       with:
+  #         node-version: "16.16"
+  #     # PNPM Cache
+  #     - run: npm i --global pnpm
+  #     - name: Cache pnpm store
+  #       uses: actions/cache@v2
+  #       env:
+  #         cache-name: cache-pnpm-store
+  #       with:
+  #         path: ~/.pnpm-store/
+  #         key: ${{ runner.os }}-build-${{ env.cache-name }}
+  #     # Set login for package registries
+  #     - run: npm set //registry.npmjs.org/:_authToken=${{secrets.NPMJS_TOKEN}}
+  #     - run: npm set //npm.pkg.github.com/:_authToken=${{secrets.GPR_TOKEN}}
+  #     # Install
+  #     - run: pnpm i
+  #     - run: pnpm run build
+  #     - run: npm run test
