@@ -32,7 +32,7 @@ enum TokenType {
 
 describe('CrafterTransfer.sol burn', function () {
     // Extra time
-    this.timeout(10000);
+    this.timeout(100000);
 
     let owner: TestingSigner;
 

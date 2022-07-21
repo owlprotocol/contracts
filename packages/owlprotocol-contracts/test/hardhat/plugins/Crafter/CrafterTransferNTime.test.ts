@@ -39,7 +39,7 @@ enum TokenType {
 
 describe('CrafterTransfer.sol NTime', function () {
     // Extra time
-    this.timeout(10000);
+    this.timeout(100000);
 
     let owner: TestingSigner;
 

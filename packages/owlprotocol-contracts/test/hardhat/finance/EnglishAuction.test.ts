@@ -583,7 +583,7 @@ describe('EnglishAuction.sol No Fee', function () {
 
 describe('EnglishAuction.sol 20% Fee', function () {
     //Extra time
-    this.timeout(10000);
+    this.timeout(100000);
     let seller: TestingSigner;
     let bidder1: TestingSigner;
     let bidder2: TestingSigner;
