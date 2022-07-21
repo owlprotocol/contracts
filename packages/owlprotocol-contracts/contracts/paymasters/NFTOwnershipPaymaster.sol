@@ -98,7 +98,9 @@ contract NFTOwnershipPaymaster is OwlPaymasterBase {
 
         uint256 tokenId = abi.decode(approvalData, (uint256));
 
-        require(gasSpent[payer] <= gasLimit, 'User reached gas limit');
+        uint256 gas = relayRequest.request.gas;
+
+        require((gasSpent[payer] + gas) <= gasLimit, 'User reached gas limit');
 
         require(numTimes[tokenId] < limit, 'TokenId reached minting limit');
         numTimes[tokenId]++;
