@@ -39,6 +39,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     )) as BeaconProxyInitializable;
 
     const limit = 10;
+    const gasLimit = 500000000;
 
     if (network.name === 'hardhat') {
         NFTOwnershipPaymasterBeaconAddr = await getBeaconAddr(
@@ -58,6 +59,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         acceptableTokenAddr,
         limit,
+        gasLimit,
         gsnForwarderAddr,
     ]);
 
