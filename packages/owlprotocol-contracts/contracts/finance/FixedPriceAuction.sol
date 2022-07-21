@@ -163,8 +163,8 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
         // Transferring ERC721 to contract
         if (_asset.token == AuctionLib.TokenType.erc721) {
             IERC721Upgradeable(_asset.contractAddr).transferFrom(seller, address(this), _asset.tokenId);
-        } else if (_asset.token == AuctionLib.TokenType.erc1155) {
-            // Transferring ERC1155
+        } else {
+            // Solidity enforces TokenType will be 721 or 1155
             IERC1155Upgradeable(_asset.contractAddr).safeTransferFrom(
                 seller,
                 address(this),
@@ -172,7 +172,7 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
                 1,
                 new bytes(0)
             );
-        } else revert('FixedPriceAuction: invalid asset token type');
+        }
     }
 
     /**********************

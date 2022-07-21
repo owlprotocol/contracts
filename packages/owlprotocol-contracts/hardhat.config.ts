@@ -74,6 +74,10 @@ const config: HardhatUserConfig = {
                     balance: '10000000000000000000000',
                     privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(3), 32),
                 },
+                {
+                    balance: '10000000000000000000000',
+                    privateKey: ethers.utils.hexZeroPad(ethers.utils.hexlify(4), 32),
+                },
             ],
         },
         local: {

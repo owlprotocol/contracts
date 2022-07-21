@@ -20,6 +20,15 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable, ERC2981Upgradeable {
         _disableInitializers();
     }
 
+    /**
+     * @dev Initializes an ERC721Owl contract
+     * @param _admin admin for contract
+     * @param uri_ uri for contract
+     * @param newContractURI new uri for contract
+     * @param _forwarder address for trusted forwarder for open GSN
+     * @param _receiver address of receiver of royalty fees
+     * @param _feeNumerator numerator of royalty fee percentage (numerator / 100)
+     */
     function initialize(
         address _admin,
         string calldata uri_,
@@ -151,8 +160,16 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable, ERC2981Upgradeable {
         uint256 tokenId,
         address receiver,
         uint96 feeNumerator
-    ) external {
+    ) external onlyRole(ROYALTY_ROLE) {
         _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    /**
+     * @dev The denominator with which to interpret the fee set in {_setTokenRoyalty} and {_setDefaultRoyalty} as a
+     * fraction of the sale price. Overrides definition in ERC2981Upgradeable.
+     */
+    function _feeDenominator() internal pure override returns (uint96) {
+        return 100;
     }
 
     /**

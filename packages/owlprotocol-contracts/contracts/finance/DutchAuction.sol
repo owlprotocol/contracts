@@ -164,6 +164,9 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
         address payable _saleFeeAddress
     ) internal onlyInitializing {
         require(_startPrice > _endPrice, 'DutchAuction: start price must be greater than end price');
+        require(_saleFee <= 100, 'DutchAuction: sale fee cannot be greater than 100 percent!'); // TODO: May want to look into optimizing this so that it takes into account the royalty fee
+        require(_saleFeeAddress != _seller, 'DutchAuction: seller cannot be the same as the owner!');
+
         asset = _asset;
 
         acceptableToken = ERC20contractAddress;
@@ -180,8 +183,8 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
         //transferring ERC 721
         if (_asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(_asset.contractAddr).transferFrom(seller, address(this), _asset.tokenId);
-        else if (_asset.token == AuctionLib.TokenType.erc1155)
-            //transferring ERC 1155
+        else {
+            // Solidity enforces TokenType will be 721 or 1155
             IERC1155Upgradeable(_asset.contractAddr).safeTransferFrom(
                 seller,
                 address(this),
@@ -189,6 +192,8 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
                 1,
                 new bytes(0)
             );
+        }
+
         startTime = block.timestamp;
     }
 
@@ -265,7 +270,8 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
         // Transfer asset to buyer
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), _msgSender(), asset.tokenId);
-        else if (asset.token == AuctionLib.TokenType.erc1155)
+        else {
+            // Asset token type is 1155 as initialization did not revert
             IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                 address(this),
                 _msgSender(),
@@ -273,6 +279,7 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
                 1,
                 new bytes(0)
             );
+        }
 
         isBought = true;
 
@@ -285,10 +292,12 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
     function claim() external onlyRole(DEFAULT_ADMIN_ROLE) {
         //owner withdraws asset if nobody bids
         require(block.timestamp >= startTime + auctionDuration, 'DutchAuction: cannot claim when auction is ongoing!');
+        require(!isBought, 'DutchAuction: you cannot claim when the the asset was already sold!');
 
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).safeTransferFrom(address(this), seller, asset.tokenId);
-        else if (asset.token == AuctionLib.TokenType.erc1155)
+        else {
+            // Asset token type is 1155 as initialization did not revert
             IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                 address(this),
                 seller,
@@ -296,7 +305,7 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
                 1,
                 new bytes(0)
             );
-
+        }
         emit Claim(seller, asset.contractAddr, asset.tokenId);
     }
 

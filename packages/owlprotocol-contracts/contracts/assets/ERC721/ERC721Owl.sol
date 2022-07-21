@@ -43,7 +43,7 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable, ERC2981Upgradeable {
      * @param baseURI_ base URI for contract
      * @param _forwarder address for trusted forwarder for open GSN
      * @param _receiver address of receiver of royalty fees
-     * @param _feeNumerator numerator of fee proportion (numerator / 10000)
+     * @param _feeNumerator numerator of royalty fee percentage (numerator / 100)
      */
     function initialize(
         address _admin,
@@ -88,6 +88,7 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable, ERC2981Upgradeable {
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
         _grantRole(ROYALTY_ROLE, _admin);
+
         _setDefaultRoyalty(_receiver, _feeNumerator);
 
         __ERC721Owl_init_unchained(baseURI_);
@@ -177,8 +178,16 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable, ERC2981Upgradeable {
         uint256 tokenId,
         address receiver,
         uint96 feeNumerator
-    ) external {
+    ) external onlyRole(ROYALTY_ROLE) {
         _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    /**
+     * @dev The denominator with which to interpret the fee set in {_setTokenRoyalty} and {_setDefaultRoyalty} as a
+     * fraction of the sale price. Overrides definition in ERC2981Upgradeable.
+     */
+    function _feeDenominator() internal pure override returns (uint96) {
+        return 100;
     }
 
     /**

@@ -13,6 +13,7 @@ import '@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol'
 
 import '../OwlBase.sol';
 import './AuctionLib.sol';
+import 'hardhat/console.sol';
 
 /**
  * @dev This contract is a standard English Auction smart contract that allows
@@ -172,8 +173,8 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
         // Transferring ERC721
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).transferFrom(seller, address(this), asset.tokenId);
-        else if (asset.token == AuctionLib.TokenType.erc1155)
-            // Transferring ERC1155
+        else {
+            // Solidity enforces TokenType will be 721 or 1155
             IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                 seller,
                 address(this),
@@ -181,7 +182,7 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
                 1,
                 new bytes(0)
             );
-        else revert();
+        }
 
         endAt = block.timestamp + _auctionDuration * 1 seconds;
     }
