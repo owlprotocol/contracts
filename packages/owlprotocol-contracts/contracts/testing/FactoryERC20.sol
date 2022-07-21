@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@opengsn/contracts/src/BaseRelayRecipient.sol';
+import '../OwlBase.sol';
 
 /**
  * @dev **INTERNAL TOOL**
  * Used to factory ERC20 coins for unit testing
  */
-contract FactoryERC20 is BaseRelayRecipient, ERC20 {
+contract FactoryERC20 is OwlBase, ERC20 {
     /**
      * @dev Creates ERC20 token
      * @param mintAmount how much should be minted and given to `msg.sender`.
@@ -26,18 +26,18 @@ contract FactoryERC20 is BaseRelayRecipient, ERC20 {
 
     // Used for testing ONLY
     function setTrustedForwarder(address forwarder) public {
-        _setTrustedForwarder(forwarder);
+        grantRouter(forwarder);
     }
 
     /**
      * @notice the following 3 functions are all required for OpenGSN integration
      */
-    function _msgSender() internal view override(BaseRelayRecipient, Context) returns (address sender) {
-        sender = BaseRelayRecipient._msgSender();
+    function _msgSender() internal view override(OwlBase, Context) returns (address sender) {
+        sender = OwlBase._msgSender();
     }
 
-    function _msgData() internal view override(BaseRelayRecipient, Context) returns (bytes calldata) {
-        return BaseRelayRecipient._msgData();
+    function _msgData() internal view override(OwlBase, Context) returns (bytes calldata) {
+        return OwlBase._msgData();
     }
 
     function versionRecipient() external pure override returns (string memory) {
