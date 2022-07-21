@@ -1,4 +1,5 @@
 import { ethers, network } from 'hardhat';
+import { increaseTo, increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 const { utils } = ethers;
 const { parseUnits } = utils;
 import { expect, assert } from 'chai';
@@ -566,11 +567,9 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
-            await network.provider.send('evm_increaseTime', [23]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(23);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('93.100000000000000060', 18)); // known to fail/deviate occassionally
-            await network.provider.send('evm_increaseTime', [25]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(25);
 
             const sellerBalance = await acceptableERC20Token.balanceOf(seller.address);
             const tx1 = await auction.connect(bidder1).bid();
@@ -598,11 +597,9 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
-            await network.provider.send('evm_increaseTime', [23]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(23);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('93.100000000000000060', 18)); // known to fail/deviate occassionally
-            await network.provider.send('evm_increaseTime', [25]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(25);
 
             const sellerBalance = await acceptableERC20Token.balanceOf(seller.address);
             const tx1 = await auction.connect(bidder1).bid();
@@ -630,8 +627,7 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
-            await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(300);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await auction.claim();
 
@@ -645,8 +641,7 @@ describe('DutchAuction.sol No Fees', function () {
         });
 
         it('error: bid after auction ends', async () => {
-            await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(300);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
@@ -823,11 +818,9 @@ describe('DutchAuction.sol No Fees', function () {
 
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
 
-            await network.provider.send('evm_increaseTime', [23]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(23);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('99.583401815135389380', 18)); // known to fail/deviate occassionally
-            await network.provider.send('evm_increaseTime', [25]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(25);
 
             const sellerBalance = await acceptableERC20Token.balanceOf(seller.address);
             const tx2 = await auction.connect(bidder1).bid();
@@ -851,11 +844,9 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await testNFT.balanceOf(auction.address)).to.equal(1);
             expect(await testNFT.balanceOf(seller.address)).to.equal(0);
 
-            await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(300);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
-            await network.provider.send('evm_increaseTime', [1]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(1);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await auction.claim();
 
@@ -864,8 +855,7 @@ describe('DutchAuction.sol No Fees', function () {
         });
 
         it('error: bid after auction ends', async () => {
-            await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
-            await network.provider.send('evm_mine');
+            await increase(300);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
@@ -1003,11 +993,9 @@ describe('DutchAuction.sol No Fees', function () {
                 expect(await test1155.balanceOf(seller.address, 1)).to.equal(99);
 
                 expect(await auction.getCurrentPrice()).to.equal(parseUnits('100.0', 18));
-                await network.provider.send('evm_increaseTime', [23]); //advance timestamp in seconds
-                await network.provider.send('evm_mine');
+                await increase(23);
                 expect(await auction.getCurrentPrice()).to.equal(parseUnits('93.100000000000000060', 18));
-                await network.provider.send('evm_increaseTime', [25]); //advance timestamp in seconds
-                await network.provider.send('evm_mine');
+                await increase(25);
 
                 const sellerBalance = await acceptableERC20Token.balanceOf(seller.address);
                 const tx1 = await auction.connect(bidder1).bid();
@@ -1029,8 +1017,7 @@ describe('DutchAuction.sol No Fees', function () {
                 expect(await test1155.balanceOf(auction.address, 1)).to.equal(1);
                 expect(await test1155.balanceOf(seller.address, 1)).to.equal(99);
 
-                await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
-                await network.provider.send('evm_mine');
+                await increase(300);
                 expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
                 await auction.claim();
 
@@ -1039,8 +1026,7 @@ describe('DutchAuction.sol No Fees', function () {
             });
 
             it('error: bid after auction ends', async () => {
-                await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
-                await network.provider.send('evm_mine');
+                await increase(300);
                 expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
                 await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
             });
@@ -1048,7 +1034,7 @@ describe('DutchAuction.sol No Fees', function () {
     });
 });
 
-describe.skip('TODO - IM BROKEN PLEASE FIX ME -------- HELLLLPPPPPPPPP - DutchAuction.sol 10% Fees', function () {
+describe('DutchAuction.sol 10% Fees', function () {
     //Extra time
     this.timeout(100000);
     let seller: TestingSigner;
@@ -1174,9 +1160,9 @@ describe.skip('TODO - IM BROKEN PLEASE FIX ME -------- HELLLLPPPPPPPPP - DutchAu
 
             //assert initial token amounts
             originalERC20Balance = parseUnits('1000000000.0', 18);
-            expect(await testNFT.balanceOf(seller.address)).to.equal(0);
-            expect(await testNFT.balanceOf(DutchAuctionAddress)).to.equal(1);
-            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(originalERC20Balance);
+            expect(await testNFT.balanceOf(seller.address), 'seller has NFTs').to.equal(0);
+            expect(await testNFT.balanceOf(DutchAuctionAddress), 'dutch auction does NOT have NFT').to.equal(1);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address), 'bidder has no bal').to.equal(originalERC20Balance);
         });
 
         it('test', async () => {
@@ -1241,12 +1227,10 @@ describe.skip('TODO - IM BROKEN PLEASE FIX ME -------- HELLLLPPPPPPPPP - DutchAu
             const blockNumBefore = await ethers.provider.getBlockNumber();
             const blockBefore = await ethers.provider.getBlock(blockNumBefore);
             const timestampBefore = blockBefore.timestamp;
-            console.log(timestampBefore);
 
             const blockNumBefore2 = await ethers.provider.getBlockNumber();
             const blockBefore2 = await ethers.provider.getBlock(blockNumBefore2);
             const timestampBefore2 = blockBefore2.timestamp;
-            console.log(timestampBefore2);
         });
 
         it('simple auction - 1 bidder', async () => {

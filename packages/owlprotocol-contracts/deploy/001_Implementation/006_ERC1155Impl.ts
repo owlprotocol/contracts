@@ -3,8 +3,8 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { burnNonce } from '../../constants';
 
-const address = '0x70d466e7a8D285e894783EDEeb559FF45ba3Eec4';
-const nonceToDeploy = 18;
+const address = '0x000F22F98A6a68E80F7456d75F409CD7359F9cB3';
+const nonceToDeploy = 21;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
@@ -15,7 +15,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if ((await web3.eth.getCode(address)) != '0x')
         return console.log(`already deployed on ${network.name} at ${address}`);
 
-    if (network.name === 'hardhat') await burnNonce(deployer, nonceToDeploy);
+    if (network.name === 'hardhat' || network.name == 'localhost') await burnNonce(deployer, nonceToDeploy);
     if ((await web3.eth.getTransactionCount(deployer)) != nonceToDeploy)
         return console.log(`wrong nonce ${nonce}; required ${nonceToDeploy}`);
 

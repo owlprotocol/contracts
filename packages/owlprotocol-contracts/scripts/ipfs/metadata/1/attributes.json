@@ -1,0 +1,24 @@
+{
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "Swamp"
+        },
+        {
+            "trait_type": "Fur",
+            "value": "Death Bot"
+        },
+        {
+            "trait_type": "Back",
+            "value": "Blue Pack"
+        },
+        {
+            "trait_type": "Mouth",
+            "value": "Foaming"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "Mystic Eye"
+        }
+    ]
+}

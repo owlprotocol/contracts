@@ -20,7 +20,7 @@ import { BigNumber } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
 import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEnvironment';
 
-describe('Rent.sol', function () {
+describe.skip('Rent.sol', function () {
     //Extra time
     this.timeout(10000);
     let admin: SignerWithAddress;

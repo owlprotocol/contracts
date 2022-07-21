@@ -71,7 +71,7 @@ describe('Lootbox.sol', () => {
                 {
                     forking: {
                         jsonRpcUrl: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-                        epochBlockNumber: 11046840,
+                        epochBlockNumber: 11062380,
                     },
                 },
             ],
