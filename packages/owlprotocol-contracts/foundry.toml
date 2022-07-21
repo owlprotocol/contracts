@@ -11,4 +11,7 @@ remappings = [
     'truffle/=node_modules/truffle/',
 ]
 
+[profile.default.rpc_endpoints]
+rinkeby = 'https://rinkeby.infura.io/v3/${INFURA_API_KEY}'
+
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
