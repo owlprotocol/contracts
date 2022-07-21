@@ -216,37 +216,6 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         );
     });
 
-    describe('Caller Reached Gas Limit', () => {
-        it(
-            'gasless mint()',
-            assertBalances(ethers, async () => {
-                // Use this gas pass
-                gasPassToken = tokenId2;
-
-                // first mint is fine
-                await Owl.connect(signer1).mint(signer1.address, 4, { gasLimit: 3e6 });
-                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(1);
-                const exists = await Owl.exists(4);
-                assert.equal(exists, true, 'Token not minted!');
-
-                // second mint is fine
-                await Owl.connect(signer1).mint(signer1.address, 5, { gasLimit: 3e6 });
-                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(2);
-                const exists2 = await Owl.exists(5);
-                assert.equal(exists2, true, 'Token not minted!');
-
-                // third mint is fine
-                await Owl.connect(signer1).mint(signer1.address, 6, { gasLimit: 3e6 });
-                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(3);
-                const exists3 = await Owl.exists(6);
-                assert.equal(exists3, true, 'Token not minted!');
-
-                // fourth mint throws
-                await expectPaymasterThrows(Owl.connect(signer1).mint(signer1.address, 7, { gasLimit: 3e6 }));
-            }),
-        );
-    });
-
     describe('Caller Not Approved', () => {
         it(
             'paymaster rejects',
@@ -257,6 +226,56 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
                 const mintTokenId = 8;
                 const mintCall = Owl.connect(signer2).mint(signer2.address, mintTokenId, { gasLimit: 3e6 });
                 await expectPaymasterThrows(mintCall);
+            }),
+        );
+    });
+
+    describe('Caller Reached Gas Limit', () => {
+        it(
+            'gasless mint()',
+            assertBalances(ethers, async () => {
+                // Use this gas pass
+                gasPassToken = 2;
+                const mintTokenId = 4;
+
+                // Fails
+                const mintCall = Owl.connect(signer2).mint(signer2.address, mintTokenId, { gasLimit: 3e6 });
+                await expectPaymasterThrows(mintCall);
+                // Transfer special nft
+                await testNFT.connect(signer1).transferFrom(signer1.address, signer2.address, gasPassToken);
+                expect(await testNFT.ownerOf(gasPassToken)).equals(signer2.address);
+
+                // first mint is fine
+                await Owl.connect(signer2).mint(signer1.address, 4, { gasLimit: 3e6 });
+                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(1);
+                const exists = await Owl.exists(4);
+                assert.equal(exists, true, 'Token not minted!');
+
+                //verify that the Paymaster mapping for gas spent is working properly
+                expect(await NFTPaymaster.getGasSpent(signer2.address)).is.greaterThan(0);
+
+                // second mint is fine
+                await Owl.connect(signer1).mint(signer1.address, 5, { gasLimit: 3e6 });
+                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(2);
+                const exists2 = await Owl.exists(5);
+                assert.equal(exists2, true, 'Token not minted!');
+
+                //verify that the Paymaster mapping for gas spent is working properly
+                expect(await NFTPaymaster.getGasSpent(signer2.address)).is.greaterThan(0);
+
+                // third mint is fine
+                await Owl.connect(signer1).mint(signer1.address, 6, { gasLimit: 3e6 });
+                expect(await NFTPaymaster.getNumTransactions(gasPassToken)).to.equal(3);
+                const exists3 = await Owl.exists(6);
+                assert.equal(exists3, true, 'Token not minted!');
+
+                //verify that the Paymaster mapping for gas spent is working properly
+                expect(await NFTPaymaster.getGasSpent(signer2.address)).is.greaterThan(0);
+                console.log('gas spent:', NFTPaymaster.getGasSpent(signer2.address));
+                console.log('gas limit', NFTPaymaster.PAYMASTER_ACCEPTANCE_BUDGET());
+
+                // fourth mint throws
+                await expectPaymasterThrows(Owl.connect(signer1).mint(signer1.address, 7, { gasLimit: 3e6 }));
             }),
         );
     });

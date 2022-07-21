@@ -74,14 +74,6 @@ contract NFTOwnershipPaymaster is OwlPaymasterBase {
     }
 
     /**
-     * @dev function that returns the number of times a tokenId has been used
-     * for approving a transaction
-     */
-    function getNumTransactions(uint256 tokenId) external view returns (uint256) {
-        return numTimes[tokenId];
-    }
-
-    /**
      * @dev function that performs all access control. It verifies that
      * the client owns an acceptable token in the approved collection.
      * it also ensures that the tokenId usage has not reached it's limit
