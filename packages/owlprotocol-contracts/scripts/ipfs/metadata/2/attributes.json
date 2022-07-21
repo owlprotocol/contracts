@@ -1,0 +1,32 @@
+{
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "Outhouse"
+        },
+        {
+            "trait_type": "Fur",
+            "value": "Zombie"
+        },
+        {
+            "trait_type": "Feet",
+            "value": "Cast"
+        },
+        {
+            "trait_type": "Back",
+            "value": "Beer Kegs"
+        },
+        {
+            "trait_type": "Neck",
+            "value": "Black BAYC Bandana"
+        },
+        {
+            "trait_type": "Mouth",
+            "value": "Tennis Ball"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "Wide"
+        }
+    ]
+}

@@ -1,0 +1,28 @@
+{
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "Outhouse"
+        },
+        {
+            "trait_type": "Fur",
+            "value": "Tan"
+        },
+        {
+            "trait_type": "Feet",
+            "value": "Old Laces"
+        },
+        {
+            "trait_type": "Neck",
+            "value": "BAYC Collar"
+        },
+        {
+            "trait_type": "Mouth",
+            "value": "Smiling"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "Happy"
+        }
+    ]
+}

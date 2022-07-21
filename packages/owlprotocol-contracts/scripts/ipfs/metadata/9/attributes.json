@@ -1,0 +1,28 @@
+{
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "Outhouse"
+        },
+        {
+            "trait_type": "Fur",
+            "value": "Pink"
+        },
+        {
+            "trait_type": "Neck",
+            "value": "Pink Collar"
+        },
+        {
+            "trait_type": "Mouth",
+            "value": "Bloody"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "Goofy"
+        },
+        {
+            "trait_type": "Head",
+            "value": "Trippy Captain's Hat"
+        }
+    ]
+}
