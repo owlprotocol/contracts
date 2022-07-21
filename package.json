@@ -13,7 +13,7 @@
     "build": "npm-run-all --parallel build:contracts",
     "build:contracts": "cd ./packages/owlprotocol-contracts && pnpm run compile",
     "test": "npm-run-all --parallel test:contracts",
-    "test:contracts": "cd ./packages/owlprotocol-contracts && pnpm run test:parallel",
+    "test:contracts": "cd ./packages/owlprotocol-contracts && pnpm run test",
     "coverage": "npm-run-all --parallel coverage:contracts",
     "coverage:contracts": "cd ./packages/owlprotocol-contracts && pnpm run coverage"
   },
