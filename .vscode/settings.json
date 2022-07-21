@@ -12,7 +12,6 @@
 
   "solidity.remappings": [
     "ds-test/=packages/owlprotocol-contracts/lib/forge-std/lib/ds-test/src/",
-    "forge-std/=packages/owlprotocol-contracts/lib/forge-std/src/",
-    "contracts/=packages/owlprotocol-contracts/contracts/"
+    "forge-std/=packages/owlprotocol-contracts/lib/forge-std/src/"
   ]
 }

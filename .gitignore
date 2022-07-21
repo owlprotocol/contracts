@@ -14,6 +14,7 @@ yarn.lock
 
 # production
 /build
+/lib
 
 # misc
 .DS_Store
@@ -27,6 +28,6 @@ pnpm-debug.log*
 # hardhat
 /artifacts
 /cache
-# /typechain
+/typechain
 /factory
 
