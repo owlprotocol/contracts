@@ -62,7 +62,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
     before(async () => {
         //Setup Test Environment and get addresses
         const gsn = await loadEnvironment(ethers);
-        // if (gsn.gsnTestEnv === undefined) throw 'Must enable gsn!';
+        if (gsn.gsnTestEnv === undefined) throw 'Must enable gsn!';
         gsnForwarderAddress = gsn.gsnTestEnv.contractsDeployment.forwarderAddress as string;
         relayHubAddress = gsn.gsnTestEnv.contractsDeployment.relayHubAddress as string;
 
