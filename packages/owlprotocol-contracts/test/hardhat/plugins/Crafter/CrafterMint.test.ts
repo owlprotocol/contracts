@@ -49,7 +49,7 @@ enum TokenType {
 
 describe('CrafterMint.sol', function () {
     // Extra time
-    this.timeout(10000);
+    this.timeout(100000);
 
     let owner: TestingSigner;
     let signer2: TestingSigner;

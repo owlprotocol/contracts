@@ -22,7 +22,7 @@ import { GsnTestEnvironment, TestEnvironment } from '@opengsn/cli/dist/GsnTestEn
 
 describe.skip('Rent.sol', function () {
     //Extra time
-    this.timeout(10000);
+    this.timeout(100000);
     let admin: SignerWithAddress;
     let _owner: SignerWithAddress;
     let _renter: SignerWithAddress;
