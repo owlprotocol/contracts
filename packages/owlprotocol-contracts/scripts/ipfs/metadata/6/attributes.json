@@ -1,0 +1,32 @@
+{
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "Swamp"
+        },
+        {
+            "trait_type": "Fur",
+            "value": "Black"
+        },
+        {
+            "trait_type": "Feet",
+            "value": "Pink Combat Boots"
+        },
+        {
+            "trait_type": "Neck",
+            "value": "Lei"
+        },
+        {
+            "trait_type": "Mouth",
+            "value": "Bloody"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "Sad"
+        },
+        {
+            "trait_type": "Head",
+            "value": "Bow"
+        }
+    ]
+}
