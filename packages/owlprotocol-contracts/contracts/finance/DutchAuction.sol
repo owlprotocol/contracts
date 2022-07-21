@@ -239,6 +239,8 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
         address royaltyReceiver;
         uint256 royaltyAmount;
 
+        isBought = true;
+
         // Marketplace commission
         SafeERC20Upgradeable.safeTransferFrom(
             IERC20Upgradeable(acceptableToken),
@@ -280,9 +282,6 @@ contract DutchAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradea
                 new bytes(0)
             );
         }
-
-        isBought = true;
-
         emit Bid(_msgSender(), bidPrice);
     }
 

@@ -27,7 +27,7 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable, ERC2981Upgradeable {
      * @param newContractURI new uri for contract
      * @param _forwarder address for trusted forwarder for open GSN
      * @param _receiver address of receiver of royalty fees
-     * @param _feeNumerator numerator of royalty fee percentage (numerator / 100)
+     * @param _feeNumerator numerator of royalty fee percentage (numerator / 10000)
      */
     function initialize(
         address _admin,
@@ -90,6 +90,15 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable, ERC2981Upgradeable {
      */
     function grantUriRole(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _grantRole(URI_ROLE, to);
+    }
+
+    /**
+     * @notice Must have DEFAULT_ADMIN_ROLE
+     * @dev Grants ROYALTY_ROLE to {a}
+     * @param to address to
+     */
+    function grantRoyaltyRole(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _grantRole(ROYALTY_ROLE, to);
     }
 
     /***** MINTING *****/
@@ -165,11 +174,10 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable, ERC2981Upgradeable {
     }
 
     /**
-     * @dev The denominator with which to interpret the fee set in {_setTokenRoyalty} and {_setDefaultRoyalty} as a
-     * fraction of the sale price. Overrides definition in ERC2981Upgradeable.
+     * @dev Exposing `_setDefaultRoyalty`
      */
-    function _feeDenominator() internal pure override returns (uint96) {
-        return 100;
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) external onlyRole(ROYALTY_ROLE) {
+        _setDefaultRoyalty(receiver, feeNumerator);
     }
 
     /**

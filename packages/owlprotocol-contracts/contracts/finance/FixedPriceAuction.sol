@@ -187,6 +187,8 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
         require(block.timestamp < startTime + auctionDuration, 'FixedPriceAuction: ended');
         require(!isBought, 'FixedPriceAuction: somebody has already bought this item!');
 
+        isBought = true;
+
         uint256 marketplaceCommission = (saleFee * price) / 100;
         address royaltyReceiver;
         uint256 royaltyAmount;
@@ -232,8 +234,6 @@ contract FixedPriceAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpg
                 new bytes(0)
             );
         }
-
-        isBought = true;
 
         emit Buy(_msgSender(), price);
     }

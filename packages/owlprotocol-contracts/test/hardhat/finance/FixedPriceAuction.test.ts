@@ -599,7 +599,7 @@ describe('FixedPriceAuction.sol', function () {
             testNFTFactory = (await ethers.getContractFactory('ERC721Owl')) as ERC721Owl__factory;
             testNFTImpl = await testNFTFactory.deploy();
             const { address } = await deployClone(testNFTImpl,
-                [owner.address, 'n', 's', 'u', gsnForwarderAddress, owner.address, 30], ERC1167Factory);
+                [owner.address, 'n', 's', 'u', gsnForwarderAddress, owner.address, 3000], ERC1167Factory);
             testNFTInst = await (ethers.getContractAt('ERC721Owl', address)) as ERC721Owl;
             await testNFTInst.connect(owner).mint(seller.address, tokenId);
 
@@ -704,7 +704,7 @@ describe('FixedPriceAuction.sol', function () {
             test1155Factory = (await ethers.getContractFactory('ERC1155Owl')) as ERC1155Owl__factory;
             test1155Impl = await test1155Factory.deploy();
             const { address } = await deployClone(test1155Impl,
-                [owner.address, 'n', 's', gsnForwarderAddress, owner.address, 30], ERC1167Factory);
+                [owner.address, 'n', 's', gsnForwarderAddress, owner.address, 3000], ERC1167Factory);
             test1155Inst = await (ethers.getContractAt('ERC1155Owl', address)) as ERC1155Owl;
             await test1155Inst.connect(owner).mint(seller.address, tokenId, 1, '0x');
 
