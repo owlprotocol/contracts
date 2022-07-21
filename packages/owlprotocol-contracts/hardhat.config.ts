@@ -4,7 +4,6 @@
  * @type import('hardhat/config').HardhatUserConfig
  */
 
-import fs from 'fs';
 import { HardhatUserConfig, HardhatNetworkAccountsUserConfig } from 'hardhat/types/config';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-web3';

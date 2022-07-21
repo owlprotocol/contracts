@@ -15,7 +15,7 @@ src/truffle
 src/web3
 src/abi
 
-# typechain
+typechain
 /typechain
 
 # dependencies

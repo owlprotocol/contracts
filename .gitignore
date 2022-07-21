@@ -27,6 +27,6 @@ pnpm-debug.log*
 # hardhat
 /artifacts
 /cache
-# /typechain
+/typechain
 /factory
 
