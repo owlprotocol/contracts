@@ -1001,6 +1001,7 @@ describe('EnglishAuction.sol 20% Fee', function () {
             await (await auction.bid(5));
             expect(await auction.getCurrentBid()).to.equal(5);
             await network.provider.send('evm_increaseTime', [86401]); //advance timestamp in seconds
+            await network.provider.send('evm_mine');
             expect(await auction.getRemainingTime()).to.equal(0);
             await auction.winnerClaim();
             await expect(auction.winnerClaim()).to.be.revertedWith('EnglishAuction: winner has already claimed');
