@@ -24,7 +24,7 @@ import web3 from 'web3';
 import { BigNumber } from 'ethers';
 import { Web3ProviderBaseInterface } from '@opengsn/common/dist/types/Aliases';
 
-describe.skip('ERC721Owl With NFTOwnershipPaymaster', () => {
+describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
     let ERC721OwlFactory: ERC721Owl__factory;
     let ERC721OwlImplementation: ERC721Owl;
 

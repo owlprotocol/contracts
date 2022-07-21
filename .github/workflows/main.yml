@@ -22,6 +22,7 @@ env:
   POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
   MAINNET_API_KEY: ${{ secrets.MAINNET_API_KEY }}
   OTHER_PRIV_KEY: ${{ secrets.OTHER_PRIV_KEY }}
+  isGSN: false
 
 jobs:
   run-coverage:
