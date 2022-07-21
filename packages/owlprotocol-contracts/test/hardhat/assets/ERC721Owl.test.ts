@@ -35,11 +35,11 @@ describe('ERC721Owl', () => {
         Owl = (
             await deployCloneWrap(
                 ERC721OwlImplementation,
-                [signer1.address, 'n', 's', 'u', gsnForwarderAddress],
+                [signer1.address, 'n', 's', 'u', gsnForwarderAddress, signer1.address, 0],
                 undefined,
                 undefined,
-                'initialize(address,string,string,string,address)', // must use full signature
-                signer1,
+                'initialize(address,string,string,string,address,address,uint96)', // must use full signature
+                signer1
             )
         ).contract as ERC721Owl;
     });

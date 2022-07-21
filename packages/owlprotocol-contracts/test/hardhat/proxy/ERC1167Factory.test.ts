@@ -52,6 +52,8 @@ describe('ERC1167Factory', () => {
             symbol,
             uri,
             ethers.constants.AddressZero,
+            signer1.address,
+            0
         ]))
         const receipt2 = await tx2.wait();
         const { events: events2 } = receipt2
@@ -59,7 +61,7 @@ describe('ERC1167Factory', () => {
         expect(events2).to.not.equal(undefined)
         if (events2 === undefined) return;
 
-        const { instance: instance2, implementation, salt } = pick(events2[5].args, ['instance', 'implementation', 'salt'])
+        const { instance: instance2, implementation, salt } = pick(events2[6].args, ['instance', 'implementation', 'salt'])
 
         expect(implementation).to.equal(ERC721Impl.address)
         expect(salt).to.equal(hexZeroPad("0x00", 32));
@@ -101,6 +103,8 @@ describe('ERC1167Factory', () => {
             symbol,
             uri,
             ethers.constants.AddressZero,
+            signer1.address,
+            0
         ])
 
 
@@ -111,7 +115,7 @@ describe('ERC1167Factory', () => {
         expect(events2).to.not.equal(undefined)
         if (events2 === undefined) return;
 
-        const { instance: instance2, implementation } = pick(events2[5].args, ['instance', 'implementation'])
+        const { instance: instance2, implementation } = pick(events2[6].args, ['instance', 'implementation'])
 
         expect(implementation).to.equal(ERC721Impl.address)
 

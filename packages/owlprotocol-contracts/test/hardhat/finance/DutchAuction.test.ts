@@ -7,14 +7,22 @@ import { expect, assert } from 'chai';
 import {
     DutchAuction,
     DutchAuction__factory,
-    ERC20,
-    ERC721,
-    ERC1155,
     ERC1167Factory,
     ERC1167Factory__factory,
+    ERC721Owl,
+    ERC721Owl__factory,
+    ERC1155Owl__factory,
+    ERC1155Owl,
+    FactoryERC20,
+    FactoryERC721,
+    FactoryERC1155,
+    UpgradeableBeaconInitializable__factory,
+    UpgradeableBeaconInitializable,
+    BeaconProxyInitializable__factory,
+    BeaconProxyInitializable,
 } from '../../../typechain';
 
-import { createERC20, createERC721, createERC1155, deployCloneWrap, predictDeployClone } from '../utils';
+import { createERC20, createERC721, createERC1155, deployCloneWrap, predictDeployClone, deployClone } from '../utils';
 import { BigNumber } from 'ethers';
 import {
     loadSignersSmart,
@@ -34,6 +42,7 @@ describe('DutchAuction.sol No Fees', function () {
     let seller: TestingSigner;
     let bidder1: TestingSigner;
     let owner: TestingSigner;
+    let marketplace: TestingSigner;
 
     let ERC1167FactoryFactory: ERC1167Factory__factory;
     let ERC1167Factory: ERC1167Factory;
@@ -46,7 +55,7 @@ describe('DutchAuction.sol No Fees', function () {
     before(async () => {
         //Setup Test Environment
         ({ gsnForwarderAddress } = await loadEnvironment(ethers, network));
-        [seller, bidder1, owner] = await loadSignersSmart(ethers, network);
+        [seller, bidder1, owner, marketplace] = await loadSignersSmart(ethers, network);
 
         //launch Auction + implementation
         DutchAuctionFactory = (await ethers.getContractFactory('DutchAuction')) as DutchAuction__factory;
@@ -59,11 +68,399 @@ describe('DutchAuction.sol No Fees', function () {
         await Promise.all([DutchAuctionImplementation.deployed()]);
     });
 
+    describe('Initialization reverts', () => {
+        //define setup
+        let testNFT: FactoryERC721;
+        let acceptableERC20Token: FactoryERC20;
+        let tokenId: number;
+
+        beforeEach(async () => {
+            //Deploy ERC20 and ERC721
+            [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
+            [testNFT] = await createERC721(1, 1); //minting one token
+            tokenId = 0;
+        });
+        it('Invalid token type', async () => {
+            await expect(deployClone(
+                DutchAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //start price
+                    //end price
+                    //auction duration
+                    //isNonLinear
+                    //saleFee
+                    //saleFeeAddress
+                    //forwarder 
+                    seller.address,
+                    {
+                        token: 5,
+                        contractAddr: testNFT.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    10,
+                    300,
+                    true,
+                    0,
+                    owner.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('');
+        });
+
+        it('seller and saleFeeAddress same', async () => {
+            await expect(deployClone(
+                DutchAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //start price
+                    //end price
+                    //auction duration
+                    //isNonLinear
+                    //saleFee
+                    //saleFeeAddress
+                    //forwarder 
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    10,
+                    300,
+                    true,
+                    0,
+                    seller.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('DutchAuction: seller cannot be the same as the owner!');
+        });
+
+        it('sale fee over 100', async () => {
+            await expect(deployClone(
+                DutchAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //start price
+                    //end price
+                    //auction duration
+                    //isNonLinear
+                    //saleFee
+                    //saleFeeAddress
+                    //forwarder 
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    10,
+                    300,
+                    true,
+                    999,
+                    owner.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('DutchAuction: sale fee cannot be greater than 100 percent!');
+        });
+
+        it('end price greater or equal to start price', async () => {
+            await expect(deployClone(
+                DutchAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //start price
+                    //end price
+                    //auction duration
+                    //isNonLinear
+                    //saleFee
+                    //saleFeeAddress
+                    //forwarder 
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    999,
+                    300,
+                    true,
+                    0,
+                    owner.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            )).to.be.revertedWith('DutchAuction: start price must be greater than end price');
+        });
+    });
+
+    describe('Royalty fee test ERC721Owl', () => {
+        //define setup
+        let testNFTFactory: ERC721Owl__factory
+        let testNFTImpl: ERC721Owl;
+        let test1155Inst: ERC721Owl;
+        const tokenId = 0;
+        let acceptableERC20Token: FactoryERC20;
+        let DutchAuctionAddress: string;
+
+        const totalERC20Minted = parseUnits('1.0', 27);
+
+        let auction: DutchAuction;
+
+        beforeEach(async () => {
+            //Deploy ERC20 and ERC721
+            [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
+
+            // Deploy test Owl 
+            testNFTFactory = (await ethers.getContractFactory('ERC721Owl')) as ERC721Owl__factory;
+            testNFTImpl = await testNFTFactory.deploy();
+            const { address } = await deployClone(testNFTImpl,
+                [owner.address, 'n', 's', 'u', gsnForwarderAddress, owner.address, 3000], ERC1167Factory);
+            test1155Inst = await (ethers.getContractAt('ERC721Owl', address)) as ERC721Owl;
+            await test1155Inst.connect(owner).mint(seller.address, 0);
+
+
+            //predict deployment address
+            DutchAuctionAddress = await predictDeployClone(
+                DutchAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //start price
+                    //end price
+                    //auction duration
+                    //isNonLinear
+                    //saleFee
+                    //saleFeeAddress
+                    //forwarder 
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: test1155Inst.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    10,
+                    300,
+                    false,
+                    20,
+                    marketplace.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            );
+
+            //Set Approval ERC721 for sale
+            await test1155Inst.connect(seller).approve(DutchAuctionAddress, tokenId);
+
+            await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('1.0', 27));
+
+            // Transfer ERC20s to bidders
+            await acceptableERC20Token.connect(seller).transfer(bidder1.address, parseUnits('1.0', 27));
+
+            //deploy contract
+            auction = (
+                await deployCloneWrap(
+                    DutchAuctionImplementation,
+                    [
+                        //seller address
+                        //Asset
+                        //ERC20 Contract address (acceptable token)
+                        //start price
+                        //end price
+                        //auction duration
+                        //isNonLinear
+                        //saleFee
+                        //saleFeeAddress
+                        //forwarder 
+                        seller.address,
+                        {
+                            token: TokenType.erc721,
+                            contractAddr: test1155Inst.address,
+                            tokenId,
+                        },
+                        acceptableERC20Token.address,
+                        100, //in "wei"
+                        10,
+                        300,
+                        false,
+                        20,
+                        marketplace.address,
+                        gsnForwarderAddress,
+                    ],
+                    ERC1167Factory,
+                    undefined,
+                    undefined,
+                    seller,
+                )
+            ).contract as DutchAuction;
+
+            //assert initial token amounts
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(0);
+
+            expect(await test1155Inst.balanceOf(seller.address)).to.equal(0);
+            expect(await test1155Inst.balanceOf(DutchAuctionAddress)).to.equal(1);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(totalERC20Minted);
+        });
+
+        it('Test bid', async () => {
+            await (await auction.connect(bidder1).bid()).wait();
+            const price = await auction.getCurrentPrice();
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(totalERC20Minted.sub(price));
+            expect(await test1155Inst.balanceOf(bidder1.address)).to.equal(1);
+            expect(await acceptableERC20Token.balanceOf(owner.address)).to.equal(price.mul(3).div(10));
+            expect(await acceptableERC20Token.balanceOf(marketplace.address)).to.equal(price.mul(2).div(10));
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(price.mul(5).div(10));
+        });
+    });
+
+    describe('Royalty fee test ERC1155Owl', () => {
+        //define setup
+        let test1155Factory: ERC1155Owl__factory;
+        let test1155Impl: ERC1155Owl;
+        let test1155Inst: ERC1155Owl;
+        const tokenId = 0;
+        let acceptableERC20Token: FactoryERC20;
+        let DutchAuctionAddress: string;
+
+        const totalERC20Minted = parseUnits('1.0', 27);
+
+        let auction: DutchAuction;
+
+        beforeEach(async () => {
+            //Deploy ERC20 and ERC721
+            [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
+
+            // Deploy test Owl 
+            test1155Factory = (await ethers.getContractFactory('ERC1155Owl')) as ERC1155Owl__factory;
+            test1155Impl = await test1155Factory.deploy();
+            const { address } = await deployClone(test1155Impl,
+                [owner.address, 'n', 's', gsnForwarderAddress, owner.address, 3000], ERC1167Factory);
+            test1155Inst = await (ethers.getContractAt('ERC1155Owl', address)) as ERC1155Owl;
+            await test1155Inst.connect(owner).mint(seller.address, tokenId, 1, '0x');
+
+
+            //predict deployment address
+            DutchAuctionAddress = await predictDeployClone(
+                DutchAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //start price
+                    //end price
+                    //auction duration
+                    //isNonLinear
+                    //saleFee
+                    //saleFeeAddress
+                    //forwarder 
+                    seller.address,
+                    {
+                        token: TokenType.erc1155,
+                        contractAddr: test1155Inst.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    10,
+                    300,
+                    false,
+                    20,
+                    marketplace.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            );
+
+            //Set Approval ERC721 for sale
+            await test1155Inst.connect(seller).setApprovalForAll(DutchAuctionAddress, true);
+
+            await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('1.0', 27));
+
+            // Transfer ERC20s to bidders
+            await acceptableERC20Token.connect(seller).transfer(bidder1.address, parseUnits('1.0', 27));
+
+            //deploy contract
+            auction = (
+                await deployCloneWrap(
+                    DutchAuctionImplementation,
+                    [
+                        //seller address
+                        //Asset
+                        //ERC20 Contract address (acceptable token)
+                        //start price
+                        //end price
+                        //auction duration
+                        //isNonLinear
+                        //saleFee
+                        //saleFeeAddress
+                        //forwarder 
+                        seller.address,
+                        {
+                            token: TokenType.erc1155,
+                            contractAddr: test1155Inst.address,
+                            tokenId,
+                        },
+                        acceptableERC20Token.address,
+                        100, //in "wei"
+                        10,
+                        300,
+                        false,
+                        20,
+                        marketplace.address,
+                        gsnForwarderAddress,
+                    ],
+                    ERC1167Factory,
+                    undefined,
+                    undefined,
+                    seller,
+                )
+            ).contract as DutchAuction;
+
+            //assert initial token amounts
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(0);
+            expect(await test1155Inst.balanceOf(seller.address, tokenId)).to.equal(0);
+            expect(await test1155Inst.balanceOf(DutchAuctionAddress, tokenId)).to.equal(1);
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(totalERC20Minted);
+        });
+
+        it('Test bid', async () => {
+            await (await auction.connect(bidder1).bid()).wait();
+            const price = await auction.getCurrentPrice();
+            expect(await acceptableERC20Token.balanceOf(bidder1.address)).to.equal(totalERC20Minted.sub(price));
+            expect(await test1155Inst.balanceOf(bidder1.address, tokenId)).to.equal(1);
+            expect(await acceptableERC20Token.balanceOf(owner.address)).to.equal(price.mul(3).div(10));
+            expect(await acceptableERC20Token.balanceOf(marketplace.address)).to.equal(price.mul(2).div(10));
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(price.mul(5).div(10));
+        });
+    });
+
     describeNoGSN('Linear Auction Tests - No GSN', () => {
         //define setup
-        let testNFT: ERC721;
+        let testNFT: FactoryERC721;
         const tokenId = 0;
-        let acceptableERC20Token: ERC20;
+        let acceptableERC20Token: FactoryERC20;
         let DutchAuctionAddress: string;
 
         let originalERC20Balance: BigNumber;
@@ -88,6 +485,7 @@ describe('DutchAuction.sol No Fees', function () {
                     //isNonLinear
                     //saleFee
                     //saleFeeAddress
+                    //forwarder 
                     seller.address,
                     {
                         token: TokenType.erc721,
@@ -95,7 +493,7 @@ describe('DutchAuction.sol No Fees', function () {
                         tokenId,
                     },
                     acceptableERC20Token.address,
-                    100, //in "eth"
+                    100, //in "wei"
                     10,
                     300,
                     false,
@@ -110,8 +508,7 @@ describe('DutchAuction.sol No Fees', function () {
             await testNFT.connect(seller).approve(DutchAuctionAddress, tokenId);
 
             await acceptableERC20Token.connect(bidder1).approve(DutchAuctionAddress, parseUnits('100.0', 18));
-            await acceptableERC20Token.connect(bidder1).approve(seller.address, parseUnits('100.0', 18));
-            await acceptableERC20Token.connect(bidder1).approve(owner.address, parseUnits('100.0', 18));
+
             // Transfer ERC20s to bidders
             await acceptableERC20Token.connect(seller).transfer(bidder1.address, parseUnits('100.0', 18));
 
@@ -129,6 +526,7 @@ describe('DutchAuction.sol No Fees', function () {
                         //isNonLinear
                         //saleFee
                         //saleFeeAddress
+                        //forwarder 
                         seller.address,
                         {
                             token: TokenType.erc721,
@@ -136,7 +534,7 @@ describe('DutchAuction.sol No Fees', function () {
                             tokenId,
                         },
                         acceptableERC20Token.address,
-                        100, //in "eth"
+                        100, //in "wei"
                         10,
                         300,
                         false,
@@ -237,18 +635,87 @@ describe('DutchAuction.sol No Fees', function () {
             expect(await testNFT.balanceOf(auction.address)).to.equal(0);
         });
 
+        it('error: bid after already bought', async () => {
+            await auction.connect(bidder1).bid();
+            await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: somebody has already bought this item!');
+        });
+
         it('error: bid after auction ends', async () => {
             await increase(300);
             expect(await auction.getCurrentPrice()).to.equal(parseUnits('10.0', 18));
             await expect(auction.connect(bidder1).bid()).to.be.revertedWith('DutchAuction: ended');
         });
+
+        it('error: claim during auction', async () => {
+            await expect(auction.claim()).to.be.revertedWith('DutchAuction: cannot claim when auction is ongoing!');
+        });
+
+        it('error: claim after already bought', async () => {
+            await auction.connect(bidder1).bid();
+            await network.provider.send('evm_increaseTime', [300]); //advance timestamp in seconds
+            await network.provider.send('evm_mine');
+            await expect(auction.claim()).to.be.revertedWith('DutchAuction: you cannot claim when the the asset was already sold!');
+        });
+
+        it('beacon proxy initialization', async () => {
+            const [testNFT2] = await createERC721(1);
+
+            const beaconFactory = (await ethers.getContractFactory(
+                'UpgradeableBeaconInitializable',
+            )) as UpgradeableBeaconInitializable__factory;
+            const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+            const beaconProxyFactory = (await ethers.getContractFactory(
+                'BeaconProxyInitializable',
+            )) as BeaconProxyInitializable__factory;
+            const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+            const { address: beaconAddr } = await deployClone(beaconImpl, [seller.address, DutchAuctionImplementation.address], ERC1167Factory);
+            //@ts-ignore
+            const data = DutchAuctionImplementation.interface.encodeFunctionData('proxyInitialize',
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //start price
+                    //end price
+                    //auction duration
+                    //isNonLinear
+                    //saleFee
+                    //saleFeeAddress
+                    //forwarder 
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT2.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    10,
+                    300,
+                    false,
+                    0,
+                    owner.address,
+                    gsnForwarderAddress,
+                ])
+            const beaconProxyAddr = await predictDeployClone(beaconProxyImpl, [seller.address, beaconAddr, data], ERC1167Factory);
+            //Set Approval ERC721 for sale
+
+            await testNFT2.connect(seller).approve(beaconProxyAddr, tokenId);
+            await deployClone(beaconProxyImpl, [seller.address, beaconAddr, data], ERC1167Factory);
+            const contrInst = (await ethers.getContractAt('DutchAuction', beaconProxyAddr)) as DutchAuction;
+
+            //transformer doesn't have only dna role
+            contrInst.connect(bidder1).bid();
+        });
     });
 
     describe('Nonlinear Auction Tests', () => {
         //define setup
-        let testNFT: ERC721;
+        let testNFT: FactoryERC721;
         const tokenId = 0;
-        let acceptableERC20Token: ERC20;
+        let acceptableERC20Token: FactoryERC20;
         let DutchAuctionAddress: string;
         let auction: DutchAuction;
 
@@ -272,6 +739,7 @@ describe('DutchAuction.sol No Fees', function () {
                     //isNonLinear
                     //saleFee
                     //saleFeeAddress
+                    //forwarder 
                     seller.address,
                     {
                         token: TokenType.erc721,
@@ -279,7 +747,7 @@ describe('DutchAuction.sol No Fees', function () {
                         tokenId,
                     },
                     acceptableERC20Token.address,
-                    100, //in "eth"
+                    100, //in "wei"
                     10,
                     300,
                     true,
@@ -311,6 +779,7 @@ describe('DutchAuction.sol No Fees', function () {
                     //isNonLinear
                     //saleFee
                     //saleFeeAddress
+                    //forwarder 
                     seller.address,
                     {
                         token: TokenType.erc721,
@@ -318,7 +787,7 @@ describe('DutchAuction.sol No Fees', function () {
                         tokenId,
                     },
                     acceptableERC20Token.address,
-                    100, //in "eth"
+                    100, //in "wei"
                     10,
                     300,
                     true,
@@ -421,8 +890,8 @@ describe('DutchAuction.sol No Fees', function () {
 
         describe('Linear Auction Tests', () => {
             //define setup
-            let test1155: ERC1155;
-            let acceptableERC20Token: ERC20;
+            let test1155: FactoryERC1155;
+            let acceptableERC20Token: FactoryERC20;
             let DutchAuctionAddress: string;
             let auction: DutchAuction;
 
@@ -446,6 +915,7 @@ describe('DutchAuction.sol No Fees', function () {
                         //isNonLinear
                         //saleFee
                         //saleFeeAddress
+                        //forwarder 
                         seller.address,
                         {
                             token: TokenType.erc1155,
@@ -453,7 +923,7 @@ describe('DutchAuction.sol No Fees', function () {
                             tokenId: 1,
                         },
                         acceptableERC20Token.address,
-                        100, //in "eth"
+                        100, //in "wei"
                         10,
                         300,
                         false,
@@ -485,6 +955,7 @@ describe('DutchAuction.sol No Fees', function () {
                         //isNonLinear
                         //saleFee
                         //saleFeeAddress
+                        //forwarder 
                         seller.address,
                         {
                             token: TokenType.erc1155,
@@ -492,7 +963,7 @@ describe('DutchAuction.sol No Fees', function () {
                             tokenId: 1,
                         },
                         acceptableERC20Token.address,
-                        100, //in "eth"
+                        100, //in "wei"
                         10,
                         300,
                         false,
@@ -596,9 +1067,9 @@ describe('DutchAuction.sol 10% Fees', function () {
     });
     describe('Linear Auction Tests', () => {
         //define setup
-        let testNFT: ERC721;
+        let testNFT: FactoryERC721;
         const tokenId = 0;
-        let acceptableERC20Token: ERC20;
+        let acceptableERC20Token: FactoryERC20;
         let DutchAuctionAddress: string;
         let auction: DutchAuction;
 
@@ -624,6 +1095,7 @@ describe('DutchAuction.sol 10% Fees', function () {
                     //isNonLinear
                     //saleFee
                     //saleFeeAddress
+                    //forwarder 
                     seller.address,
                     {
                         token: TokenType.erc721,
@@ -631,7 +1103,7 @@ describe('DutchAuction.sol 10% Fees', function () {
                         tokenId,
                     },
                     acceptableERC20Token.address,
-                    100, //in "eth"
+                    100, //in "wei"
                     10,
                     300,
                     false,
@@ -661,6 +1133,7 @@ describe('DutchAuction.sol 10% Fees', function () {
                         //isNonLinear
                         //saleFee
                         //saleFeeAddress
+                        //forwarder 
                         seller.address,
                         {
                             token: TokenType.erc721,
@@ -668,7 +1141,7 @@ describe('DutchAuction.sol 10% Fees', function () {
                             tokenId,
                         },
                         acceptableERC20Token.address,
-                        100, //in "eth"
+                        100, //in "wei"
                         10,
                         300,
                         false,
@@ -708,7 +1181,7 @@ describe('DutchAuction.sol 10% Fees', function () {
                         tokenId,
                     },
                     acceptableERC20Token.address,
-                    90, //in "eth"
+                    90, //in "wei"
                     5,
                     300,
                     false,
@@ -735,7 +1208,7 @@ describe('DutchAuction.sol 10% Fees', function () {
                         tokenId,
                     },
                     acceptableERC20Token.address,
-                    90, //in "eth"
+                    90, //in "wei"
                     5,
                     300,
                     false,

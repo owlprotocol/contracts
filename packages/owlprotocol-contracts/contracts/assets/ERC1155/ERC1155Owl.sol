@@ -2,12 +2,14 @@
 pragma solidity ^0.8.4;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol';
 
 import '../../OwlBase.sol';
 
-contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable {
+contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable, ERC2981Upgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
+    bytes32 internal constant ROYALTY_ROLE = keccak256('ROYALTY_ROLE');
     string private contractURI_;
 
     string public constant version = 'v0.1';
@@ -18,35 +20,52 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable {
         _disableInitializers();
     }
 
+    /**
+     * @dev Initializes an ERC721Owl contract
+     * @param _admin admin for contract
+     * @param uri_ uri for contract
+     * @param newContractURI new uri for contract
+     * @param _forwarder address for trusted forwarder for open GSN
+     * @param _receiver address of receiver of royalty fees
+     * @param _feeNumerator numerator of royalty fee percentage (numerator / 10000)
+     */
     function initialize(
         address _admin,
         string calldata uri_,
         string calldata newContractURI,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) external initializer {
-        __ERC1155Owl_init(_admin, uri_, newContractURI, _forwarder);
+        __ERC1155Owl_init(_admin, uri_, newContractURI, _forwarder, _receiver, _feeNumerator);
     }
 
     function proxyInitialize(
         address _admin,
         string calldata uri_,
         string calldata newContractURI,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) external onlyInitializing {
-        __ERC1155Owl_init(_admin, uri_, newContractURI, _forwarder);
+        __ERC1155Owl_init(_admin, uri_, newContractURI, _forwarder, _receiver, _feeNumerator);
     }
 
     function __ERC1155Owl_init(
         address _admin,
         string memory uri_,
         string calldata newContractURI,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) internal onlyInitializing {
         __ERC1155_init(uri_);
         __OwlBase_init(_admin, _forwarder);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
+        _grantRole(ROYALTY_ROLE, _admin);
+        _setDefaultRoyalty(_receiver, _feeNumerator);
 
         __ERC1155Owl_init_unchained(newContractURI);
     }
@@ -71,6 +90,15 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable {
      */
     function grantUriRole(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _grantRole(URI_ROLE, to);
+    }
+
+    /**
+     * @notice Must have DEFAULT_ADMIN_ROLE
+     * @dev Grants ROYALTY_ROLE to {a}
+     * @param to address to
+     */
+    function grantRoyaltyRole(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _grantRole(ROYALTY_ROLE, to);
     }
 
     /***** MINTING *****/
@@ -135,6 +163,24 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable {
     }
 
     /**
+     * @dev Exposing `_setTokenRoyalty`
+     */
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 feeNumerator
+    ) external onlyRole(ROYALTY_ROLE) {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    /**
+     * @dev Exposing `_setDefaultRoyalty`
+     */
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) external onlyRole(ROYALTY_ROLE) {
+        _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
+    /**
      * @notice the following 3 functions are all required for OpenGSN integration
      */
     function _msgSender() internal view override(OwlBase, ContextUpgradeable) returns (address) {
@@ -153,7 +199,7 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable {
         public
         view
         virtual
-        override(ERC1155Upgradeable, AccessControlUpgradeable)
+        override(ERC1155Upgradeable, ERC2981Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

@@ -35,7 +35,7 @@ describe('ERC721OwlAttributes.sol', async () => {
         const { address } = (
             await deployClone(
                 ERC721OwlAttributesImpl,
-                [signer1.address, 'n', 's', 'u', gsnForwarderAddress],
+                [signer1.address, 'n', 's', 'u', gsnForwarderAddress, signer1.address, 0],
                 ERC1167Factory,
                 salt,
             )
@@ -82,6 +82,7 @@ describe('ERC721OwlAttributes.sol', async () => {
             symbol,
             uri,
             '0x' + '0'.repeat(40),
+            signer1.address, 0
         ]);
         const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data]);
         contrInst = (await ethers.getContractAt('ERC721OwlAttributes', beaconProxyAddr)) as ERC721OwlAttributes;

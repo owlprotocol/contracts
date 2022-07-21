@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol';
 
 import '../../OwlBase.sol';
 
@@ -11,9 +12,10 @@ import '../../OwlBase.sol';
  * happens through initializers for compatibility with a EIP1167 minimal-proxy
  * deployment strategy.
  */
-contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
+contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable, ERC2981Upgradeable {
     bytes32 internal constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 internal constant URI_ROLE = keccak256('URI_ROLE');
+    bytes32 internal constant ROYALTY_ROLE = keccak256('ROYALTY_ROLE');
 
     string public constant VERSION = 'v0.1';
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', VERSION)));
@@ -40,15 +42,19 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
      * @param _symbol symbol for contract
      * @param baseURI_ base URI for contract
      * @param _forwarder address for trusted forwarder for open GSN
+     * @param _receiver address of receiver of royalty fees
+     * @param _feeNumerator numerator of royalty fee percentage (numerator / 10000)
      */
     function initialize(
         address _admin,
         string calldata _name,
         string calldata _symbol,
         string calldata baseURI_,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) external virtual initializer {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder);
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder, _receiver, _feeNumerator);
     }
 
     /**
@@ -60,9 +66,11 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
         string calldata _name,
         string calldata _symbol,
         string calldata baseURI_,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) external virtual onlyInitializing {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder);
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder, _receiver, _feeNumerator);
     }
 
     function __ERC721Owl_init(
@@ -70,13 +78,18 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
         string memory _name,
         string memory _symbol,
         string memory baseURI_,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) internal onlyInitializing {
         __ERC721_init(_name, _symbol);
         __OwlBase_init(_admin, _forwarder);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
         _grantRole(URI_ROLE, _admin);
+        _grantRole(ROYALTY_ROLE, _admin);
+
+        _setDefaultRoyalty(_receiver, _feeNumerator);
 
         __ERC721Owl_init_unchained(baseURI_);
     }
@@ -106,6 +119,15 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
      */
     function grantUriRole(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _grantRole(URI_ROLE, to);
+    }
+
+    /**
+     * @notice Must have DEFAULT_ADMIN_ROLE
+     * @dev Grants ROYALTY_ROLE to {a}
+     * @param to address to
+     */
+    function grantRoyaltyRole(address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _grantRole(ROYALTY_ROLE, to);
     }
 
     /**
@@ -159,6 +181,24 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
     }
 
     /**
+     * @dev exposing `_setTokenRoyalty`
+     */
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 feeNumerator
+    ) external onlyRole(ROYALTY_ROLE) {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    /**
+     * @dev Exposing `_setDefaultRoyalty`
+     */
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) external onlyRole(ROYALTY_ROLE) {
+        _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
+    /**
      * @dev use {OwlBase._msgSender()}
      */
     function _msgSender() internal view override(OwlBase, ContextUpgradeable) returns (address) {
@@ -181,7 +221,7 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable {
         public
         view
         virtual
-        override(ERC721Upgradeable, AccessControlUpgradeable)
+        override(ERC721Upgradeable, ERC2981Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

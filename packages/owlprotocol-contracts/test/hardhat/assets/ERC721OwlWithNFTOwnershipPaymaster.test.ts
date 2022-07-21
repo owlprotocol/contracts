@@ -85,7 +85,7 @@ describe('ERC721Owl With NFTOwnershipPaymaster', () => {
         NFTPaymaster = (
             await deployClone2({
                 implementation: NFTPaymasterImplementation,
-                initializerArgs: [signer1.address, testNFT.address, tokenUseLimit, gsnForwarderAddress],
+                initializerArgs: [signer1.address, testNFT.address, tokenUseLimit, gsnForwarderAddress, signer1.address, 0],
                 signer: signer1,
             })
         ).contract as NFTOwnershipPaymaster;
@@ -135,7 +135,7 @@ describe('ERC721Owl With NFTOwnershipPaymaster', () => {
         Owl = (
             await deployClone2({
                 implementation: ERC721OwlImplementation,
-                initializerArgs: [signer1.address, 'n', 's', 'u', gsnForwarderAddress],
+                initializerArgs: [signer1.address, 'n', 's', 'u', gsnForwarderAddress, , signer1.address, 0],
                 signer: signer1,
             })
         ).contract as ERC721Owl;
