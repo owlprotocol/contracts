@@ -15,7 +15,8 @@ export async function createERC20(tokens = 1, signer?: TestingSigner) {
 
     const contracts = [];
     for (let i = 0; i < tokens; i++) {
-        contracts.push(FactoryERC20.deploy(mintAmount, coinName, coinTicker) as Promise<FactoryERC20>);
+        const etherDeployer = await ethers.getSigner(localSigner.address); // MUST be deployed w ethers. GSN cannot deploy contracts.
+        contracts.push(FactoryERC20.connect(etherDeployer).deploy(mintAmount, coinName, coinTicker) as Promise<FactoryERC20>);
     }
     let deployedContracts = await Promise.all(contracts);
     // Assert all deployed
