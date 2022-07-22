@@ -8,6 +8,7 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
  * @dev Base for all OWLPROTOCOL contracts
  */
 abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
+    string internal constant __version = 'v0.1';
     bytes32 internal constant ROUTER_ROLE = keccak256('ROUTER_ROLE');
 
     function __OwlBase_init(address _admin, address _forwarder) internal onlyInitializing {
@@ -72,4 +73,8 @@ abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
     function versionRecipient() external pure virtual returns (string memory) {
         return '2.2.6';
     }
+
+    // function version() external pure virtual returns (string memory) {
+    //     return __version;
+    // }
 }

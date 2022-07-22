@@ -20,7 +20,7 @@ contract MinterAutoId is MinterCore {
     bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', version)));
 
     // Track our next tokenId for each species
-    uint256 nextTokenId;
+    uint256 public nextTokenId;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

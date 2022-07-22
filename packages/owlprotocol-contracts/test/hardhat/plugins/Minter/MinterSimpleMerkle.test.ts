@@ -11,7 +11,7 @@ import {
     MinterSimpleMerkle__factory,
     MinterSimpleMerkle,
 } from '../../../../typechain';
-import { deployClone } from '../../utils';
+import { deployClone, deployProxy } from '../../utils';
 
 describe('MinterSimpleMerkle.sol', function () {
     let owner: SignerWithAddress;
@@ -24,10 +24,8 @@ describe('MinterSimpleMerkle.sol', function () {
     let FactoryERC721: FactoryERC721__factory;
 
     let MinterImplementation: MinterSimpleMerkle;
-    let nft: FactoryERC721;
     let erc20: FactoryERC20;
 
-    let nftAddress: string;
     let mintFeeToken: string;
     let mintFeeAddress: string;
     let mintFeeAmount: number;
@@ -46,11 +44,9 @@ describe('MinterSimpleMerkle.sol', function () {
         accounts = await ethers.getSigners();
 
         MinterImplementation = await MinterSimpleMerkleFactory.deploy();
-        nft = await FactoryERC721.deploy('NFT', 'NFT');
         erc20 = await FactoryERC20.deploy('0', 'ERC', 'ERC');
-        await Promise.all([MinterImplementation.deployed(), nft.deployed(), erc20.deployed()]);
+        await Promise.all([MinterImplementation.deployed(), erc20.deployed()]);
 
-        nftAddress = nft.address;
         mintFeeToken = erc20.address;
         mintFeeAddress = burnAddress.address;
         mintFeeAmount = 10;
@@ -61,9 +57,12 @@ describe('MinterSimpleMerkle.sol', function () {
         let root: string;
         let proof: any[];
         let badProof: any[];
+        let nft: FactoryERC721;
 
         // Fresh minter for each test
         beforeEach(async () => {
+            nft = await FactoryERC721.deploy('NFT', 'NFT');
+
             const { address } = await deployClone(
                 MinterImplementation,
                 [
@@ -71,7 +70,7 @@ describe('MinterSimpleMerkle.sol', function () {
                     mintFeeToken,
                     mintFeeAddress,
                     mintFeeAmount,
-                    nftAddress,
+                    nft.address,
                     '0x' + 'a'.repeat(64), // dummy proof
                     '0x' + 'b'.repeat(64), // dummy uri
                     '0x' + '0'.repeat(40), // dummy forwarder
@@ -135,5 +134,43 @@ describe('MinterSimpleMerkle.sol', function () {
             // Mint Specimen
             await minter.connect(user)['mint(address,bytes32[])'](user.address, proof);
         });
+
+        it('Successful safeMint', async () => {
+            // Authorize transfer
+            await erc20.transfer(user.address, '10');
+            await erc20.connect(user).increaseAllowance(minter.address, '10');
+
+            // Set root
+            await minter.updateMerkleRoot(root, '0xaaaa');
+
+            // Mint Specimen
+            await minter.connect(user)['safeMint(address,bytes32[])'](user.address, proof);
+        });
+
+        it('Inherited mint disabled', async () => {
+            await expect(minter['mint(address)'](owner.address)).to.be.revertedWith('Must include merkleProof');
+        });
+
+        it('Inherited safeMint disabled', async () => {
+            await expect(minter['safeMint(address)'](owner.address)).to.be.revertedWith('Must include merkleProof');
+        });
+    });
+
+    it('Beacon proxy initialization', async () => {
+        const args = [
+            owner.address,
+            mintFeeToken,
+            mintFeeAddress,
+            mintFeeAmount,
+            ethers.constants.AddressZero,
+            '0x' + 'a'.repeat(64), // dummy proof
+            '0x' + 'b'.repeat(64), // dummy uri
+            ethers.constants.AddressZero, // dummy forwarder
+        ];
+
+        const initSig = 'proxyInitialize(address,address,address,uint256,address,bytes32,string,address)';
+        const contract = (await deployProxy(owner.address, MinterImplementation, args, initSig)) as MinterSimpleMerkle;
+        // Authorize transfer
+        await contract.setNextTokenId(100);
     });
 });

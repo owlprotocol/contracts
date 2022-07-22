@@ -56,6 +56,7 @@ contract MinterSimple is MinterCore {
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterSimple_init_unchained();
     }
 
     function __MinterSimple_init_unchained() internal onlyInitializing {}

@@ -28,6 +28,7 @@ describe('Contract Version Testing', async () => {
             'MinterBreeding',
             'MinterRandom',
             'MinterSimple',
+            'MinterSimpleMerkle',
             'Lootbox',
         ];
 

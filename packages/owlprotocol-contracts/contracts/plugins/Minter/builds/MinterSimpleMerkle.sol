@@ -19,6 +19,11 @@ contract MinterSimpleMerkle is MinterAutoId {
 
     event SetMerkleRoot(bytes32 merkleRoot);
 
+    // No constructor as inheriting from MinterAutoId
+    // constructor() {
+    //     _disableInitializers();
+    // }
+
     // Constructor
     function initialize(
         address _admin,
@@ -109,7 +114,7 @@ contract MinterSimpleMerkle is MinterAutoId {
      */
     function safeMint(address buyer, bytes32[] calldata merkleProof) public {
         require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
-        MinterAutoId.mint(buyer);
+        MinterAutoId.safeMint(buyer);
     }
 
     function updateMerkleRoot(bytes32 _merkleRoot, string calldata _uri) public onlyRole(DEFAULT_ADMIN_ROLE) {

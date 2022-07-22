@@ -16,6 +16,7 @@ import 'hardhat-deploy-ethers';
 import { removeConsoleLog } from 'hardhat-preprocessor';
 import 'solidity-docgen';
 import 'solidity-coverage';
+import 'hardhat-tracer';
 
 import { ethers } from 'ethers';
 
@@ -25,7 +26,7 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
     paths: {
-        tests: "test/hardhat"
+        tests: 'test/hardhat',
     },
     preprocess: {
         eachLine: removeConsoleLog((hre) => hre.network.name !== 'hardhat' && hre.network.name !== 'localhost'),

@@ -60,6 +60,7 @@ contract MinterRandom is MinterCore {
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterRandom_init_unchained();
     }
 
     function __MinterRandom_init_unchained() internal onlyInitializing {}
