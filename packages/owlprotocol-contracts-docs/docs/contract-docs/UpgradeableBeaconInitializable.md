@@ -1,11 +1,9 @@
-
-
 ## UpgradeableBeaconInitializable
 
-_This contract is used in conjunction with one or more instances of {BeaconProxy} to determine their
+This contract is used in conjunction with one or more instances of {BeaconProxy} to determine their
 implementation contract, which is where they will delegate all function calls.
 
-An owner is able to change the implementation the beacon points to, thus upgrading the proxies that use this beacon._
+An owner is able to change the implementation the beacon points to, thus upgrading the proxies that use this beacon.
 
 ### _implementation
 
@@ -19,7 +17,7 @@ address _implementation
 event Upgraded(address implementation)
 ```
 
-_Emitted when the implementation returned by the beacon is changed._
+Emitted when the implementation returned by the beacon is changed.
 
 ### constructor
 
@@ -27,8 +25,8 @@ _Emitted when the implementation returned by the beacon is changed._
 constructor() public
 ```
 
-_Sets the address of the initial implementation, and the deployer account as the owner who can upgrade the
-beacon._
+Sets the address of the initial implementation, and the deployer account as the owner who can upgrade the
+beacon.
 
 ### initialize
 
@@ -42,7 +40,7 @@ function initialize(address _admin, address implementation_) public
 function implementation() public view virtual returns (address)
 ```
 
-_Returns the current implementation address._
+Returns the current implementation address.
 
 ### upgradeTo
 
@@ -50,14 +48,14 @@ _Returns the current implementation address._
 function upgradeTo(address newImplementation) public virtual
 ```
 
-_Upgrades the beacon to a new implementation.
+Upgrades the beacon to a new implementation.
 
 Emits an {Upgraded} event.
 
 Requirements:
 
 - msg.sender must be the owner of the contract.
-- &#x60;newImplementation&#x60; must be a contract._
+- `newImplementation` must be a contract.
 
 ### _setImplementation
 
@@ -65,9 +63,9 @@ Requirements:
 function _setImplementation(address newImplementation) private
 ```
 
-_Sets the implementation contract address for this beacon
+Sets the implementation contract address for this beacon
 
 Requirements:
 
-- &#x60;newImplementation&#x60; must be a contract._
+- `newImplementation` must be a contract.
 

@@ -1,9 +1,7 @@
-
-
 ## FactoryERC721
 
-_**INTERNAL TOOL**
-Used to factory ERC721 NFTs for unit testing_
+**INTERNAL TOOL**
+Used to factory ERC721 NFTs for unit testing
 
 ### lastTokenId
 
@@ -17,7 +15,7 @@ uint256 lastTokenId
 constructor(string nftName, string nftSymbol) public
 ```
 
-_Creates ERC721 token_
+Creates ERC721 token
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -30,7 +28,7 @@ _Creates ERC721 token_
 function mintTokens(uint256 count) public
 ```
 
-_Creates and gives a token to whoever calls the method_
+Creates and gives a token to whoever calls the method
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -42,8 +40,8 @@ _Creates and gives a token to whoever calls the method_
 function mint(address to, uint256 tokenId) public
 ```
 
-_Mints a token and assigns it to &#x60;to&#x60;.
-doesn&#x27;t require permissions._
+Mints a token and assigns it to `to`.
+doesn't require permissions.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -56,8 +54,8 @@ doesn&#x27;t require permissions._
 function safeMint(address to, uint256 tokenId) public
 ```
 
-_Mints a token and assigns it to &#x60;to&#x60;.
-doesn&#x27;t require permissions._
+Mints a token and assigns it to `to`.
+doesn't require permissions.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -68,5 +66,31 @@ doesn&#x27;t require permissions._
 
 ```solidity
 function exists(uint256 tokenId) external view returns (bool)
+```
+
+### setTrustedForwarder
+
+```solidity
+function setTrustedForwarder(address forwarder) public
+```
+
+### _msgSender
+
+```solidity
+function _msgSender() internal view returns (address sender)
+```
+
+the following 3 functions are all required for OpenGSN integration
+
+### _msgData
+
+```solidity
+function _msgData() internal view returns (bytes)
+```
+
+### versionRecipient
+
+```solidity
+function versionRecipient() external pure returns (string)
 ```
 
