@@ -1,8 +1,6 @@
-
-
 ## ERC1820ImplementerAuthorizeAll
 
-_Implementation of the {IERC1820Implementer} interface.
+Implementation of the {IERC1820Implementer} interface.
 
 Contracts may inherit from this and call {_registerInterfaceForAddress} to
 declare their willingness to be implementers.
@@ -10,7 +8,7 @@ declare their willingness to be implementers.
 Any accounts requesting to add this to the registry will be approved.
 
 {IERC1820Registry-setInterfaceImplementer} should then be called for the
-registration to be complete._
+registration to be complete.
 
 ### _ERC1820_ACCEPT_MAGIC
 
@@ -21,7 +19,7 @@ bytes32 _ERC1820_ACCEPT_MAGIC
 ### _supportedInterfaces
 
 ```solidity
-mapping(bytes32 &#x3D;&gt; bool) _supportedInterfaces
+mapping(bytes32 => bool) _supportedInterfaces
 ```
 
 ### canImplementInterfaceForAddress
@@ -30,7 +28,7 @@ mapping(bytes32 &#x3D;&gt; bool) _supportedInterfaces
 function canImplementInterfaceForAddress(bytes32 interfaceHash, address) public view virtual returns (bytes32)
 ```
 
-_See {IERC1820Implementer-canImplementInterfaceForAddress}._
+See {IERC1820Implementer-canImplementInterfaceForAddress}.
 
 ### _registerInterfaceForAddress
 
@@ -38,9 +36,9 @@ _See {IERC1820Implementer-canImplementInterfaceForAddress}._
 function _registerInterfaceForAddress(bytes32 interfaceHash) internal virtual
 ```
 
-_Declares the contract as willing to be an implementer of
-&#x60;interfaceHash&#x60; for &#x60;account&#x60;.
+Declares the contract as willing to be an implementer of
+`interfaceHash` for `account`.
 
 See {IERC1820Registry-setInterfaceImplementer} and
-{IERC1820Registry-interfaceHash}._
+{IERC1820Registry-interfaceHash}.
 

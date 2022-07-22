@@ -1,5 +1,3 @@
-
-
 ## ERC1820Registry
 
 This contract is the official implementation of the ERC1820 Registry.
@@ -19,7 +17,7 @@ ERC165 Invalid ID.
 bytes4 ERC165ID
 ```
 
-Method ID for the ERC165 supportsInterface method (&#x3D; &#x60;bytes4(keccak256(&#x27;supportsInterface(bytes4)&#x27;))&#x60;).
+Method ID for the ERC165 supportsInterface method (= `bytes4(keccak256('supportsInterface(bytes4)'))`).
 
 ### ERC1820_ACCEPT_MAGIC
 
@@ -32,7 +30,7 @@ Magic value which is returned if a contract implements an interface on behalf of
 ### interfaces
 
 ```solidity
-mapping(address &#x3D;&gt; mapping(bytes32 &#x3D;&gt; address)) interfaces
+mapping(address => mapping(bytes32 => address)) interfaces
 ```
 
 mapping from addresses and interface hashes to their implementers.
@@ -40,7 +38,7 @@ mapping from addresses and interface hashes to their implementers.
 ### managers
 
 ```solidity
-mapping(address &#x3D;&gt; address) managers
+mapping(address => address) managers
 ```
 
 mapping from addresses to their manager.
@@ -48,7 +46,7 @@ mapping from addresses to their manager.
 ### erc165Cached
 
 ```solidity
-mapping(address &#x3D;&gt; mapping(bytes4 &#x3D;&gt; bool)) erc165Cached
+mapping(address => mapping(bytes4 => bool)) erc165Cached
 ```
 
 flag for each address and erc165 interface to indicate if it is cached.
@@ -59,7 +57,7 @@ flag for each address and erc165 interface to indicate if it is cached.
 event InterfaceImplementerSet(address addr, bytes32 interfaceHash, address implementer)
 ```
 
-Indicates a contract is the &#x27;implementer&#x27; of &#x27;interfaceHash&#x27; for &#x27;addr&#x27;.
+Indicates a contract is the 'implementer' of 'interfaceHash' for 'addr'.
 
 ### ManagerChanged
 
@@ -67,7 +65,7 @@ Indicates a contract is the &#x27;implementer&#x27; of &#x27;interfaceHash&#x27;
 event ManagerChanged(address addr, address newManager)
 ```
 
-Indicates &#x27;newManager&#x27; is the address of the new manager for &#x27;addr&#x27;.
+Indicates 'newManager' is the address of the new manager for 'addr'.
 
 ### getInterfaceImplementer
 
@@ -79,12 +77,12 @@ Query if an address implements an interface and through which contract.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _addr | address | Address being queried for the implementer of an interface. (If &#x27;_addr&#x27; is the zero address then &#x27;msg.sender&#x27; is assumed.) |
-| _interfaceHash | bytes32 | Keccak256 hash of the name of the interface as a string. E.g., &#x27;web3.utils.keccak256(&quot;ERC777TokensRecipient&quot;)&#x27; for the &#x27;ERC777TokensRecipient&#x27; interface. |
+| _addr | address | Address being queried for the implementer of an interface. (If '_addr' is the zero address then 'msg.sender' is assumed.) |
+| _interfaceHash | bytes32 | Keccak256 hash of the name of the interface as a string. E.g., 'web3.utils.keccak256("ERC777TokensRecipient")' for the 'ERC777TokensRecipient' interface. |
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | address | The address of the contract which implements the interface &#x27;_interfaceHash&#x27; for &#x27;_addr&#x27; or &#x27;0&#x27; if &#x27;_addr&#x27; did not register an implementer for this interface. |
+| [0] | address | The address of the contract which implements the interface '_interfaceHash' for '_addr' or '0' if '_addr' did not register an implementer for this interface. |
 
 ### setInterfaceImplementer
 
@@ -98,9 +96,9 @@ Only the manager defined for that address can set it.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _addr | address | Address for which to set the interface. (If &#x27;_addr&#x27; is the zero address then &#x27;msg.sender&#x27; is assumed.) |
-| _interfaceHash | bytes32 | Keccak256 hash of the name of the interface as a string. E.g., &#x27;web3.utils.keccak256(&quot;ERC777TokensRecipient&quot;)&#x27; for the &#x27;ERC777TokensRecipient&#x27; interface. |
-| _implementer | address | Contract address implementing &#x27;_interfaceHash&#x27; for &#x27;_addr&#x27;. |
+| _addr | address | Address for which to set the interface. (If '_addr' is the zero address then 'msg.sender' is assumed.) |
+| _interfaceHash | bytes32 | Keccak256 hash of the name of the interface as a string. E.g., 'web3.utils.keccak256("ERC777TokensRecipient")' for the 'ERC777TokensRecipient' interface. |
+| _implementer | address | Contract address implementing '_interfaceHash' for '_addr'. |
 
 ### setManager
 
@@ -108,13 +106,13 @@ Only the manager defined for that address can set it.
 function setManager(address _addr, address _newManager) external
 ```
 
-Sets &#x27;_newManager&#x27; as manager for &#x27;_addr&#x27;.
-The new manager will be able to call &#x27;setInterfaceImplementer&#x27; for &#x27;_addr&#x27;.
+Sets '_newManager' as manager for '_addr'.
+The new manager will be able to call 'setInterfaceImplementer' for '_addr'.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _addr | address | Address for which to set the new manager. |
-| _newManager | address | Address of the new manager for &#x27;addr&#x27;. (Pass &#x27;0x0&#x27; to reset the manager to &#x27;_addr&#x27;.) |
+| _newManager | address | Address of the new manager for 'addr'. (Pass '0x0' to reset the manager to '_addr'.) |
 
 ### getManager
 
@@ -174,7 +172,7 @@ function implementsERC165Interface(address _contract, bytes4 _interfaceId) publi
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | bool | True if &#x27;_contract&#x27; implements &#x27;_interfaceId&#x27;, false otherwise. |
+| [0] | bool | True if '_contract' implements '_interfaceId', false otherwise. |
 
 ### implementsERC165InterfaceNoCache
 
@@ -191,7 +189,7 @@ Checks whether a contract implements an ERC165 interface or not without using no
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | bool | True if &#x27;_contract&#x27; implements &#x27;_interfaceId&#x27;, false otherwise. |
+| [0] | bool | True if '_contract' implements '_interfaceId', false otherwise. |
 
 ### isERC165Interface
 
@@ -207,7 +205,7 @@ Checks whether the hash is a ERC165 interface (ending with 28 zeroes) or not.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | bool | True if &#x27;_interfaceHash&#x27; is an ERC165 interface (ending with 28 zeroes), false otherwise. |
+| [0] | bool | True if '_interfaceHash' is an ERC165 interface (ending with 28 zeroes), false otherwise. |
 
 ### noThrowCall
 
@@ -215,5 +213,5 @@ Checks whether the hash is a ERC165 interface (ending with 28 zeroes) or not.
 function noThrowCall(address _contract, bytes4 _interfaceId) internal view returns (uint256 success, uint256 result)
 ```
 
-_Make a call on a contract without throwing if the function does not exist._
+Make a call on a contract without throwing if the function does not exist.
 

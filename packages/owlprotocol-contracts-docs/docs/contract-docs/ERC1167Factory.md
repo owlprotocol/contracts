@@ -1,8 +1,6 @@
-
-
 ## ERC1167Factory
 
-_ERC1167 Minimal Proxy Factory_
+ERC1167 Minimal Proxy Factory
 
 ### NewClone
 

@@ -1,69 +1,67 @@
 ## ICrafter
 
-_Pluggable Crafting Contract.
-Each contract is it&#x27;s own recipe definition.
-Players can interact with the contract to have
-recipie outputs either minted or transferred
-from a deposit._
+Crafting contracts interface
 
 ### initialize
 
 ```solidity
-function initialize(address _admin, address _burnAddress, uint96 _craftableAmount, struct PluginsLib.Ingredient[] _inputs, struct PluginsLib.Ingredient[] _outputs) external
+function initialize(address _admin, address _burnAddress, uint96 _craftableAmount, struct PluginsCore.Ingredient[] _inputs, struct PluginsCore.Ingredient[] _outputs, address _forwarder) external
 ```
 
-Create recipe
+Initializes contract (replaces constructor in proxy pattern)
 
-_Configures crafting recipe with inputs/outputs_
-
-| Name              | Type                           | Description                          |
-| ----------------- | ------------------------------ | ------------------------------------ |
-| \_admin           | address                        | Admin address to intialize ownership |
-| \_burnAddress     | address                        | Burn address for burn inputs         |
-| \_craftableAmount | uint96                         |                                      |
-| \_inputs          | struct PluginsLib.Ingredient[] | inputs for recipe                    |
-| \_outputs         | struct PluginsLib.Ingredient[] | outputs for recipe                   |
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _admin | address | owner, can control outputs on contract |
+| _burnAddress | address | Burn address for burn inputs |
+| _craftableAmount | uint96 | limit on the number of times this configuration can be crafted |
+| _inputs | struct PluginsCore.Ingredient[] | inputs for configuration |
+| _outputs | struct PluginsCore.Ingredient[] | outputs for configuration |
+| _forwarder | address | trusted forwarder address for openGSN |
 
 ### deposit
 
 ```solidity
-function deposit(uint96 depositAmount, uint256[][] _outputsERC721Ids) external
+function deposit(uint96 amount, uint256[][] _outputsERC721Ids) external
 ```
 
-Must be recipe creator
+Must be `DEFAULT_ADMIN_ROLE`. Automatically sends from
+`_msgSender()`
 
-_Used to deposit recipe outputs_
+Used to deposit configuration outputs.
 
-| Name               | Type        | Description                                   |
-| ------------------ | ----------- | --------------------------------------------- |
-| depositAmount      | uint96      | How many times the recipe should be craftable |
-| \_outputsERC721Ids | uint256[][] | 2D-array of ERC721 tokens used in crafting    |
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| amount | uint96 | How many more times the configuration should be craftable |
+| _outputsERC721Ids | uint256[][] | 2D-array of ERC721 tokens used in crafting Example of `_outputERC721Ids` with `amount = 2` with 3 `Ingredient`s in `outputs` with `TokenType.ERC721` ``` [  [1, 2]  [3, 4]  [5, 6] ] ``` |
 
 ### withdraw
 
 ```solidity
-function withdraw(uint96 withdrawAmount) external
+function withdraw(uint96 amount) external
 ```
 
-Must be recipe creator
+Must be `DEFAULT_ADMIN_ROLE`
 
-_Used to withdraw recipe outputs. Reverse logic as deposit()._
+Used to withdraw configuration outputs out of contract to the
+caller. Will also decrease `craftableAmount`
 
-| Name           | Type   | Description                                          |
-| -------------- | ------ | ---------------------------------------------------- |
-| withdrawAmount | uint96 | How many times the craft outputs should be withdrawn |
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| amount | uint96 | How many sets of outputs should be withdrawn |
 
 ### craft
 
 ```solidity
-function craft(uint96 craftAmount, uint256[][] _inputERC721Ids) external
+function craft(uint96 amount, uint256[][] _inputERC721Ids) external
 ```
 
-Craft {craftAmount}
+Craft `amount`
 
-_Used to craft. Consumes inputs and transfers outputs._
+Used to craft. Consumes inputs and transfers outputs.
 
-| Name             | Type        | Description                                    |
-| ---------------- | ----------- | ---------------------------------------------- |
-| craftAmount      | uint96      | How many times to craft                        |
-| \_inputERC721Ids | uint256[][] | Array of pre-approved NFTs for crafting usage. |
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| amount | uint96 | How many times to craft |
+| _inputERC721Ids | uint256[][] | Array of pre-approved NFTs for crafting usage. Example of `_inputERC721Ids` with `amount = 2` with 3 `Ingredient`s in `inputs` with `TokenType.ERC721` ``` [  [1, 2]  [3, 4]  [5, 6] ] ``` |
+

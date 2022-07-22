@@ -1,9 +1,7 @@
-
-
 ## ERC1820ImplementerInterface
 
-_The interface a contract MUST implement if it is the implementer of
-some (other) interface for any address other than itself._
+The interface a contract MUST implement if it is the implementer of
+some (other) interface for any address other than itself.
 
 ### canImplementInterfaceForAddress
 
@@ -11,7 +9,7 @@ some (other) interface for any address other than itself._
 function canImplementInterfaceForAddress(bytes32 interfaceHash, address addr) external view returns (bytes32)
 ```
 
-Indicates whether the contract implements the interface &#x27;interfaceHash&#x27; for the address &#x27;addr&#x27; or not.
+Indicates whether the contract implements the interface 'interfaceHash' for the address 'addr' or not.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -20,5 +18,5 @@ Indicates whether the contract implements the interface &#x27;interfaceHash&#x27
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | bytes32 | ERC1820_ACCEPT_MAGIC only if the contract implements &#x27;interfaceHash&#x27; for the address &#x27;addr&#x27;. |
+| [0] | bytes32 | ERC1820_ACCEPT_MAGIC only if the contract implements 'interfaceHash' for the address 'addr'. |
 

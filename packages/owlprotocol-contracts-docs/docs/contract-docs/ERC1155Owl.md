@@ -1,5 +1,3 @@
-
-
 ## ERC1155Owl
 
 ### MINTER_ROLE
@@ -12,6 +10,12 @@ bytes32 MINTER_ROLE
 
 ```solidity
 bytes32 URI_ROLE
+```
+
+### ROYALTY_ROLE
+
+```solidity
+bytes32 ROYALTY_ROLE
 ```
 
 ### contractURI_
@@ -41,25 +45,36 @@ constructor() public
 ### initialize
 
 ```solidity
-function initialize(address _admin, string uri_, string newContractURI) external
+function initialize(address _admin, string uri_, string newContractURI, address _forwarder, address _receiver, uint96 _feeNumerator) external
 ```
+
+Initializes an ERC721Owl contract
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _admin | address | admin for contract |
+| uri_ | string | uri for contract |
+| newContractURI | string | new uri for contract |
+| _forwarder | address | address for trusted forwarder for open GSN |
+| _receiver | address | address of receiver of royalty fees |
+| _feeNumerator | uint96 | numerator of royalty fee percentage (numerator / 10000) |
 
 ### proxyInitialize
 
 ```solidity
-function proxyInitialize(address _admin, string uri_, string newContractURI) external
+function proxyInitialize(address _admin, string uri_, string newContractURI, address _forwarder, address _receiver, uint96 _feeNumerator) external
 ```
 
 ### __ERC1155Owl_init
 
 ```solidity
-function __ERC1155Owl_init(address _admin, string uri_, string newContractURI) internal
+function __ERC1155Owl_init(address _admin, string uri_, string newContractURI, address _forwarder, address _receiver, uint96 _feeNumerator) internal
 ```
 
 ### __ERC1155Owl_init_unchained
 
 ```solidity
-function __ERC1155Owl_init_unchained(address _admin, string newContractURI) internal
+function __ERC1155Owl_init_unchained(string newContractURI) internal
 ```
 
 ### grantMinter
@@ -70,7 +85,7 @@ function grantMinter(address to) public
 
 Must have DEFAULT_ADMIN_ROLE
 
-_Grants MINTER_ROLE to {a}_
+Grants MINTER_ROLE to {a}
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -84,7 +99,21 @@ function grantUriRole(address to) public
 
 Must have DEFAULT_ADMIN_ROLE
 
-_Grants URI_ROLE to {a}_
+Grants URI_ROLE to {a}
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| to | address | address to |
+
+### grantRoyaltyRole
+
+```solidity
+function grantRoyaltyRole(address to) public
+```
+
+Must have DEFAULT_ADMIN_ROLE
+
+Grants ROYALTY_ROLE to {a}
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -98,7 +127,7 @@ function mint(address to, uint256 id, uint256 amount, bytes data) public
 
 Must have MINTER_ROLE
 
-_Allows MINTER_ROLE to mint NFTs_
+Allows MINTER_ROLE to mint NFTs
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -115,7 +144,7 @@ function mintBatch(address to, uint256[] ids, uint256[] amounts, bytes data) pub
 
 Must have MINTER_ROLE
 
-_Allows caller to mint NFTs (safeMint)_
+Allows caller to mint NFTs (safeMint)
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -132,7 +161,7 @@ function setURI(string newuri) public
 
 Must have URI_ROLE role!
 
-_Allows setting the uri_
+Allows setting the uri
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -146,7 +175,7 @@ function setContractURI(string newContractURI) public
 
 Must have URI_ROLE role!
 
-_Allows setting the contract uri_
+Allows setting the contract uri
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -158,7 +187,37 @@ _Allows setting the contract uri_
 function contractURI() public view returns (string)
 ```
 
-_Defines collection-wide metadata that is URI-accessible_
+Defines collection-wide metadata that is URI-accessible
+
+### setTokenRoyalty
+
+```solidity
+function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) external
+```
+
+Exposing `_setTokenRoyalty`
+
+### setDefaultRoyalty
+
+```solidity
+function setDefaultRoyalty(address receiver, uint96 feeNumerator) external
+```
+
+Exposing `_setDefaultRoyalty`
+
+### _msgSender
+
+```solidity
+function _msgSender() internal view returns (address)
+```
+
+the following 3 functions are all required for OpenGSN integration
+
+### _msgData
+
+```solidity
+function _msgData() internal view returns (bytes)
+```
 
 ### supportsInterface
 

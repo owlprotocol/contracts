@@ -1,5 +1,3 @@
-
-
 ## ERC20Owl
 
 ### MINTER_ROLE
@@ -26,12 +24,6 @@ string version
 bytes4 ERC165TAG
 ```
 
-### baseURI
-
-```solidity
-string baseURI
-```
-
 ### constructor
 
 ```solidity
@@ -41,7 +33,25 @@ constructor() public
 ### initialize
 
 ```solidity
-function initialize(address _admin, string _name, string _symbol) external
+function initialize(address _admin, string _name, string _symbol, address _forwarder) external
+```
+
+### proxyInitialize
+
+```solidity
+function proxyInitialize(address _admin, string _name, string _symbol, address _forwarder) external
+```
+
+### __ERC20Owl_init
+
+```solidity
+function __ERC20Owl_init(address _admin, string _name, string _symbol, address _forwarder) internal
+```
+
+### __ERC20Owl_init_unchained
+
+```solidity
+function __ERC20Owl_init_unchained(address _admin, address _forwarder) internal
 ```
 
 ### grantMinter
@@ -52,7 +62,7 @@ function grantMinter(address to) public
 
 Must have DEFAULT_ADMIN_ROLE
 
-_Grants MINTER_ROLE to {a}_
+Grants MINTER_ROLE to {a}
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -66,12 +76,24 @@ function mint(address to, uint256 amount) public
 
 Must have MINTER_ROLE
 
-_Allows MINTER_ROLE to mint NFTs_
+Allows MINTER_ROLE to mint NFTs
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | to | address | address to |
 | amount | uint256 | amount to mint |
+
+### _msgSender
+
+```solidity
+function _msgSender() internal view returns (address)
+```
+
+### _msgData
+
+```solidity
+function _msgData() internal view virtual returns (bytes)
+```
 
 ### supportsInterface
 
@@ -79,7 +101,7 @@ _Allows MINTER_ROLE to mint NFTs_
 function supportsInterface(bytes4 interfaceId) public view virtual returns (bool)
 ```
 
-_ERC165 Support_
+ERC165 Support
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
