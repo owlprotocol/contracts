@@ -9,14 +9,14 @@
 {{{natspec.notice}}}
 
 {{#if natspec.dev}}
-{{#noop}}{{{natspec.dev}}}{{/noop}}
+{{#formatLinks}}{{{natspec.dev}}}{{/formatLinks}}
 {{/if}}
 
 {{#if natspec.params}}
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 {{#each params}}
-| {{name}} | {{type}} | {{{joinLines natspec}}} |
+| {{name}} | {{type}} | {{#formatLinks}}{{{joinLines natspec}}}{{/formatLinks}} |
 {{/each}}
 {{/if}}
 
@@ -24,7 +24,7 @@
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 {{#each returns}}
-| {{#if name}}{{name}}{{else}}[{{@index}}]{{/if}} | {{type}} | {{{joinLines natspec}}} |
+| {{#if name}}{{name}}{{else}}[{{@index}}]{{/if}} | {{type}} | {{#formatLinks}}{{{joinLines natspec}}}{{/formatLinks}} |
 {{/each}}
 {{/if}}
 

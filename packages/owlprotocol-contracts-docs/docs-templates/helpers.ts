@@ -1,4 +1,5 @@
 import { HelperOptions, Utils } from 'handlebars';
+
 // import { TypeName } from 'solidity-ast';
 // import { DocItemWithContext } from '../../site';
 
@@ -60,16 +61,29 @@ export function joinLines(text?: string) {
     }
 }
 
-// const { version } = require('../package.json');
+// Regular expression -> match all function names, contract names, and # to separate
+const re = /{{([ #a-zA-Z0-9_]*)}}/gm;
+const path = './'; // todo - set this somewhere else
+export function formatLinks(this: unknown, opts: HelperOptions) {
+    // Render our text
+    let rendered = opts.fn(this as unknown, opts);
+    // Find all occurances
+    const matches = rendered.match(re);
+    if (!matches) return rendered;
 
-// module.exports = {
-//     'github-link': (contractPath: string) => {
-//         return `https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v${version}/contracts/${contractPath}`;
-//     },
-// };
+    // Iterate through links and format
+    for (const match of matches) {
+        // {{ContractA#mint}} => ContractA#mint
+        const name = match.slice(2, match.length - 2);
 
-export function noop(this: unknown, opts: HelperOptions) {
-    console.log('helper found!');
-    return opts.fn(this as unknown, opts);
-    // return 'somelinkhere!';
+        // ContractA#mint => Contract.mint(...)
+        let displayName = name;
+        if (displayName.includes('#')) displayName = displayName.replace('#', '.') + '(...)';
+
+        // Set md link and update
+        const link = `[${displayName}](${path}${name})`;
+        rendered = rendered.replace(match, link);
+    }
+
+    return rendered;
 }
