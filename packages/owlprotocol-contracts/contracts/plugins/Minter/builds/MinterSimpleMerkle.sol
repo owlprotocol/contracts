@@ -11,7 +11,7 @@ import './MinterAutoId.sol';
 contract MinterSimpleMerkle is MinterAutoId {
     // Specification + ERC165
     bytes4 private constant ERC165TAG =
-        bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimpleMerkle/', version)));
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimpleMerkle/', _version)));
 
     // Merkle Root
     bytes32 public merkleRoot;

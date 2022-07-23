@@ -61,7 +61,7 @@ contract ERC721OwlAttributes is ERC721Owl {
 
     bytes32 private constant DNA_ROLE = keccak256('DNA_ROLE');
     bytes4 private constant ERC165TAG =
-        bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlAttributes/', VERSION)));
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlAttributes/', _version)));
 
     /**********************
            Storage

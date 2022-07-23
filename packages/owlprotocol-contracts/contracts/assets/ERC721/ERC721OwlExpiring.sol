@@ -26,7 +26,7 @@ contract ERC721OwlExpiring is ERC721Owl {
 
     bytes32 private constant EXPIRY_ROLE = keccak256('EXPIRY_ROLE');
     bytes4 private constant ERC165TAG =
-        bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlExpiring/', VERSION)));
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlExpiring/', _version)));
 
     /**********************
            Storage

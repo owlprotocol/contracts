@@ -17,8 +17,7 @@ import '../../../utils/SourceRandom.sol';
  */
 contract MinterRandom is MinterCore {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterRandom/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterRandom/', _version)));
 
     // Nonce
     uint256 private _numMinted;

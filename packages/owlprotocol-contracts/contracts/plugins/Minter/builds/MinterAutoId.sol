@@ -29,8 +29,7 @@ import '../MinterCore.sol';
  */
 contract MinterAutoId is MinterCore {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', _version)));
 
     // Track our next tokenId for each species
     uint256 public nextTokenId;
@@ -130,12 +129,21 @@ contract MinterAutoId is MinterCore {
     }
 
     /**
-     * @dev Used to set the starting nextTokenId value. Used to save situtations
+     * @dev Used to set the starting nextTokenId value. Used to save situations
      * where someone mints directly and we get out of sync.
      * @param nextTokenId_ next token id to be minted
      */
     function setNextTokenId(uint256 nextTokenId_) public onlyRole(DEFAULT_ADMIN_ROLE) {
         nextTokenId = nextTokenId_;
+    }
+
+    /**
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
 
@@ -156,7 +164,7 @@ interface IMinterAutoId is IERC165Upgradeable {
 
     /**
      * @dev Used to set the starting nextTokenId value.
-     * Used to save situtations where someone mints directly
+     * Used to save situations where someone mints directly
      */
     function setNextTokenId(uint256 nextTokenId_) external;
 }

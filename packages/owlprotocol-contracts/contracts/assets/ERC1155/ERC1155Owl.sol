@@ -12,8 +12,7 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable, ERC2981Upgradeable {
     bytes32 internal constant ROYALTY_ROLE = keccak256('ROYALTY_ROLE');
     string private contractURI_;
 
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC1155Owl/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC1155Owl/', _version)));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -199,7 +198,7 @@ contract ERC1155Owl is OwlBase, ERC1155BurnableUpgradeable, ERC2981Upgradeable {
         public
         view
         virtual
-        override(ERC1155Upgradeable, ERC2981Upgradeable, AccessControlUpgradeable)
+        override(OwlBase, ERC1155Upgradeable, ERC2981Upgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

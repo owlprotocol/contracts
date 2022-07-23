@@ -16,8 +16,7 @@ import '../MinterCore.sol';
  */
 contract MinterSimple is MinterCore {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimple/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimple/', _version)));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

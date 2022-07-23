@@ -33,7 +33,7 @@ import '../../../utils/RosalindDNA.sol';
  */
 contract MinterBreeding is MinterCore {
     // Specification + ERC165
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterBreeding/', __version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterBreeding/', _version)));
 
     // Store
     mapping(uint256 => uint256) lastBredTime;
@@ -169,7 +169,7 @@ contract MinterBreeding is MinterCore {
         uint256[] memory mutationRates
     ) private {
         // Initial input checks
-        require(genes.length >= 1, 'Atleast one gene must be specified!');
+        require(genes.length >= 1, 'At least one gene must be specified!');
         require(
             mutationRates.length == 0 || mutationRates.length == genes.length,
             'Mutation rates must be 0 or equal genes.length'
