@@ -14,8 +14,22 @@ import '../../../utils/SourceRandom.sol';
 import '../../../utils/RosalindDNA.sol';
 
 /**
- * @dev Decentralized NFT Minter contract
+ * @dev Decentralized NFT Minter breeding contract
  *
+ * Breeder NFT minter contracts. Every time `breed` or `safeBreed` is called, a new NFT id is automatically generated based on the genetics of both parents.
+ *
+ * Breeding rules -
+ * Breeding configuration -
+ * Breeding logic -
+ *
+ * As all Minter contracts interact with existing NFTs, MinterCore expects two
+ * standard functions exposed by the NFT:
+ * - `mint(address to, uint256 tokenId)`
+ * - `safeMint(address to, uint256 tokenId)`
+ *
+ * Additionally, Minter contracts must have required permissions for minting. In
+ * the case that you're using ERC721Owl, you'll do that with
+ * `ERC721Owl.grantMinter(BreedingContract)`.
  */
 contract MinterBreeding is MinterCore {
     // Specification + ERC165

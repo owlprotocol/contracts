@@ -99,7 +99,7 @@ contract MinterAutoId is MinterCore {
         uint256 _mintFeeAmount,
         address _nftContractAddr,
         address _forwarder
-    ) private onlyInitializing {
+    ) internal onlyInitializing {
         __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
         __MinterAutoId_init_unchained();
     }
@@ -107,7 +107,7 @@ contract MinterAutoId is MinterCore {
     /**
      * @dev For future implementations.
      */
-    function __MinterAutoId_init_unchained() internal onlyInitializing {}
+    function __MinterAutoId_init_unchained() private onlyInitializing {}
 
     /**
      * @dev Mint the next NFT at `nextTokenId`.
@@ -136,15 +136,6 @@ contract MinterAutoId is MinterCore {
      */
     function setNextTokenId(uint256 nextTokenId_) public onlyRole(DEFAULT_ADMIN_ROLE) {
         nextTokenId = nextTokenId_;
-    }
-
-    /**
-     * @dev ERC165 Support
-     * @param interfaceId hash of the interface testing for
-     * @return bool whether interface is supported
-     */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
     }
 }
 
