@@ -13,6 +13,7 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
  * - Consistent contract versioning
  * - Consistent access control
  * - UUPS contract upgrade support
+ * See {{ link test }}
  */
 abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
     string internal constant __version = 'v0.1';
@@ -111,9 +112,11 @@ abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
     }
 
     /**
-     * ERC165 support
+     * @dev ERC165 Support
+     * @param interfaceId hash of the interface testing for
+     * @return bool whether interface is supported
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
-    }
+    // function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    //     return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
+    // }
 }
