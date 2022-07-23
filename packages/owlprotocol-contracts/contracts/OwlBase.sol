@@ -5,7 +5,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 
 /**
- * @dev Base for all OWLPROTOCOL contracts
+ * @dev Base for all OwlProtocol contracts
  *
  * Implements several required mechanisms for all OwlProtocol contracts to
  * utilize:
@@ -16,8 +16,10 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
  * See {{ link test }}
  */
 abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
-    string internal constant __version = 'v0.1';
     bytes32 internal constant ROUTER_ROLE = keccak256('ROUTER_ROLE');
+    // Consistent version across all contracts
+    string internal constant _version = 'v0.1';
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://OwlBase/', _version)));
 
     /**
      * @dev OwlBase required initialization
@@ -97,15 +99,18 @@ abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
         return '2.2.6';
     }
 
-    // TODO - implement this
-    // function version() external pure virtual returns (string memory) {
-    //     return __version;
-    // }
+    /**
+     * @dev OwlProtocol contract version. Used to determine compatibility
+     * interoperable with other Owl contracts.
+     */
+    function version() external pure virtual returns (string memory) {
+        return _version;
+    }
 
     /**
      * @dev Determine is an address a GSN trusted forwarder.
      * @param forwarder address to query
-     * @return OpenGSN trusted forwardder status
+     * @return OpenGSN trusted forwarder status
      */
     function isTrustedForwarder(address forwarder) public view returns (bool) {
         return hasRole(ROUTER_ROLE, forwarder);
@@ -116,7 +121,7 @@ abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
      * @param interfaceId hash of the interface testing for
      * @return bool whether interface is supported
      */
-    // function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-    //     return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
-    // }
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);
+    }
 }
