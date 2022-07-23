@@ -17,8 +17,7 @@ import '../../../utils/SourceRandom.sol';
  */
 contract MinterRandom is MinterCore {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterRandom/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterRandom/', _version)));
 
     // Nonce
     uint256 private _numMinted;
@@ -60,6 +59,7 @@ contract MinterRandom is MinterCore {
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterRandom_init_unchained();
     }
 
     function __MinterRandom_init_unchained() internal onlyInitializing {}

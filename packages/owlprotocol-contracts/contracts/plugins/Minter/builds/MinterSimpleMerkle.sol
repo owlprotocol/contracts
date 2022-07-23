@@ -11,13 +11,18 @@ import './MinterAutoId.sol';
 contract MinterSimpleMerkle is MinterAutoId {
     // Specification + ERC165
     bytes4 private constant ERC165TAG =
-        bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimpleMerkle/', version)));
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimpleMerkle/', _version)));
 
     // Merkle Root
     bytes32 public merkleRoot;
     string public uri;
 
     event SetMerkleRoot(bytes32 merkleRoot);
+
+    // No constructor as inheriting from MinterAutoId
+    // constructor() {
+    //     _disableInitializers();
+    // }
 
     // Constructor
     function initialize(
@@ -109,7 +114,7 @@ contract MinterSimpleMerkle is MinterAutoId {
      */
     function safeMint(address buyer, bytes32[] calldata merkleProof) public {
         require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
-        MinterAutoId.mint(buyer);
+        MinterAutoId.safeMint(buyer);
     }
 
     function updateMerkleRoot(bytes32 _merkleRoot, string calldata _uri) public onlyRole(DEFAULT_ADMIN_ROLE) {

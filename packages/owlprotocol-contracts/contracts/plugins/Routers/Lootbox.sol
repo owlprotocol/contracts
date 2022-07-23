@@ -91,8 +91,7 @@ contract Lootbox is PluginsCore, KeeperCompatibleInterface, ERC721HolderUpgradea
     using AddressUpgradeable for address;
 
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Lootbox/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Lootbox/', _version)));
 
     /**********************
              State
@@ -300,7 +299,7 @@ contract Lootbox is PluginsCore, KeeperCompatibleInterface, ERC721HolderUpgradea
         public
         view
         virtual
-        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        override(OwlBase, ERC1155ReceiverUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

@@ -21,8 +21,7 @@ contract RouteRandomizer is PluginsCore, KeeperCompatibleInterface, ERC721Holder
     using AddressUpgradeable for address;
 
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://RouteRandomizer/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://RouteRandomizer/', _version)));
 
     /**********************
              State
@@ -195,7 +194,7 @@ contract RouteRandomizer is PluginsCore, KeeperCompatibleInterface, ERC721Holder
         public
         view
         virtual
-        override(ERC1155ReceiverUpgradeable, AccessControlUpgradeable)
+        override(OwlBase, ERC1155ReceiverUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

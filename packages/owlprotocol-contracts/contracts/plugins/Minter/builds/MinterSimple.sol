@@ -16,8 +16,7 @@ import '../MinterCore.sol';
  */
 contract MinterSimple is MinterCore {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimple/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterSimple/', _version)));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -56,6 +55,7 @@ contract MinterSimple is MinterCore {
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterSimple_init_unchained();
     }
 
     function __MinterSimple_init_unchained() internal onlyInitializing {}

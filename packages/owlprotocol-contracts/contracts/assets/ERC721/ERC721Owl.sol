@@ -17,8 +17,7 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable, ERC2981Upgradeable {
     bytes32 internal constant URI_ROLE = keccak256('URI_ROLE');
     bytes32 internal constant ROYALTY_ROLE = keccak256('ROYALTY_ROLE');
 
-    string public constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', VERSION)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721Owl/', _version)));
 
     /**********************
            Storage
@@ -221,7 +220,7 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable, ERC2981Upgradeable {
         public
         view
         virtual
-        override(ERC721Upgradeable, ERC2981Upgradeable, AccessControlUpgradeable)
+        override(OwlBase, ERC721Upgradeable, ERC2981Upgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

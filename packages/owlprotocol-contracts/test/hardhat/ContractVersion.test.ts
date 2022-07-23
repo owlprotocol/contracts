@@ -28,7 +28,9 @@ describe('Contract Version Testing', async () => {
             'MinterBreeding',
             'MinterRandom',
             'MinterSimple',
+            'MinterSimpleMerkle',
             'Lootbox',
+            'Transformer',
         ];
 
         const correctVersion = contracts.map((c) => assertCorrectVersion(c));

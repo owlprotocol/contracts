@@ -7,8 +7,12 @@ import {
     FactoryERC721,
     MinterRandom,
     MinterRandom__factory,
+    UpgradeableBeaconInitializable,
+    UpgradeableBeaconInitializable__factory,
+    BeaconProxyInitializable__factory,
+    BeaconProxyInitializable,
 } from '../../../../typechain';
-import { deployClone } from '../../utils';
+import { deployClone, predictDeployClone } from '../../utils';
 
 describe('MinterRandom.sol', function () {
     let owner: SignerWithAddress;
@@ -72,5 +76,37 @@ describe('MinterRandom.sol', function () {
             // SafeMint Specimen
             await minter.safeMint(owner.address);
         });
+    });
+
+    it('Beacon proxy initialization', async () => {
+        const beaconFactory = (await ethers.getContractFactory(
+            'UpgradeableBeaconInitializable',
+        )) as UpgradeableBeaconInitializable__factory;
+        const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+        const beaconProxyFactory = (await ethers.getContractFactory(
+            'BeaconProxyInitializable',
+        )) as BeaconProxyInitializable__factory;
+        const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+        const { address: beaconAddr } = await deployClone(beaconImpl, [owner.address, MinterImplementation.address]);
+
+        const args = [
+            owner.address,
+            ethers.constants.AddressZero, // mint fee token
+            ethers.constants.AddressZero, // mint fee address
+            0, // mint amount
+            nftAddress, // nft addr
+            ethers.constants.AddressZero, // trusted forwarder
+        ];
+
+        //@ts-ignore
+        const data = MinterImplementation.interface.encodeFunctionData('proxyInitialize', args);
+        const beaconProxyAddr = await predictDeployClone(beaconProxyImpl, [owner.address, beaconAddr, data]);
+
+        await deployClone(beaconProxyImpl, [owner.address, beaconAddr, data]);
+        const contract = (await ethers.getContractAt('MinterAutoId', beaconProxyAddr)) as MinterRandom;
+
+        await contract.mint(owner.address);
     });
 });

@@ -9,7 +9,7 @@ import {
     MinterSimple__factory,
 } from '../../../../typechain';
 
-import { deployClone } from '../../utils';
+import { deployClone, deployProxy } from '../../utils';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 describe('MinterSimple.sol', function () {
@@ -49,7 +49,7 @@ describe('MinterSimple.sol', function () {
         mintFeeAmount = 10;
     });
 
-    describe('MinterSimple.mint(...)', async () => {
+    describe('MinterSimple.mint(...) for fee', async () => {
         let minter: MinterSimple;
 
         beforeEach(async () => {
@@ -81,5 +81,46 @@ describe('MinterSimple.sol', function () {
                 'ERC20: insufficient allowance',
             );
         });
+    });
+
+    describe('MinterSimple.mint(...) no fee', async () => {
+        let minter: MinterSimple;
+
+        beforeEach(async () => {
+            const { address } = await deployClone(MinterImplementation, [
+                owner.address,
+                ethers.constants.AddressZero,
+                ethers.constants.AddressZero,
+                0,
+                nftAddress,
+                ethers.constants.AddressZero, // trusted forwarder
+            ]);
+
+            minter = (await ethers.getContractAt('MinterSimple', address)) as MinterSimple;
+        });
+
+        it('mint without fee', async () => {
+            await minter.connect(user).mint(user.address, '5');
+        });
+
+        it('safeMint without fee', async () => {
+            await minter.connect(user).safeMint(user.address, '6');
+        });
+    });
+
+    it('Beacon proxy initialization', async () => {
+        const args = [
+            owner.address,
+            mintFeeToken,
+            mintFeeAddress,
+            mintFeeAmount,
+            nftAddress,
+            '0x' + '0'.repeat(40), // trusted forwarder
+        ];
+
+        const contract = (await deployProxy(owner.address, MinterImplementation, args)) as MinterSimple;
+        // Authorize transfer
+        await erc20.increaseAllowance(contract.address, '10');
+        await contract.mint(owner.address, 7);
     });
 });
