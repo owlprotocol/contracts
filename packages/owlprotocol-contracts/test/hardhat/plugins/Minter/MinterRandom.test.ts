@@ -7,11 +7,11 @@ import {
     FactoryERC721,
     MinterRandom,
     MinterRandom__factory,
+    UpgradeableBeaconInitializable,
     UpgradeableBeaconInitializable__factory,
     BeaconProxyInitializable__factory,
     BeaconProxyInitializable,
 } from '../../../../typechain';
-import { UpgradeableBeaconInitializable } from '../../../../types/ethers';
 import { deployClone, predictDeployClone } from '../../utils';
 
 describe('MinterRandom.sol', function () {
