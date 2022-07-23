@@ -139,7 +139,7 @@ describe('MinterBreeding.sol', function () {
 
             await expect(
                 minterBreeding.setBreedingRules(defaultRequiredParents, 1, defaultBreedingCooldownSeconds, [], []),
-            ).to.be.revertedWith('Atleast one gene must be specified!');
+            ).to.be.revertedWith('At least one gene must be specified!');
         });
 
         it('Wrong mutation rates', async () => {
