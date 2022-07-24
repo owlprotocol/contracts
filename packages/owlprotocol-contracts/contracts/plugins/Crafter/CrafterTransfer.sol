@@ -8,7 +8,7 @@ import './CrafterCore.sol';
  * (ERC20, ERC721, ERC1155) whose crafting outputs are transferred to the
  * caller.
  *
- * Crafting configuration is designated by two {Ingredient}[]. One array is the
+ * Crafting configuration is designated by two {PluginsCore#Ingredient}[]. One array is the
  * `inputs` and the other is the `outputs`. The contract allows for the `inputs`
  * to be redeemed for the `outputs`, `craftableAmount` times.
  *

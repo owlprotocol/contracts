@@ -7,7 +7,7 @@ import './CrafterCore.sol';
  * @dev Contract module that enables crafting of different types of assets
  * (ERC20, ERC721, ERC1155) whose crafting outputs are minted to the caller.
  *
- * Crafting configuration is designated by two {Ingredient}[]. One array is the
+ * Crafting configuration is designated by two {PluginsCore#Ingredient}`[]`. One array is the
  * `inputs` and the other is the `outputs`. The contract allows for the `inputs`
  * to be redeemed for the `outputs`, `craftableAmount` times.
  *

@@ -198,14 +198,14 @@ contract ERC721Owl is OwlBase, ERC721BurnableUpgradeable, ERC2981Upgradeable {
     }
 
     /**
-     * @dev use {OwlBase._msgSender()}
+     * @inheritdoc OwlBase
      */
     function _msgSender() internal view override(OwlBase, ContextUpgradeable) returns (address) {
         return OwlBase._msgSender();
     }
 
     /**
-     * @dev use {OwlBase._msgData()}
+     * @inheritdoc OwlBase
      */
     function _msgData() internal view override(OwlBase, ContextUpgradeable) returns (bytes calldata) {
         return OwlBase._msgData();

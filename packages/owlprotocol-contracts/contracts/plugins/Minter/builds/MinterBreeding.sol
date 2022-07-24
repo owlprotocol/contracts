@@ -29,7 +29,7 @@ import '../../../utils/RosalindDNA.sol';
  *
  * Additionally, Minter contracts must have required permissions for minting. In
  * the case that you're using ERC721Owl, you'll do that with
- * `ERC721Owl.grantMinter(BreedingContract)`.
+ * {{ERC721Owl#grantMinter}}.
  */
 contract MinterBreeding is MinterCore {
     // Specification + ERC165

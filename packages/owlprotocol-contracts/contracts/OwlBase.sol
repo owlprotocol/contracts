@@ -13,7 +13,6 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
  * - Consistent contract versioning
  * - Consistent access control
  * - UUPS contract upgrade support
- * See {{ link test }}
  */
 abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
     bytes32 internal constant ROUTER_ROLE = keccak256('ROUTER_ROLE');
