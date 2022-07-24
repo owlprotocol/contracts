@@ -95,40 +95,42 @@ export function formatLinks(this: unknown, opts: HelperOptions) {
 function getLink(name: string, path: string) {
 
     let displayName = name;
-    let resource = name;
+    let resource = '';
     let link = '';
 
-    // i.e. {Contract#Ingredient}
-    if (!isLocal(name)) {
-        // ContractA#mint => Contract.mint(...)
-        displayName = displayName.replace('#', '.');
+    // ContractA#mint => Contract.mint(...)
+    displayName = displayName.replace('#', '.');
 
-        // Check if we're referencing a Type or a function
-        // ref = 'CrafterMint#deposit'.split('#') => ['CrafterMint', 'Deposit']
-        const ref = name.split('#');
-        if (ref.length >= 2 && isFunction(ref[1]))
-            // Add function indicator
-            displayName += '(...)';
-        else if (ref.length >= 2 && !isFunction(ref[1])) {
-            // Drop the casing for first letter (anchors generate camelCase)
-            // ref = Ingredient => ingredient
-            ref[1] = ref[1][0].toLowerCase() + ref[1].slice(1);
-            // Put string back together
-            name = ref.join('#');
+    // Split up what we're referencing
+    // 'CrafterMint#deposit'.split('#') => ['CrafterMint', 'deposit']
+    const components = name.split('#');
+
+    // Add function display: deposit => deposit(...)
+    if (isFunction(components[components.length - 1]))
+        displayName += '(...)';
+
+    // Either an external contract (CaseSensitive) or a local function (alllowercase)
+    if (components.length == 1) {
+        // Check if we need to be lowercase (is an anchor)
+        if (isFunction(components[0])) {
+            components[0] = components[0].toLowerCase();
+            resource = '#' + components[0];
+        } else {
+            // Link to another page
+            resource = path + components[0];
         }
-
-        // Generate link
-        link = `[\`${displayName}\`](${path}${name})`;
-
-    } else if (isLocal(name)) {
-        // Setup HTML anchors
-        // local funcs will always start with lower case
-        if (isFunction(name))
-            // Add function indicator to display
-            displayName += '(...)';
-
-        link = `[\`${displayName}\`](#${resource})`;
+    } else if (components.length == 2) {
+        // Always an anchor, which must always be lower
+        components[1] = components[1].toLowerCase();
+        // Put everything back together to a link
+        resource = path + components.join('#');
+    } else {
+        // Unsupported format, just return
+        return name;
     }
+
+    // Generate link
+    link = `[\`${displayName}\`](${resource})`;
 
     return link;
 
@@ -151,6 +153,6 @@ function isFunction(name: string) {
 //     return false;
 // }
 
-function isLocal(name: string) {
-    return (isFunction(name) /*|| isType(name) */);
-}
+// function isLocal(name: string) {
+//     return (isFunction(name) /*|| isType(name) */);
+// }
