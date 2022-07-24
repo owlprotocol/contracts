@@ -16,11 +16,40 @@ import '../../../utils/RosalindDNA.sol';
 /**
  * @dev Decentralized NFT Minter breeding contract
  *
- * Breeder NFT minter contracts. Every time `breed` or `safeBreed` is called, a new NFT id is automatically generated based on the genetics of both parents.
+ * Breeder NFT minter contracts. Every time {breed} or {safeBreed} is called, a
+ * new NFT id is automatically generated based on the genetics of both parents.
  *
- * Breeding rules -
- * Breeding configuration -
- * Breeding logic -
+ * {#BreedingRules}:
+ * - `requiredParents`: how many parents are required to breed a new species.
+ * - `generationCooldownMultiplier`: **Note**: this enables generation counting,
+ * which will be stored in the first 8 bits of the dna. All breeds will require
+ * the breedCooldownSeconds as a baseline. On top of that,
+ * `breedCooldownMultiplier * generationNumber` seconds will be added to the
+ * cooldown for those species.
+ * **TODO** - link simpleEncoder
+ * - `genes`: how would you like the specie genes to be stored? You likely want
+ * to use the `simpleEncoder` function in order to setup these values.
+ * Otherwise, more can be read on {RosalindDNA}.
+ * - `breedCooldownSeconds`: baseline cooldown for ALL NFTs to wait until
+ * breeding functionality becomes available again.
+ * **TODO** - link GenMutationRates
+ * - `mutationRates`: probability checks for DNA mutations. Under the hood,
+ * {RosalindDNA} generates a random uint256 for every gene and checks if the
+ * uint256 is less than the corresponding mutationRate. Each mutationRate must
+ * correspond to it's gene in `genes`.
+ *   - If a mutation rate value is set to * 2^256-1, it will ALWAYS mutate.
+ *   - If a mutation rate is set to 2^255-1, it will mutate 50% of the time.
+ *   - If a mutation rate is set to 2^254-1, it will mutate 25% of the time, and
+ * so on.
+ *
+ * See {RosalindDNA} for more details.
+ *
+ * Breeding configuration is set once when the contract is initially deployed,
+ * and can be updated at any time through the {setBreedingRules} function.
+ *
+ *
+ *
+ * See {RosalindDNA#_breed} for the specific breeding implementation.
  *
  * As all Minter contracts interact with existing NFTs, MinterCore expects two
  * standard functions exposed by the NFT:
@@ -29,7 +58,7 @@ import '../../../utils/RosalindDNA.sol';
  *
  * Additionally, Minter contracts must have required permissions for minting. In
  * the case that you're using ERC721Owl, you'll do that with
- * {{ERC721Owl#grantMinter}}.
+ * {ERC721Owl#grantMinter}.
  */
 contract MinterBreeding is MinterCore {
     // Specification + ERC165
