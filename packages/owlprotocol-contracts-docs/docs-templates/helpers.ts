@@ -159,6 +159,5 @@ function isFunction(name: string) {
  * Identify local anchors by #Item
  */
 function isAnchor(name: string) {
-    console.log(`Checking is anchor with :${name}`);
     return (name[0] === '#');
 }
