@@ -16,11 +16,38 @@ import '../../../utils/RosalindDNA.sol';
 /**
  * @dev Decentralized NFT Minter breeding contract
  *
- * Breeder NFT minter contracts. Every time `breed` or `safeBreed` is called, a new NFT id is automatically generated based on the genetics of both parents.
+ * Breeder NFT minter contracts. Every time {breed} or {safeBreed} is called, a
+ * new NFT id is automatically generated based on the genetics of both parents.
  *
- * Breeding rules -
- * Breeding configuration -
- * Breeding logic -
+ * See {RosalindDNA} for more details.
+ *
+ * Breeding configuration is set once when the contract is initially deployed,
+ * and can be updated at any time through the {setBreedingRules} function.
+ *
+ * Once {breed} is called, the contract logic will execute as follows:
+ *
+ * Suppose two parents:
+ * ```
+ * parent1 = 0000 | 0001 | 0011 | 0111 // DNA for parent1 (4 genes)
+ * parent2 = 1111 | 1110 | 1100 | 1000 // DNA for parent2 (4 genes)
+ * parents = [parent1, parent2]
+ *
+ * child = 0000 | 0000 | 0000 | 0000 // Fresh slate for child
+ * for (gene in parentGenes) // loop through how many genes we have (4 genes)
+ *     randomParent = pickRandom(parent1, parent2) // pick a parent randomly
+ *     geneBitmask = 1111 | 0000 | 0000 | 0000 // setup a bitmask for gene
+ *     parentGene = randomParent & geneBitmask // isolate the specific gene
+ *     // if randomParent = parent1, parentGene =
+ *     // 1111 | 0000 | 0000 | 0000
+ *     child = child | parent // combine parent and child genes for that slot
+ *     // child = 1111 | 0000 | 0000 | 0000
+ *  ```
+ *
+ * If mutations are enabled, it will additionally check for if a mutation
+ * occurred. If so, the parent gene will be replaced entirely with random bit
+ * entropy.
+ *
+ * See {RosalindDNA#_breed} for the specific breeding implementation.
  *
  * As all Minter contracts interact with existing NFTs, MinterCore expects two
  * standard functions exposed by the NFT:
@@ -29,7 +56,7 @@ import '../../../utils/RosalindDNA.sol';
  *
  * Additionally, Minter contracts must have required permissions for minting. In
  * the case that you're using ERC721Owl, you'll do that with
- * {{ERC721Owl#grantMinter}}.
+ * {ERC721Owl#grantMinter}.
  */
 contract MinterBreeding is MinterCore {
     // Specification + ERC165
@@ -39,7 +66,6 @@ contract MinterBreeding is MinterCore {
     mapping(uint256 => uint256) lastBredTime;
     BreedingRules private _breedingRules;
 
-    // Store breeding details
     struct BreedingRules {
         uint8 requiredParents;
         uint16 generationCooldownMultiplier;
@@ -61,7 +87,17 @@ contract MinterBreeding is MinterCore {
         _disableInitializers();
     }
 
-    // Constructor
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param breedingRules Breeding configuration. See {setBreedingRules}.
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function initialize(
         address _admin,
         address _mintFeeToken,
@@ -82,6 +118,17 @@ contract MinterBreeding is MinterCore {
         );
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param breedingRules Breeding configuration. See {setBreedingRules}.
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function proxyInitialize(
         address _admin,
         address _mintFeeToken,
@@ -102,6 +149,17 @@ contract MinterBreeding is MinterCore {
         );
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param breedingRules Breeding configuration. See {setBreedingRules}.
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function __MinterBreeding_init(
         address _admin,
         address _mintFeeToken,
@@ -115,7 +173,12 @@ contract MinterBreeding is MinterCore {
         __MinterBreeding_init_unchained(breedingRules);
     }
 
-    function __MinterBreeding_init_unchained(BreedingRules calldata breedingRules) internal onlyInitializing {
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param breedingRules Breeding configuration. See {setBreedingRules}.
+     */
+    function __MinterBreeding_init_unchained(BreedingRules calldata breedingRules) private onlyInitializing {
         // Call with verifications
         _setBreedingRules(
             breedingRules.requiredParents,
@@ -128,6 +191,7 @@ contract MinterBreeding is MinterCore {
 
     /**
      * @dev Create a new type of species and define attributes.
+     * @param parents list of parent NFT tokenIds to breed
      */
     function breed(uint256[] calldata parents) public returns (uint256 dna) {
         // Breed species
@@ -139,6 +203,7 @@ contract MinterBreeding is MinterCore {
 
     /**
      * @dev Create a new type of species and define attributes.
+     * @param parents list of parent NFT tokenIds to breed
      */
     function safeBreed(uint256[] calldata parents) public returns (uint256 dna) {
         // Breed species
@@ -148,6 +213,30 @@ contract MinterBreeding is MinterCore {
         MinterCore._safeMintForFee(_msgSender(), dna);
     }
 
+    /**
+     * @dev Set breeding rule configuration
+     * @param requiredParents how many parents are required to breed a new species.
+     * @param generationCooldownMultiplier **Note**: this enables generation counting,
+     * which will be stored in the first 8 bits of the dna. All breeds will require
+     * the breedCooldownSeconds as a baseline. On top of that,
+     * `breedCooldownMultiplier * generationNumber` seconds will be added to the
+     * cooldown for those species.
+     * @param breedCooldownSeconds baseline cooldown for ALL NFTs to wait until
+     * breeding functionality becomes available again.
+     * **TODO** - link simpleEncoder
+     * @param genes how would you like the specie genes to be stored? You likely want
+     * to use the `simpleEncoder` function in order to setup these values.
+     * Otherwise, more can be read on {RosalindDNA}.
+     * **TODO** - link GenMutationRates
+     * @param mutationRates probability checks for DNA mutations. Under the hood,
+     * {RosalindDNA} generates a random uint256 for every gene and checks if the
+     * uint256 is less than the corresponding mutationRate. Each mutationRate must
+     * correspond to it's gene in `genes`.
+     *   - If a mutation rate value is set to * 2^256-1, it will ALWAYS mutate.
+     *   - If a mutation rate is set to 2^255-1, it will mutate 50% of the time.
+     *   - If a mutation rate is set to 2^254-1, it will mutate 25% of the time, and
+     * so on.
+     */
     function setBreedingRules(
         uint8 requiredParents,
         uint16 generationCooldownMultiplier,
@@ -159,7 +248,7 @@ contract MinterBreeding is MinterCore {
     }
 
     /**
-     * @dev Create a new type of species and define attributes.
+     * @dev Underlying function callable internally
      */
     function _setBreedingRules(
         uint8 requiredParents,
@@ -269,7 +358,7 @@ contract MinterBreeding is MinterCore {
     }
 
     /**
-     * @dev Internal function to do the heavy lifting for breeding
+     * @dev Returns breeding configuration
      * @return requiredParents number of parents required
      * @return generationCooldownMultiplier generation cooldowns
      * @return breedCooldownSeconds number of seconds to cooldown

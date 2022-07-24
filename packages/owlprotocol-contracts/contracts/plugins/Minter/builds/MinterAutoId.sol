@@ -25,7 +25,7 @@ import '../MinterCore.sol';
  *
  * Additionally, Minter contracts must have required permissions for minting. In
  * the case that you're using ERC721Owl, you'll do that with
- * `ERC721Owl.grantMinter(MinterContract)`.
+ * {ERC721Owl#grantMinter}.
  */
 contract MinterAutoId is MinterCore {
     // Specification + ERC165
