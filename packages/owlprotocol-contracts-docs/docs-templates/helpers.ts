@@ -62,28 +62,98 @@ export function joinLines(text?: string) {
 }
 
 // Regular expression -> match all function names, contract names, and # to separate
-const re = /{{([ #a-zA-Z0-9_]*)}}/gm;
+const re = /{([\-#a-zA-Z0-9_]*)}/gm;
 const path = './'; // todo - set this somewhere else
 export function formatLinks(this: unknown, opts: HelperOptions) {
     // Render our text
     let rendered = opts.fn(this as unknown, opts);
-    // Find all occurances
+    // Find all occurrences
     const matches = rendered.match(re);
     if (!matches) return rendered;
 
     // Iterate through links and format
     for (const match of matches) {
-        // {{ContractA#mint}} => ContractA#mint
-        const name = match.slice(2, match.length - 2);
+        // {ContractA#mint} => ContractA#mint
+        let name = match.slice(1, match.length - 1);
 
-        // ContractA#mint => Contract.mint(...)
-        let displayName = name;
-        if (displayName.includes('#')) displayName = displayName.replace('#', '.') + '(...)';
+        // Standardize how it's formatted
+        // {ContractA-mint} => {ContractA#Mint}
+        if (name.includes('-')) name = name.replace('-', '#');
+
+        const link = getLink(name, path);
 
         // Set md link and update
-        const link = `[${displayName}](${path}${name})`;
         rendered = rendered.replace(match, link);
+
+        console.log(`Generated \n${link}\nfrom\n${match}\n`);
+
     }
 
     return rendered;
+}
+
+/**
+ * Returns displayName and resource for a given artifact name
+ */
+function getLink(name: string, path: string) {
+
+    let displayName = name;
+    let resource = name;
+    let link = '';
+
+    // i.e. {Contract#Ingredient}
+    if (!isLocal(name)) {
+        // ContractA#mint => Contract.mint(...)
+        displayName = displayName.replace('#', '.');
+
+        // Check if we're referencing a Type or a function
+        // ref = 'CrafterMint#deposit'.split('#') => ['CrafterMint', 'Deposit']
+        const ref = name.split('#');
+        if (ref.length >= 2 && isFunction(ref[1]))
+            // Add function indicator
+            displayName += '(...)';
+        else if (ref.length >= 2 && !isFunction(ref[1])) {
+            // Drop the casing for first letter (anchors generate camelCase)
+            // ref = Ingredient => ingredient
+            ref[1] = ref[1][0].toLowerCase() + ref[1].slice(1);
+            // Put string back together
+            name = ref.join('#');
+        }
+
+        // Generate link
+        link = `[\`${displayName}\`](${path}${name})`;
+
+    } else if (isLocal(name)) {
+        // Setup HTML anchors
+        // local funcs will always start with lower case
+        if (isFunction(name))
+            // Add function indicator to display
+            displayName += '(...)';
+
+        link = `[\`${displayName}\`](#${resource})`;
+    }
+
+    return link;
+
+}
+
+/**
+ * Determines whether a specified text string is referencing a local function or
+ * a separate contract.
+ * {Contract#function} is not local
+ * {function} is local
+ */
+function isFunction(name: string) {
+    return (!name.includes('#') && name.length > 0 && name[0] == name[0].toLowerCase());
+}
+
+// Cannot differentiate local functions from local
+// function isType(name: string) {
+//     // return (!name.includes('#') && name.length > 0 && name[0] == name[0].toUpperCase());
+//     // You can link
+//     return false;
+// }
+
+function isLocal(name: string) {
+    return (isFunction(name) /*|| isType(name) */);
 }
