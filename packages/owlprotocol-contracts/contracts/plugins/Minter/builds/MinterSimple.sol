@@ -13,6 +13,16 @@ import '../MinterCore.sol';
 /**
  * @dev Decentralized NFT Minter contract
  *
+ * Simple Minter contract to expose `mint` functionality behind an ERC20 payment.
+ *
+ * As all Minter contracts interact with existing NFTs, MinterCore expects two
+ * standard functions exposed by the NFT:
+ * - `mint(address to, uint256 tokenId)`
+ * - `safeMint(address to, uint256 tokenId)`
+ *
+ * Additionally, Minter contracts must have required permissions for minting. In
+ * the case that you're using ERC721Owl, you'll do that with
+ * {ERC721Owl#grantMinter}.
  */
 contract MinterSimple is MinterCore {
     // Specification + ERC165
@@ -23,7 +33,16 @@ contract MinterSimple is MinterCore {
         _disableInitializers();
     }
 
-    // Constructor
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function initialize(
         address _admin,
         address _mintFeeToken,
@@ -35,6 +54,16 @@ contract MinterSimple is MinterCore {
         __MinterSimple_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function proxyInitialize(
         address _admin,
         address _mintFeeToken,
@@ -46,6 +75,16 @@ contract MinterSimple is MinterCore {
         __MinterSimple_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function __MinterSimple_init(
         address _admin,
         address _mintFeeToken,
@@ -58,11 +97,15 @@ contract MinterSimple is MinterCore {
         __MinterSimple_init_unchained();
     }
 
-    function __MinterSimple_init_unchained() internal onlyInitializing {}
+    /**
+     * @dev For future implementations.
+     */
+    function __MinterSimple_init_unchained() private onlyInitializing {}
 
     /**
-     * @dev
-     * @param tokenId minted token id
+     * @dev Allow minting for `_mintFeeAmount`
+     * @param buyer address who pays and receives mint
+     * @param tokenId mint token id
      */
     function mint(address buyer, uint256 tokenId) public {
         // Mint Operation
@@ -70,8 +113,9 @@ contract MinterSimple is MinterCore {
     }
 
     /**
-     * @dev
-     * @param tokenId minted token id
+     * @dev Allow minting for `_mintFeeAmount`
+     * @param buyer address who pays and receives mint
+     * @param tokenId mint token id
      */
     function safeMint(address buyer, uint256 tokenId) public {
         // Mint Operation

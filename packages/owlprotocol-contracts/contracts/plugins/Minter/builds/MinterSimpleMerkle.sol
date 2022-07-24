@@ -7,6 +7,19 @@ import './MinterAutoId.sol';
 /**
  * @dev Decentralized NFT Minter contract
  *
+ * Simple Minter contract to expose `mint` functionality behind an optional
+ * ERC20 payment and a MerkleTree allowlist.
+ *
+ * TODO - mint IPFS-MERKLE library
+ *
+ * As all Minter contracts interact with existing NFTs, MinterCore expects two
+ * standard functions exposed by the NFT:
+ * - `mint(address to, uint256 tokenId)`
+ * - `safeMint(address to, uint256 tokenId)`
+ *
+ * Additionally, Minter contracts must have required permissions for minting. In
+ * the case that you're using ERC721Owl, you'll do that with
+ * {ERC721Owl#grantMinter}.
  */
 contract MinterSimpleMerkle is MinterAutoId {
     // Specification + ERC165
@@ -24,7 +37,18 @@ contract MinterSimpleMerkle is MinterAutoId {
     //     _disableInitializers();
     // }
 
-    // Constructor
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _merkleRoot Merkle root of the allowlist
+     * @param _uri identifier for generating merkle proofs
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function initialize(
         address _admin,
         address _mintFeeToken,
@@ -47,6 +71,18 @@ contract MinterSimpleMerkle is MinterAutoId {
         );
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _merkleRoot Merkle root of the allowlist
+     * @param _uri Resource identifier for generating merkle proofs
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function proxyInitialize(
         address _admin,
         address _mintFeeToken,
@@ -69,6 +105,18 @@ contract MinterSimpleMerkle is MinterAutoId {
         );
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _merkleRoot Merkle root of the allowlist
+     * @param _uri Resource identifier for generating merkle proofs
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function __MinterSimpleMerkle_init(
         address _admin,
         address _mintFeeToken,
@@ -83,26 +131,40 @@ contract MinterSimpleMerkle is MinterAutoId {
         __MinterSimpleMerkle_init_unchained(_merkleRoot, _uri);
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _merkleRoot Merkle root of the allowlist
+     * @param _uri Resource identifier for generating merkle proofs
+     */
     function __MinterSimpleMerkle_init_unchained(bytes32 _merkleRoot, string calldata _uri) internal onlyInitializing {
         merkleRoot = _merkleRoot;
         uri = _uri;
         emit SetMerkleRoot(merkleRoot);
     }
 
-    // Disable MinterAutoId.mint()
+    /**
+     * @notice mint(address,bytes[]) must be called with proof
+     * @dev This function only reverts.
+     */
     function mint(address buyer) public pure override returns (uint256) {
         (buyer);
         revert('Must include merkleProof');
     }
 
-    // Disable MinterAutoId.safeMint()
+    /**
+     * @notice safeMint(address,bytes[]) must be called with proof
+     * @dev This function only reverts.
+     */
     function safeMint(address buyer) public pure override returns (uint256) {
         (buyer);
         revert('Must include merkleProof');
     }
 
     /**
-     * @dev Create a new type of species and define attributes.
+     * @dev Mint a new auto-incremented id for a user in the Merkle tree.
+     * @param buyer address who pays the optional ERC20 fee
+     * @param merkleProof merkleProof generated for on-chain verification
      */
     function mint(address buyer, bytes32[] calldata merkleProof) public {
         require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
@@ -110,20 +172,30 @@ contract MinterSimpleMerkle is MinterAutoId {
     }
 
     /**
-     * @dev Create a new type of species and define attributes.
+     * @dev Mint a new auto-incremented id for a user in the Merkle tree.
+     * @param buyer address who pays the optional ERC20 fee
+     * @param merkleProof merkleProof generated for on-chain verification
      */
     function safeMint(address buyer, bytes32[] calldata merkleProof) public {
         require(_verifyMerkle(merkleProof), 'Not member of merkleTree!');
         MinterAutoId.safeMint(buyer);
     }
 
+    /**
+     * @dev Allows updating Merkle root and identifier for clients
+     * @param _merkleRoot new merkle root
+     * @param _uri new URI for clients to refer to
+     */
     function updateMerkleRoot(bytes32 _merkleRoot, string calldata _uri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         merkleRoot = _merkleRoot;
         uri = _uri;
     }
 
+    /**
+     * @dev Internal function to verify merkle proofs
+     */
     function _verifyMerkle(bytes32[] calldata merkleProof) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encode(msg.sender));
+        bytes32 leaf = keccak256(abi.encode(_msgSender()));
         return MerkleProof.verify(merkleProof, merkleRoot, leaf);
     }
 

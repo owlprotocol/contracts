@@ -24,7 +24,7 @@ import '../../OwlBase.sol';
  *
  * Additionally, Minter contracts must have required permissions for minting. In
  * the case that you're using ERC721Owl, you'll do that with
- * `ERC721Owl.grantMinter(MinterContract)`.
+ * {ERC721Owl#grantMinter}.
  */
 abstract contract MinterCore is OwlBase {
     address public mintFeeToken;
