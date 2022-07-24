@@ -318,7 +318,10 @@ describe('Lootbox.sol', () => {
         expect(await VRFBeacon.getRequestId(epochBlockNumber)).to.equal(requestId);
 
         //check that both requestUnlocks are in the same epoch on VRFBeacon
-        expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
+        const lootbox1EpochReq = lootbox.getEpochBlock(lootboxToUnlock1);
+        const lootbox2EpochReq = lootbox.getEpochBlock(lootboxToUnlock2);
+        const [lootbox1Epoch, lootbox2Epoch] = await Promise.all([lootbox1EpochReq, lootbox2EpochReq]);
+        expect(lootbox1Epoch).to.equal(lootbox2Epoch);
 
         await mineUpTo(getEpochBlockNumber(epochBlockNumber.toNumber()));
         await coordinatorRespond(requestId, epochBlockNumber);
@@ -382,9 +385,18 @@ describe('Lootbox.sol', () => {
 
         expect(await VRFBeacon.getRequestId(epochBlockNumber)).to.equal(requestId);
 
+        const lootbox1EpochReq = lootbox.getEpochBlock(lootboxToUnlock1);
+        const lootbox2EpochReq = lootbox.getEpochBlock(lootboxToUnlock2);
+        const lootbox3EpochReq = lootbox.getEpochBlock(lootboxToUnlock3);
+        const [lootbox1Epoch, lootbox2Epoch, lootbox3Epoch] = await Promise.all([
+            lootbox1EpochReq,
+            lootbox2EpochReq,
+            lootbox3EpochReq,
+        ]);
+
         //check that all requestUnlocks are in the same epoch on VRFBeacon
-        expect(await lootbox.getEpochBlock(lootboxToUnlock1)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock2));
-        expect(await lootbox.getEpochBlock(lootboxToUnlock2)).to.equal(await lootbox.getEpochBlock(lootboxToUnlock3));
+        expect(lootbox1Epoch).to.equal(lootbox2Epoch);
+        expect(lootbox2Epoch).to.equal(lootbox3Epoch);
 
         await mineUpTo(getEpochBlockNumber(epochBlockNumber.toNumber()));
         await coordinatorRespond(requestId, epochBlockNumber);
