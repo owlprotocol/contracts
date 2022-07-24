@@ -1,13 +1,13 @@
 {
     "name": "@owlprotocol/contracts",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "private": false,
     "repository": {
         "type": "git",
-        "url": "https://github.com/oyunprotocol/nft-launcher-contracts.git"
+        "url": "https://github.com/owlprotocol/contracts.git"
     },
-    "homepage": "https://github.com/oyunprotocol/nft-launcher-contracts.git",
-    "copyright": "Copyright 2021 OYUNPROTOCOL",
+    "homepage": "https://github.com/owlprotocol/contracts.git",
+    "copyright": "Copyright 2021 Owl Protocol",
     "license": "MIT",
     "scripts": {
         "hardhat:compile": "npx hardhat compile",
