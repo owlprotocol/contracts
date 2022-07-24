@@ -25,6 +25,7 @@ env:
   isGSN: false
   CONTRACTS_CACHE: "./packages/owlprotocol-contracts/cache"
   CONTRACTS_ARTIFACTS: "./packages/owlprotocol-contracts/artifacts"
+  CONTRACTS_TYPECHAIN: "./packages/owlprotocol-contracts/typechain"
 
 jobs:
   run-coverage:
@@ -68,6 +69,7 @@ jobs:
           path: |
             ${{ env.CONTRACTS_CACHE }}
             ${{ env.CONTRACTS_ARTIFACTS }}
+            ${{ env.CONTRACTS_TYPECHAIN }}
           key: hardhat-cache-${{ hashFiles('**/*.sol') }}
 
       - name: Build contracts
@@ -117,6 +119,7 @@ jobs:
           path: |
             ${{ env.CONTRACTS_CACHE }}
             ${{ env.CONTRACTS_ARTIFACTS }}
+            ${{ env.CONTRACTS_TYPECHAIN }}
           key: hardhat-cache-${{ hashFiles('**/*.sol') }}
 
       - name: Build contracts
