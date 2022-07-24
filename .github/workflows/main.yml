@@ -23,6 +23,8 @@ env:
   MAINNET_API_KEY: ${{ secrets.MAINNET_API_KEY }}
   OTHER_PRIV_KEY: ${{ secrets.OTHER_PRIV_KEY }}
   isGSN: false
+  CONTRACTS_CACHE: "./packages/owlprotocol-contracts/cache"
+  CONTRACTS_ARTIFACTS: "./packages/owlprotocol-contracts/artifacts"
 
 jobs:
   run-coverage:
@@ -59,6 +61,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - uses: actions/cache@v3
+        name: Hardhat cache
+        with:
+          path: |
+            ${{ env.CONTRACTS_CACHE }}
+            ${{ env.CONTRACTS_ARTIFACTS }}
+          key: hardhat-cache-${{ hashFiles('**/*.sol') }}
 
       - name: Build contracts
         run: pnpm run build
@@ -100,6 +110,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - uses: actions/cache@v3
+        name: Hardhat cache
+        with:
+          path: |
+            ${{ env.CONTRACTS_CACHE }}
+            ${{ env.CONTRACTS_ARTIFACTS }}
+          key: hardhat-cache-${{ hashFiles('**/*.sol') }}
 
       - name: Build contracts
         run: pnpm run build
