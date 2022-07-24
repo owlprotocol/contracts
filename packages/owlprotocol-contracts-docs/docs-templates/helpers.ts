@@ -84,9 +84,6 @@ export function formatLinks(this: unknown, opts: HelperOptions) {
 
         // Set md link and update
         rendered = rendered.replace(match, link);
-
-        console.log(`Generated \n${link}\nfrom\n${match}\n`);
-
     }
 
     return rendered;
