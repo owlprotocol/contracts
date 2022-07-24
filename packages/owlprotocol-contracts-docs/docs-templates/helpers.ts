@@ -122,6 +122,15 @@ function getLink(name: string, path: string) {
     } else if (components.length == 2) {
         // Always an anchor, which must always be lower
         components[1] = components[1].toLowerCase();
+
+        // See if we found an anchor type
+        if (isAnchor(name)) {
+            // Special local {#Anchor} type
+            displayName = displayName.slice(1); // slice off .
+            // We don't want to path anywhere else
+            path = '';
+        }
+
         // Put everything back together to a link
         resource = path + components.join('#');
     } else {
@@ -143,16 +152,12 @@ function getLink(name: string, path: string) {
  * {function} is local
  */
 function isFunction(name: string) {
-    return (!name.includes('#') && name.length > 0 && name[0] == name[0].toLowerCase());
+    return (!name.includes('#') && name.length > 0 && name[0] === name[0].toLowerCase());
 }
 
-// Cannot differentiate local functions from local
-// function isType(name: string) {
-//     // return (!name.includes('#') && name.length > 0 && name[0] == name[0].toUpperCase());
-//     // You can link
-//     return false;
-// }
-
-// function isLocal(name: string) {
-//     return (isFunction(name) /*|| isType(name) */);
-// }
+/**
+ * Identify local anchors by #Item
+ */
+function isAnchor(name: string) {
+    return (name[0] === '#');
+}
