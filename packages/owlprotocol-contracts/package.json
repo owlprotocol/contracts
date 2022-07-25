@@ -124,5 +124,6 @@
         "artifacts/contracts/**/*.json",
         "contracts/**/*.sol",
         "types"
+
     ]
 }
