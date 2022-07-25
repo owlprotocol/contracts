@@ -71,6 +71,8 @@ jobs:
             ${{ env.CONTRACTS_ARTIFACTS }}
             ${{ env.CONTRACTS_TYPECHAIN }}
           key: hardhat-cache-${{ hashFiles('**/*.sol') }}
+          restore-keys: |
+            hardhat-cache-
 
       - name: Build contracts
         run: pnpm run build
@@ -121,6 +123,8 @@ jobs:
             ${{ env.CONTRACTS_ARTIFACTS }}
             ${{ env.CONTRACTS_TYPECHAIN }}
           key: hardhat-cache-${{ hashFiles('**/*.sol') }}
+          restore-keys: |
+            hardhat-cache-
 
       - name: Build contracts
         run: pnpm run build
