@@ -17,12 +17,14 @@ import { removeConsoleLog } from 'hardhat-preprocessor';
 import 'solidity-docgen';
 import 'solidity-coverage';
 import 'hardhat-tracer';
+import path from 'path';
 
 import { ethers } from 'ethers';
 
 import dotenv from 'dotenv';
 dotenv.config();
 // TODO - auto doc generation
+
 
 const config: HardhatUserConfig = {
     paths: {
@@ -278,7 +280,8 @@ const config: HardhatUserConfig = {
     },
     docgen: {
         outputDir: '../owlprotocol-contracts-docs/docs/contract-docs',
-        pages: 'items',
+        pages: 'files',
+        exclude: ['testing', 'utils'],
         templates: '../owlprotocol-contracts-docs/docs-templates/',
     },
 };

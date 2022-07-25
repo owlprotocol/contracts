@@ -22,7 +22,7 @@
         "compile": "npx hardhat clean && npx hardhat compile",
         "test:parallel": "npx hardhat test --parallel",
         "build": "npm run compile",
-        "docs": "DOCS=../owlprotocol-contracts-docs/docs/contract-docs && rm -f $DOCS/* && hardhat docgen && echo '# Solidity Reference' > $DOCS/index.md",
+        "docs": "DOCS=../owlprotocol-contracts-docs/docs/contract-docs && rm -rf $DOCS/* && hardhat docgen && echo '# API' > $DOCS/index.md",
         "generate-types": "npm-run-all -p generate-types:web3 generate-types:ethers",
         "generate-types:web3": "typechain --target web3-v1 --out-dir=types/web3 'artifacts/contracts/**/+([a-zA-Z0-9_]).json'",
         "generate-types:ethers": "typechain --target=ethers-v5 --out-dir=types/ethers 'artifacts/contracts/**/+([a-zA-Z0-9_]).json'"
