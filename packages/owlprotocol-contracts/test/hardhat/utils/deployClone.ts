@@ -21,6 +21,11 @@ export async function deployClone(
     if (salt) saltString = salt;
 
 
+
+    console.log(initializerArgs)
+
+    await new Promise((res) => setTimeout(res, 5000))
+
     const deploymentData = implementation.interface.encodeFunctionData(initSignature, initializerArgs);
 
     const deploymentAddress = await ERC1167Factory.predictDeterministicAddress(
