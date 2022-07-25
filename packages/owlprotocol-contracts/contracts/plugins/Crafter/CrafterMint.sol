@@ -256,6 +256,11 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
                     'CrafterMint: _outputsERC721Ids[i] != amount'
                 );
                 for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
+                    // Potential vunerability here is that after this check,
+                    // someone with mint rights to the output nft address mints
+                    // a tokenId in the output list. It is imperative that
+                    // access to minting of the nft is well-secured, as is
+                    // guaranteed when launching through the OwlProtocol Portal
                     require(
                         !ERC721Owl(ingredient.contractAddr).exists(_outputsERC721Ids[erc721Outputs][j]),
                         'CrafterMint: tokenId already minted'
