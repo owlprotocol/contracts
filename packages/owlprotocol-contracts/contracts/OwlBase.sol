@@ -26,6 +26,9 @@ abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
      * @param _forwarder OpenGSN forwarder address (if desired).
      */
     function __OwlBase_init(address _admin, address _forwarder) internal onlyInitializing {
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(ROUTER_ROLE, _forwarder);
+
         __OwlBase_init_unchained(_admin, _forwarder);
     }
 
@@ -33,10 +36,7 @@ abstract contract OwlBase is UUPSUpgradeable, AccessControlUpgradeable {
      * @dev OwlBase unchained initialization.
      * For future implementation.
      */
-    function __OwlBase_init_unchained(address _admin, address _forwarder) internal onlyInitializing {
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(ROUTER_ROLE, _forwarder);
-    }
+    function __OwlBase_init_unchained(address _admin, address _forwarder) internal onlyInitializing {}
 
     /**
      * @notice Must have owner role
