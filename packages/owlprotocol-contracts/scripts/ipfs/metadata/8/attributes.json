@@ -1,0 +1,28 @@
+{
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "Outhouse"
+        },
+        {
+            "trait_type": "Fur",
+            "value": "Tan"
+        },
+        {
+            "trait_type": "Feet",
+            "value": "Pink Combat Boots"
+        },
+        {
+            "trait_type": "Back",
+            "value": "Beer Saddle"
+        },
+        {
+            "trait_type": "Mouth",
+            "value": "Growl"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "3D Glasses"
+        }
+    ]
+}

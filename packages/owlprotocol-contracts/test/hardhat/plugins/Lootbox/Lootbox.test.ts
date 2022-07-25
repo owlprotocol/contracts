@@ -71,7 +71,7 @@ describe('Lootbox.sol', () => {
                 {
                     forking: {
                         jsonRpcUrl: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-                        epochBlockNumber: 11046840,
+                        epochBlockNumber: 11062380,
                     },
                 },
             ],
@@ -250,7 +250,7 @@ describe('Lootbox.sol', () => {
     }
 
     it('1 Lootbox', async () => {
-        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1);
         const { requestId, epochBlockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
             'epochBlockNumber',
@@ -302,7 +302,7 @@ describe('Lootbox.sol', () => {
     });
 
     it('2 Lootboxes, same EPOCH_PERIOD', async () => {
-        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1);
         const { requestId, epochBlockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
             'epochBlockNumber',
@@ -364,17 +364,17 @@ describe('Lootbox.sol', () => {
     });
 
     it('3 Lootboxes, all in same epoch', async () => {
-        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1);
         const { requestId, epochBlockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
             'epochBlockNumber',
-        ]); network
+        ]);
 
         await network.provider.send('evm_setAutomine', [false]);
 
         lootbox.requestUnlock(lootboxToUnlock1);
         lootbox.requestUnlock(lootboxToUnlock2);
-        lootbox.requestUnlock(lootboxToUnlock3)
+        lootbox.requestUnlock(lootboxToUnlock3);
 
         await network.provider.send('evm_increaseTime', [10]);
         await network.provider.send('evm_mine', []);
@@ -435,7 +435,7 @@ describe('Lootbox.sol', () => {
         const { upkeepNeeded } = await lootbox.checkUpkeep('0x');
         expect(upkeepNeeded).to.equal(false);
 
-        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1);
         const { requestId: reqId1, epochBlockNumber: epochBlockNumber1 } = pick(
             await lootbox.callStatic.requestUnlock(lootboxToUnlock1),
             ['requestId', 'epochBlockNumber'],
@@ -511,7 +511,7 @@ describe('Lootbox.sol', () => {
     });
 
     it('Request unlock multiple times', async () => {
-        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1);
         const { requestId: reqId1, epochBlockNumber: epochBlockNumber1 } = pick(
             await lootbox.callStatic.requestUnlock(lootboxToUnlock1),
             ['requestId', 'epochBlockNumber'],
@@ -529,7 +529,7 @@ describe('Lootbox.sol', () => {
     });
 
     it('Multiple performUpkeep() calls with same queueIndex should fail', async () => {
-        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1)
+        if (((await time.latestBlock()) + 1) % 10 === 0) await mine(1);
         const { requestId, epochBlockNumber } = pick(await lootbox.callStatic.requestUnlock(lootboxToUnlock1), [
             'requestId',
             'epochBlockNumber',
@@ -573,17 +573,10 @@ describe('Lootbox.sol', () => {
         )) as BeaconProxyInitializable__factory;
         const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
 
-        const { address: beaconAddr } = await deployClone(beaconImpl, [
-            signer1.address,
-            lootboxImpl.address,
-        ]);
+        const { address: beaconAddr } = await deployClone(beaconImpl, [signer1.address, lootboxImpl.address]);
         //@ts-ignore
         const data = lootboxImpl.interface.encodeFunctionData('proxyInitialize', [...lootboxArgs]);
-        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [
-            signer1.address,
-            beaconAddr,
-            data,
-        ]);
+        const { address: beaconProxyAddr } = await deployClone(beaconProxyImpl, [signer1.address, beaconAddr, data]);
         const contrInst = (await ethers.getContractAt('Lootbox', beaconProxyAddr)) as Lootbox;
 
         await contrInst.requestUnlock(0);

@@ -23,8 +23,7 @@ import '../assets/ERC721/ERC721OwlExpiring.sol';
  */
 contract Rent is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Rent/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://Rent/', _version)));
 
     /**********************
              Types
@@ -296,7 +295,7 @@ contract Rent is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
         public
         view
         virtual
-        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        override(OwlBase, ERC1155ReceiverUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

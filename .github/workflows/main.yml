@@ -22,55 +22,108 @@ env:
   POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
   MAINNET_API_KEY: ${{ secrets.MAINNET_API_KEY }}
   OTHER_PRIV_KEY: ${{ secrets.OTHER_PRIV_KEY }}
+  isGSN: false
+  CONTRACTS_CACHE: "./packages/owlprotocol-contracts/cache"
+  CONTRACTS_ARTIFACTS: "./packages/owlprotocol-contracts/artifacts"
+  CONTRACTS_TYPECHAIN: "./packages/owlprotocol-contracts/typechain"
 
 jobs:
   run-coverage:
-    name: Run Tests
-    # Required to pass env secrets
-    environment: test-runners
+    name: Run Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: "16.16"
-      # PNPM Cache
-      - run: npm i --global pnpm
-      - name: Cache pnpm store
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-pnpm-store
+          node-version: 16
+
+      - uses: pnpm/action-setup@v2.0.1
+        name: Install pnpm
+        id: pnpm-install
         with:
-          path: ~/.pnpm-store/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}
-      # Set login for package registries
-      - run: npm set //registry.npmjs.org/:_authToken=${{secrets.NPMJS_TOKEN}}
-      - run: npm set //npm.pkg.github.com/:_authToken=${{secrets.GPR_TOKEN}}
-      # Install
-      - run: pnpm i
-      - run: pnpm run build
-      - run: pnpm run coverage
-  # run-tests:
-  #   name: Run Tests
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v1
-  #       with:
-  #         node-version: "16.16"
-  #     # PNPM Cache
-  #     - run: npm i --global pnpm
-  #     - name: Cache pnpm store
-  #       uses: actions/cache@v2
-  #       env:
-  #         cache-name: cache-pnpm-store
-  #       with:
-  #         path: ~/.pnpm-store/
-  #         key: ${{ runner.os }}-build-${{ env.cache-name }}
-  #     # Set login for package registries
-  #     - run: npm set //registry.npmjs.org/:_authToken=${{secrets.NPMJS_TOKEN}}
-  #     - run: npm set //npm.pkg.github.com/:_authToken=${{secrets.GPR_TOKEN}}
-  #     # Install
-  #     - run: pnpm i
-  #     - run: pnpm run build
-  #     - run: npm run test
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - uses: actions/cache@v3
+        name: Hardhat cache
+        with:
+          path: |
+            ${{ env.CONTRACTS_CACHE }}
+            ${{ env.CONTRACTS_ARTIFACTS }}
+            ${{ env.CONTRACTS_TYPECHAIN }}
+          key: hardhat-cache-${{ hashFiles('**/*.sol') }}
+
+      - name: Build contracts
+        run: pnpm run build
+
+      - name: Run coverage
+        run: pnpm run coverage
+
+  run-tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - uses: pnpm/action-setup@v2.0.1
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - uses: actions/cache@v3
+        name: Hardhat cache
+        with:
+          path: |
+            ${{ env.CONTRACTS_CACHE }}
+            ${{ env.CONTRACTS_ARTIFACTS }}
+            ${{ env.CONTRACTS_TYPECHAIN }}
+          key: hardhat-cache-${{ hashFiles('**/*.sol') }}
+
+      - name: Build contracts
+        run: pnpm run build
+
+      - name: Run tests
+        run: pnpm run test

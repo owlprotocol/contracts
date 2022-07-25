@@ -10,6 +10,14 @@ import {
     FactoryERC1155,
     FactoryERC20,
     FactoryERC721,
+    ERC721Owl__factory,
+    ERC721Owl,
+    ERC1155Owl,
+    ERC1155Owl__factory,
+    UpgradeableBeaconInitializable__factory,
+    UpgradeableBeaconInitializable,
+    BeaconProxyInitializable__factory,
+    BeaconProxyInitializable,
 } from '../../../typechain';
 
 import { createERC1155, createERC20, createERC721, deployClone, predictDeployClone } from '../utils';
@@ -27,6 +35,7 @@ describe('FixedPriceAuction.sol', function () {
     let seller: TestingSigner;
     let buyer: TestingSigner;
     let owner: TestingSigner;
+    let marketplace: TestingSigner;
 
     let FixedPriceAuctionFactory: FixedPriceAuction__factory;
     let FixedPriceAuctionImplementation: FixedPriceAuction;
@@ -51,7 +60,7 @@ describe('FixedPriceAuction.sol', function () {
         await Promise.all([ERC1167Factory.deployed(), FixedPriceAuctionImplementation.deployed()]);
 
         //get users (seller + bidder?)
-        [seller, buyer, owner] = await loadSignersSmart(ethers);
+        [seller, buyer, owner, marketplace] = await loadSignersSmart(ethers);
     });
 
     describe('Initialization reverts', () => {
@@ -157,6 +166,7 @@ describe('FixedPriceAuction.sol', function () {
         let acceptableERC20Token: FactoryERC20;
         let FixedPriceAuctionAddress: string;
         let auction: FixedPriceAuction;
+        const tokenId = 0;
 
         let originalERC20Balance: BigNumber;
 
@@ -164,7 +174,6 @@ describe('FixedPriceAuction.sol', function () {
             //Deploy ERC20 and ERC721
             [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
             [testNFT] = await createERC721(1, 1); //minting one token
-            const tokenId = 0;
 
             //predict address
             FixedPriceAuctionAddress = await predictDeployClone(
@@ -286,7 +295,55 @@ describe('FixedPriceAuction.sol', function () {
         it('error: claim when already bought', async () => {
             await auction.connect(buyer).buy();
             await expect(auction.claim()).to.be.revertedWith('FixedPriceAuction: cannot claim when the token has been sold already!');
-        })
+        });
+
+        it('beacon proxy initialization', async () => {
+            const [testNFT2] = await createERC721(1);
+
+            const beaconFactory = (await ethers.getContractFactory(
+                'UpgradeableBeaconInitializable',
+            )) as UpgradeableBeaconInitializable__factory;
+            const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+            const beaconProxyFactory = (await ethers.getContractFactory(
+                'BeaconProxyInitializable',
+            )) as BeaconProxyInitializable__factory;
+            const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+            const { address: beaconAddr } = await deployClone(beaconImpl, [seller.address, FixedPriceAuctionImplementation.address], ERC1167Factory);
+            //@ts-ignore
+            const data = FixedPriceAuctionImplementation.interface.encodeFunctionData('proxyInitialize',
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFT2.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    parseUnits('100.0', 18), //in "wei"
+                    300,
+                    0,
+                    owner.address,
+                    gsnForwarderAddress,
+                ]);
+            const beaconProxyAddr = await predictDeployClone(beaconProxyImpl, [seller.address, beaconAddr, data], ERC1167Factory);
+            //Set Approval ERC721 for sale
+
+            await testNFT2.connect(seller).approve(beaconProxyAddr, tokenId);
+            await deployClone(beaconProxyImpl, [seller.address, beaconAddr, data], ERC1167Factory);
+            const contrInst = (await ethers.getContractAt('FixedPriceAuction', beaconProxyAddr)) as FixedPriceAuction;
+
+            //transformer doesn't have only dna role
+            contrInst.connect(buyer).buy();
+        });
     });
 
     describe('No fee test - ERC1155', () => {
@@ -518,6 +575,214 @@ describe('FixedPriceAuction.sol', function () {
             );
             expect(await acceptableERC20Token.balanceOf(owner.address)).to.equal(parseUnits('10.0', 18));
             expect(await testNFT.ownerOf(tokenId)).to.equal(buyer.address);
+        });
+    });
+
+    describe('Royalty Fee Tests ERC721Owl', () => {
+        //define setup
+        let testNFTFactory: ERC721Owl__factory;
+        let testNFTImpl: ERC721Owl;
+        let testNFTInst: ERC721Owl;
+        const tokenId = 0;
+        let acceptableERC20Token: FactoryERC20;
+        let FixedPriceAuctionAddress: string;
+
+        const totalERC20Minted = parseUnits('1.0', 27);
+
+        let auction: FixedPriceAuction;
+
+        beforeEach(async () => {
+            //Deploy ERC20 and ERC721
+            [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
+
+            // Deploy test Owl 
+            testNFTFactory = (await ethers.getContractFactory('ERC721Owl')) as ERC721Owl__factory;
+            testNFTImpl = await testNFTFactory.deploy();
+            const { address } = await deployClone(testNFTImpl,
+                [owner.address, 'n', 's', 'u', gsnForwarderAddress, owner.address, 3000], ERC1167Factory);
+            testNFTInst = await (ethers.getContractAt('ERC721Owl', address)) as ERC721Owl;
+            await testNFTInst.connect(owner).mint(seller.address, tokenId);
+
+            FixedPriceAuctionAddress = await predictDeployClone(
+                FixedPriceAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFTInst.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    300,
+                    20,
+                    marketplace.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            );
+
+            //Set Approval ERC721 for sale
+            await testNFTInst.connect(seller).approve(FixedPriceAuctionAddress, tokenId);
+            await acceptableERC20Token.connect(buyer).approve(FixedPriceAuctionAddress, parseUnits('100.0', 18));
+
+            // Transfer ERC20s to bidders
+            await acceptableERC20Token.connect(seller).transfer(buyer.address, parseUnits('1.0', 27));
+
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(0);
+
+            //deploy auction
+            await deployClone(
+                FixedPriceAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc721,
+                        contractAddr: testNFTInst.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    300,
+                    20,
+                    marketplace.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            );
+            auction = (await ethers.getContractAt('FixedPriceAuction', FixedPriceAuctionAddress)) as FixedPriceAuction;
+
+            //assert initial token amounts
+            expect(await testNFTInst.ownerOf(tokenId)).to.equal(FixedPriceAuctionAddress);
+            expect(await acceptableERC20Token.balanceOf(buyer.address)).to.equal(totalERC20Minted);
+        });
+
+        it('simple auction - 1 bidder', async () => {
+            expect(await testNFTInst.ownerOf(tokenId)).to.equal(auction.address);
+
+            await auction.connect(buyer).buy();
+
+            expect(await testNFTInst.ownerOf(tokenId)).to.equal(buyer.address);
+            // expect(await acceptableERC20Token.balanceOf(owner.address)).to.equal(30);
+            expect(await acceptableERC20Token.balanceOf(marketplace.address)).to.equal(20);
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(50);
+        });
+    });
+
+    describe('Royalty Fee Tests ERC1155Owl', () => {
+        //define setup
+        let test1155Factory: ERC1155Owl__factory;
+        let test1155Impl: ERC1155Owl;
+        let test1155Inst: ERC1155Owl;
+        const tokenId = 0;
+        let acceptableERC20Token: FactoryERC20;
+        let FixedPriceAuctionAddress: string;
+
+        const totalERC20Minted = parseUnits('1.0', 27);
+
+        let auction: FixedPriceAuction;
+
+        beforeEach(async () => {
+            //Deploy ERC20 and ERC721
+            [acceptableERC20Token] = await createERC20(); //mints 1e9 tokens
+
+            // Deploy test Owl 
+            test1155Factory = (await ethers.getContractFactory('ERC1155Owl')) as ERC1155Owl__factory;
+            test1155Impl = await test1155Factory.deploy();
+            const { address } = await deployClone(test1155Impl,
+                [owner.address, 'n', 's', gsnForwarderAddress, owner.address, 3000], ERC1167Factory);
+            test1155Inst = await (ethers.getContractAt('ERC1155Owl', address)) as ERC1155Owl;
+            await test1155Inst.connect(owner).mint(seller.address, tokenId, 1, '0x');
+
+            FixedPriceAuctionAddress = await predictDeployClone(
+                FixedPriceAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc1155,
+                        contractAddr: test1155Inst.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    300,
+                    20,
+                    marketplace.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            );
+
+            //Set Approval ERC721 for sale
+            await test1155Inst.connect(seller).setApprovalForAll(FixedPriceAuctionAddress, true);
+            await acceptableERC20Token.connect(buyer).approve(FixedPriceAuctionAddress, parseUnits('100.0', 18));
+
+            // Transfer ERC20s to bidders
+            await acceptableERC20Token.connect(seller).transfer(buyer.address, parseUnits('1.0', 27));
+
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(0);
+
+            //deploy auction
+            await deployClone(
+                FixedPriceAuctionImplementation,
+                [
+                    //seller address
+                    //Asset
+                    //ERC20 Contract address (acceptable token)
+                    //price
+                    //auction duration
+                    //sale fee
+                    //sale fee address
+                    seller.address,
+                    {
+                        token: TokenType.erc1155,
+                        contractAddr: test1155Inst.address,
+                        tokenId,
+                    },
+                    acceptableERC20Token.address,
+                    100, //in "wei"
+                    300,
+                    20,
+                    marketplace.address,
+                    gsnForwarderAddress,
+                ],
+                ERC1167Factory,
+            );
+            auction = (await ethers.getContractAt('FixedPriceAuction', FixedPriceAuctionAddress)) as FixedPriceAuction;
+
+            //assert initial token amounts
+            expect(await test1155Inst.balanceOf(FixedPriceAuctionAddress, tokenId)).to.equal(1);
+            expect(await acceptableERC20Token.balanceOf(buyer.address)).to.equal(totalERC20Minted);
+        });
+
+        it('simple auction - 1 bidder', async () => {
+            await auction.connect(buyer).buy();
+
+            expect(await test1155Inst.balanceOf(buyer.address, tokenId)).to.equal(1);
+            // expect(await acceptableERC20Token.balanceOf(owner.address)).to.equal(30);
+            expect(await acceptableERC20Token.balanceOf(marketplace.address)).to.equal(20);
+            expect(await acceptableERC20Token.balanceOf(seller.address)).to.equal(50);
         });
     });
 });

@@ -7,7 +7,7 @@ import './CrafterCore.sol';
  * @dev Contract module that enables crafting of different types of assets
  * (ERC20, ERC721, ERC1155) whose crafting outputs are minted to the caller.
  *
- * Crafting configuration is designated by two {Ingredient}[]. One array is the
+ * Crafting configuration is designated by two {PluginsCore#Ingredient}`[]`. One array is the
  * `inputs` and the other is the `outputs`. The contract allows for the `inputs`
  * to be redeemed for the `outputs`, `craftableAmount` times.
  *
@@ -57,8 +57,7 @@ import './CrafterCore.sol';
  * plug-and-play, so to speak.
  */
 contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
-    string public constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterMint/', VERSION)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterMint/', _version)));
 
     /**********************
         Initialization
@@ -257,6 +256,11 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
                     'CrafterMint: _outputsERC721Ids[i] != amount'
                 );
                 for (uint256 j = 0; j < _outputsERC721Ids[erc721Outputs].length; j++) {
+                    // Potential vunerability here is that after this check,
+                    // someone with mint rights to the output nft address mints
+                    // a tokenId in the output list. It is imperative that
+                    // access to minting of the nft is well-secured, as is
+                    // guaranteed when launching through the OwlProtocol Portal
                     require(
                         !ERC721Owl(ingredient.contractAddr).exists(_outputsERC721Ids[erc721Outputs][j]),
                         'CrafterMint: tokenId already minted'
@@ -321,7 +325,7 @@ contract CrafterMint is CrafterCore, ERC1155HolderUpgradeable {
         public
         view
         virtual
-        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        override(OwlBase, ERC1155ReceiverUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

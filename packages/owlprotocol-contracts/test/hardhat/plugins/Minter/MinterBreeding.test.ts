@@ -1,6 +1,6 @@
 import { expect, assert } from 'chai';
 import { ethers } from 'hardhat';
-import { encodeGenesUint256, decodeGenesUint256, sleep, deployClone } from '../../utils';
+import { encodeGenesUint256, decodeGenesUint256, sleep, deployClone, predictDeployClone } from '../../utils';
 import { BigNumber as BN } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
@@ -9,6 +9,10 @@ import {
     MinterBreeding__factory,
     ERC721OwlAttributes,
     ERC721OwlAttributes__factory,
+    UpgradeableBeaconInitializable__factory,
+    UpgradeableBeaconInitializable,
+    BeaconProxyInitializable__factory,
+    BeaconProxyInitializable,
 } from '../../../../typechain';
 const toBN = BN.from;
 
@@ -38,6 +42,8 @@ describe('MinterBreeding.sol', function () {
     const parentIds: number[] = [];
     const numParents = 5;
     const defaultGenerationMultiplier = 0;
+    const defaultRequiredParents = 2;
+    const defaultBreedingCooldownSeconds = 604800; // 7 days
 
     before(async () => {
         // Deploy contracts
@@ -86,13 +92,101 @@ describe('MinterBreeding.sol', function () {
                 );
         });
 
+        it('Safe Breed Specimen', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            // Breed our first specimen
+            await minterBreeding.safeBreed([parentIds[0], parentIds[1]]);
+
+            // Make sure we called our simple breed function (no mutation)
+            const { dna } = await getLastBred(minterBreeding);
+            const newSpecimenDNA = decodeGenesUint256(dna, genes);
+
+            // Assert our first gene is from one of our parents (mutation function not called)
+            // Note mutation testing is done in `RosalindDNA.test.ts`
+            // For every value, make sure it's coming from a parent
+            for (let geneIdx = 0; geneIdx < parentGenes[0].length; geneIdx++)
+                assert(
+                    newSpecimenDNA[geneIdx].eq(parentGenes[0][geneIdx]) ||
+                    newSpecimenDNA[geneIdx].eq(parentGenes[1][geneIdx]),
+                    `Unexpected gene created at geneIdx: ${geneIdx}`,
+                );
+        });
         it('Fail on single parent', async () => {
             const minterBreeding = await setupBreederContract();
 
             await expect(minterBreeding.breed([parentIds[0]])).to.be.revertedWith('Invalid number of parents!');
         });
 
-        it('Test Cooldown', async () => {
+        it('Fail on same parents', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            await expect(minterBreeding.breed([parentIds[0], parentIds[0]])).to.be.revertedWith(
+                'NFT currently on cooldown!',
+            );
+        });
+
+        it('No space for generations', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            await expect(
+                minterBreeding.setBreedingRules(defaultRequiredParents, 1, defaultBreedingCooldownSeconds, genes, []),
+            ).to.be.revertedWith('Generations requires gene[0]=8');
+        });
+
+        it('No genes specified', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            await expect(
+                minterBreeding.setBreedingRules(defaultRequiredParents, 1, defaultBreedingCooldownSeconds, [], []),
+            ).to.be.revertedWith('At least one gene must be specified!');
+        });
+
+        it('Wrong mutation rates', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            await expect(
+                minterBreeding.setBreedingRules(
+                    defaultRequiredParents,
+                    defaultGenerationMultiplier,
+                    defaultBreedingCooldownSeconds,
+                    genes,
+                    [1],
+                ),
+            ).to.be.revertedWith('Mutation rates must be 0 or equal genes.length');
+        });
+
+        it('Clear old mutation rates', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            const mutationRates = [];
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            for (const _ of genes) mutationRates.push(toBN(2).pow(toBN(256)).sub(1)); //every gene has 100% chance to mutate
+
+            await minterBreeding.setBreedingRules(
+                defaultRequiredParents,
+                defaultGenerationMultiplier,
+                defaultBreedingCooldownSeconds,
+                genes,
+                mutationRates,
+            );
+
+            const genes2 = genes.slice(1);
+            const mutationRates2 = mutationRates.slice(1);
+            const mutationRates2Length = mutationRates2.length;
+            await minterBreeding.setBreedingRules(
+                defaultRequiredParents,
+                defaultGenerationMultiplier,
+                defaultBreedingCooldownSeconds,
+                genes2,
+                mutationRates2,
+            );
+
+            const storedMutationRates = (await minterBreeding.getBreedingRules())[4];
+            expect(mutationRates2Length, 'previous rates not deleted!').equals(storedMutationRates.length);
+        });
+
+        it('NFT on Cooldown', async () => {
             const minterBreeding = await setupBreederContract();
 
             // Breed our first specimen
@@ -121,7 +215,13 @@ describe('MinterBreeding.sol', function () {
         it('Set breeding cooldown', async () => {
             const minterBreeding = await setupBreederContract();
             const cooldownSeconds = 1;
-            await minterBreeding.setBreedingRules(0, defaultGenerationMultiplier, cooldownSeconds, genes, []);
+            await minterBreeding.setBreedingRules(
+                defaultRequiredParents,
+                defaultGenerationMultiplier,
+                cooldownSeconds,
+                genes,
+                [],
+            );
 
             // Breed our second specimen w/ cooldown
             await minterBreeding.breed([parentIds[0], parentIds[1]]);
@@ -138,7 +238,13 @@ describe('MinterBreeding.sol', function () {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             for (const _ of genes) mutationRates.push(toBN(2).pow(toBN(256)).sub(1)); //every gene has 100% chance to mutate
             // Set mutations
-            await minterBreeding.setBreedingRules(0, defaultGenerationMultiplier, 0, genes, mutationRates);
+            await minterBreeding.setBreedingRules(
+                defaultRequiredParents,
+                defaultGenerationMultiplier,
+                defaultBreedingCooldownSeconds,
+                genes,
+                mutationRates,
+            );
 
             // Breed
             await minterBreeding.breed([parentIds[0], parentIds[1]]);
@@ -159,12 +265,15 @@ describe('MinterBreeding.sol', function () {
         it('Enable generation counter', async () => {
             const minterBreeding = await setupBreederContract();
 
+            // Slice off [0, ...] for generation storage
+            const generationGenes = genes.slice(1);
+
             // Enable generation counting
             await minterBreeding.setBreedingRules(
-                0, // requiredParents (default to 0)
+                defaultRequiredParents, // requiredParents (default to 0)
                 1, // enable 1x multiplier
-                0, // breedCooldownSeconds (defaults to 7 days)
-                genes, // gene encoding placements
+                defaultBreedingCooldownSeconds, // breedCooldownSeconds (defaults to 7 days)
+                generationGenes, // gene encoding placements
                 [], // mutation rates (defaults to none)
             );
 
@@ -181,12 +290,15 @@ describe('MinterBreeding.sol', function () {
         it('Enable generational cooldowns', async () => {
             const minterBreeding = await setupBreederContract();
 
+            // Slice off [0, ...] for generation storage
+            const generationGenes = genes.slice(1);
+
             // Enable generation counting
             await minterBreeding.setBreedingRules(
-                0, // requiredParents (default to 0)
+                defaultRequiredParents, // requiredParents (default to 0)
                 1, // enable 1x multiplier
-                1, // breedCooldownSeconds (defaults to 7 days)
-                genes, // gene encoding placements
+                1, // breedCooldownSeconds (1 sec)
+                generationGenes, // gene encoding placements
                 [], // mutation rates (defaults to none)
             );
 
@@ -208,6 +320,26 @@ describe('MinterBreeding.sol', function () {
                 'NFT currently on cooldown!',
             );
         });
+
+        it('Get breeding rules', async () => {
+            const minterBreeding = await setupBreederContract();
+
+            // Enable generation counting
+            await minterBreeding.setBreedingRules(
+                3, // requiredParents (default to 0)
+                0, // enable 1x multiplier
+                2, // breedCooldownSeconds (defaults to 7 days)
+                genes, // gene encoding placements
+                [], // mutation rates (defaults to none)
+            );
+
+            const rules = await minterBreeding.getBreedingRules();
+            expect(rules[0] === 3);
+            expect(rules[1] === 1);
+            expect(rules[2].eq(2));
+            expect(rules[3]).to.deep.equal(genes);
+            expect(rules[4]).to.deep.equal([]);
+        });
     });
 
     async function setupBreederContract() {
@@ -219,6 +351,8 @@ describe('MinterBreeding.sol', function () {
             'owl',
             'abcd',
             '0x' + '0'.repeat(40),
+            owner.address,
+            0
         ]));
         const nft = (await ethers.getContractAt('ERC721OwlAttributes', address)) as ERC721OwlAttributes;
 
@@ -240,9 +374,9 @@ describe('MinterBreeding.sol', function () {
             mintFeeAmount,
             nftAddress,
             {
-                requiredParents: 0, // requiredParents (default to 2)
+                requiredParents: 2, // requiredParents (default to 2)
                 generationCooldownMultiplier: defaultGenerationMultiplier,
-                breedCooldownSeconds: 0, // breedCooldownSeconds (defaults to 7 days)
+                breedCooldownSeconds: 1, // breedCooldownSeconds (defaults to 7 days)
                 genes, // gene encoding placements
                 mutationRates: [], // mutation rates (defaults to none)
             },
@@ -260,14 +394,14 @@ describe('MinterBreeding.sol', function () {
         // Generate encoded parents [will be ids: parentIds]
         for (const parent of encodedParents) await nft.safeMint(owner.address, parent);
 
-        // Set our gene pattern
-        await minterBreeding.connect(owner).setBreedingRules(
-            0, // requiredParents (default to 2)
-            defaultGenerationMultiplier,
-            0, // breedCooldownSeconds (defaults to 7 days)
-            genes, // gene encoding placements
-            [], // mutation rates (defaults to none)
-        );
+        // // Set our gene pattern
+        // await minterBreeding.connect(owner).setBreedingRules(
+        //     0, // requiredParents (default to 2)
+        //     defaultGenerationMultiplier,
+        //     0, // breedCooldownSeconds (defaults to 7 days)
+        //     genes, // gene encoding placements
+        //     [], // mutation rates (defaults to none)
+        // );
 
         return minterBreeding;
     }
@@ -287,4 +421,43 @@ describe('MinterBreeding.sol', function () {
 
         return { tokenId: newSpecimen, dna };
     }
+
+    it('Beacon proxy initialization', async () => {
+        const beaconFactory = (await ethers.getContractFactory(
+            'UpgradeableBeaconInitializable',
+        )) as UpgradeableBeaconInitializable__factory;
+        const beaconImpl = (await beaconFactory.deploy()) as UpgradeableBeaconInitializable;
+
+        const beaconProxyFactory = (await ethers.getContractFactory(
+            'BeaconProxyInitializable',
+        )) as BeaconProxyInitializable__factory;
+        const beaconProxyImpl = (await beaconProxyFactory.deploy()) as BeaconProxyInitializable;
+
+        const { address: beaconAddr } = await deployClone(beaconImpl, [owner.address, BreederImplementation.address]);
+
+        const args = [
+            owner.address,
+            owner.address, // mint fee token
+            owner.address, // mint fee address
+            1, // mint fee amount
+            owner.address, // nft addr
+            {
+                requiredParents: 0, // requiredParents (default to 2)
+                generationCooldownMultiplier: defaultGenerationMultiplier,
+                breedCooldownSeconds: 0, // breedCooldownSeconds (defaults to 7 days)
+                genes, // gene encoding placements
+                mutationRates: [], // mutation rates (defaults to none)
+            },
+            ethers.constants.AddressZero, // trusted forwarder
+        ];
+
+        //@ts-ignore
+        const data = BreederImplementation.interface.encodeFunctionData('proxyInitialize', args);
+        const beaconProxyAddr = await predictDeployClone(beaconProxyImpl, [owner.address, beaconAddr, data]);
+
+        await deployClone(beaconProxyImpl, [owner.address, beaconAddr, data]);
+        const contract = (await ethers.getContractAt('MinterBreeding', beaconProxyAddr)) as MinterBreeding;
+
+        await contract.breed(['000000000']);
+    });
 });

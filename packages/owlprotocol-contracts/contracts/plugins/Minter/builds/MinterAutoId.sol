@@ -13,21 +13,42 @@ import '../MinterCore.sol';
 /**
  * @dev Decentralized NFT Minter contract
  *
+ * Auto-incrementing NFT minter contracts. Every time `mint` or `safeMint` is
+ * called, the NFT id is automatically generated and minted on the fly. Great
+ * for end-users to interact with without requiring clients to monitor the
+ * blockchain.
+ *
+ * As all Minter contracts interact with existing NFTs, MinterCore expects two
+ * standard functions exposed by the NFT:
+ * - `mint(address to, uint256 tokenId)`
+ * - `safeMint(address to, uint256 tokenId)`
+ *
+ * Additionally, Minter contracts must have required permissions for minting. In
+ * the case that you're using ERC721Owl, you'll do that with
+ * {ERC721Owl#grantMinter}.
  */
 contract MinterAutoId is MinterCore {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterAutoId/', _version)));
 
     // Track our next tokenId for each species
-    uint256 nextTokenId;
+    uint256 public nextTokenId;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
-    // Constructor
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function initialize(
         address _admin,
         address _mintFeeToken,
@@ -39,6 +60,16 @@ contract MinterAutoId is MinterCore {
         __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function proxyInitialize(
         address _admin,
         address _mintFeeToken,
@@ -50,6 +81,16 @@ contract MinterAutoId is MinterCore {
         __MinterAutoId_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
+    /**
+     * @notice This function is never called directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function __MinterAutoId_init(
         address _admin,
         address _mintFeeToken,
@@ -62,10 +103,14 @@ contract MinterAutoId is MinterCore {
         __MinterAutoId_init_unchained();
     }
 
-    function __MinterAutoId_init_unchained() internal onlyInitializing {}
+    /**
+     * @dev For future implementations.
+     */
+    function __MinterAutoId_init_unchained() private onlyInitializing {}
 
     /**
-     * @dev Create a new type of species and define attributes.
+     * @dev Mint the next NFT at `nextTokenId`.
+     * @param buyer user to pay for and send the NFT to
      * @return nextTokenId
      */
     function mint(address buyer) public virtual returns (uint256) {
@@ -74,7 +119,8 @@ contract MinterAutoId is MinterCore {
     }
 
     /**
-     * @dev Create a new type of species and define attributes.
+     * @dev Mint the next NFT at `nextTokenId`.
+     * @param buyer user to pay for and send the NFT to
      * @return nextTokenId
      */
     function safeMint(address buyer) public virtual returns (uint256) {
@@ -83,9 +129,8 @@ contract MinterAutoId is MinterCore {
     }
 
     /**
-     * @dev Used to set the starting nextTokenId value.
-     * Used to save situtations where someone mints directly
-     * and we get out of sync.
+     * @dev Used to set the starting nextTokenId value. Used to save situations
+     * where someone mints directly and we get out of sync.
      * @param nextTokenId_ next token id to be minted
      */
     function setNextTokenId(uint256 nextTokenId_) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -119,7 +164,7 @@ interface IMinterAutoId is IERC165Upgradeable {
 
     /**
      * @dev Used to set the starting nextTokenId value.
-     * Used to save situtations where someone mints directly
+     * Used to save situations where someone mints directly
      */
     function setNextTokenId(uint256 nextTokenId_) external;
 }

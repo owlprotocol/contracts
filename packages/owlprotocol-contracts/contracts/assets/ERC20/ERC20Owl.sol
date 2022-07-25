@@ -9,8 +9,7 @@ contract ERC20Owl is OwlBase, ERC20BurnableUpgradeable {
     bytes32 private constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 private constant URI_ROLE = keccak256('URI_ROLE');
 
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC20Owl/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC20Owl/', _version)));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

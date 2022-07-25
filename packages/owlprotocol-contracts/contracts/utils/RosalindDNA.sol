@@ -16,7 +16,7 @@ library RosalindDNA {
     /**
      * @dev Breeds multiple parents DNA, returning a new combined
      * @param parentsDNA N different parent DNAs
-     * @param genes start indicies of each gene.
+     * @param genes start indices of each gene.
      * First index should ALWAYS be 0. Using [0, 128] splits
      * the DNA into two genes of equal length
      * @param randomSeed random value to use for gene splicing

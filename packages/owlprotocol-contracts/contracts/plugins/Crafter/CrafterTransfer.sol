@@ -8,7 +8,7 @@ import './CrafterCore.sol';
  * (ERC20, ERC721, ERC1155) whose crafting outputs are transferred to the
  * caller.
  *
- * Crafting configuration is designated by two {Ingredient}[]. One array is the
+ * Crafting configuration is designated by two {PluginsCore#Ingredient}[]. One array is the
  * `inputs` and the other is the `outputs`. The contract allows for the `inputs`
  * to be redeemed for the `outputs`, `craftableAmount` times.
  *
@@ -61,8 +61,7 @@ import './CrafterCore.sol';
  * plug-and-play, so to speak.
  */
 contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
-    string public constant VERSION = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterTransfer/', VERSION)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://CrafterTransfer/', _version)));
 
     /**********************
         Initialization
@@ -360,7 +359,7 @@ contract CrafterTransfer is CrafterCore, ERC1155HolderUpgradeable {
         public
         view
         virtual
-        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        override(OwlBase, ERC1155ReceiverUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

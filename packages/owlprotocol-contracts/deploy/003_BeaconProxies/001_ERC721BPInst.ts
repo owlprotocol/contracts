@@ -8,6 +8,9 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 const salt = ethers.utils.formatBytes32String('1');
 let ERC721BeaconAddr = ERC721BeaconInstAddr;
 
+// const baseURI = 'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/'
+const baseURI = 'http://127.0.0.1:5002/ipfs/bafybeif4zkmu7qdhkpf3pnhwxipylqleof7rl6ojbe7mq3fzogz6m4xk3i/#/ipfs/QmPEQ3BBNxWWRtJPaLCqDQq6HWNtKieZsJ9qutw2FcE4b8'
+
 const gsnForwarderAddr = '0x' + '0'.repeat(40);
 //should be changed to below this line eventually
 //const gsnForwarderAddr = getGSNConfig(network).forwarder;
@@ -40,7 +43,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         other,
         'CryptoOwls',
         'OWL',
-        'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
+        baseURI,
         gsnForwarderAddr,
     ]);
 
@@ -88,4 +91,4 @@ async function getBeaconAddr(
 
 export default deploy;
 deploy.tags = ['ERC721Inst', 'ERC721', 'BeaconProxy', 'Instance'];
-deploy.dependencies = ['BeaconImpl', 'BeaconProxyImpl', 'ERC721Impl', 'ERC1155Impl', 'CrafterTransferImpl', 'Beacons'];
+deploy.dependencies = ['BeaconImpl', 'BeaconProxyImpl', 'ERC721Impl', 'ERC721Beacon'];

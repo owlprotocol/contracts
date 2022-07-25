@@ -12,6 +12,7 @@ import { Web3Provider, ExternalProvider } from '@ethersproject/providers';
 import { RelayProvider, GSNConfig } from '@opengsn/provider';
 import { RelayRequest } from '@opengsn/common/dist/EIP712/RelayRequest';
 import {
+    IS_GSN,
     loadEnvironment,
     loadSignersSmart,
     TestingSigner,
@@ -24,7 +25,7 @@ import web3 from 'web3';
 import { BigNumber } from 'ethers';
 import { Web3ProviderBaseInterface } from '@opengsn/common/dist/types/Aliases';
 
-describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
+describe('ERC721Owl With NFTOwnershipPaymaster', () => {
     let ERC721OwlFactory: ERC721Owl__factory;
     let ERC721OwlImplementation: ERC721Owl;
 
@@ -62,9 +63,12 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
     //Run GSN Tests here
     //Use account1 as account0 is used as relayer
     //Use Web3.js as better suited for provider
-    before(async () => {
+    before(async function () {
         //Setup Test Environment and get addresses
         const gsn = await loadEnvironment(ethers);
+
+        if (!IS_GSN) this.skip();
+
         if (gsn.gsnTestEnv === undefined) throw 'Must enable gsn!';
         gsnForwarderAddress = gsn.gsnTestEnv.contractsDeployment.forwarderAddress as string;
         relayHubAddress = gsn.gsnTestEnv.contractsDeployment.relayHubAddress as string;
@@ -135,7 +139,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         Owl = (
             await deployClone2({
                 implementation: ERC721OwlImplementation,
-                initializerArgs: [signer1.address, 'n', 's', 'u', gsnForwarderAddress],
+                initializerArgs: [signer1.address, 'n', 's', 'u', gsnForwarderAddress, , signer1.address, 0],
                 signer: signer1,
             })
         ).contract as ERC721Owl;
@@ -143,7 +147,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         await Owl.connect(await ethers.getSigner(signer1.address)).grantMinter(signer3.address);
     });
 
-    describe('Caller Approved', () => {
+    describeGSN('Caller Approved', () => {
         it(
             'gasless mint()',
             assertBalances(ethers, async () => {
@@ -200,7 +204,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         );
     });
 
-    describe('Caller Reached Mint Limit', () => {
+    describeGSN('Caller Reached Mint Limit', () => {
         it(
             'gasless mint()',
             assertBalances(ethers, async () => {
@@ -231,7 +235,7 @@ describeGSN('ERC721Owl With NFTOwnershipPaymaster', () => {
         );
     });
 
-    describe('Caller Not Approved', () => {
+    describeGSN('Caller Not Approved', () => {
         it(
             'paymaster rejects',
             assertBalances(ethers, async () => {

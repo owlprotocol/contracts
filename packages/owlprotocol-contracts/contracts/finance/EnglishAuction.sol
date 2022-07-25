@@ -9,8 +9,11 @@ import '@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol';
 
+import '@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol';
+
 import '../OwlBase.sol';
 import './AuctionLib.sol';
+import 'hardhat/console.sol';
 
 /**
  * @dev This contract is a standard English Auction smart contract that allows
@@ -24,8 +27,7 @@ import './AuctionLib.sol';
  */
 contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://EnglishAuction/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://EnglishAuction/', _version)));
 
     /**********************
              Types
@@ -68,7 +70,7 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
      * @param _startPrice start bid on nft
      * @param _auctionDuration duration of auction (in seconds)
      * @param _resetTime time at which the auction resets when a bid is made within this time frame (in seconds)
-     * @param _saleFee the percentage of the sale to be sent to the original owner as commission
+     * @param _saleFee the percentage of the sale to be sent to the marketplace as commission
      * @param _saleFeeAddress the address to which the sale fee is sent
      * @param _forwarder the address for the Trusted Forwarder for Open GSN integration
      */
@@ -170,8 +172,8 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
         // Transferring ERC721
         if (asset.token == AuctionLib.TokenType.erc721)
             IERC721Upgradeable(asset.contractAddr).transferFrom(seller, address(this), asset.tokenId);
-        else if (asset.token == AuctionLib.TokenType.erc1155)
-            // Transferring ERC1155
+        else {
+            // Solidity enforces TokenType will be 721 or 1155
             IERC1155Upgradeable(asset.contractAddr).safeTransferFrom(
                 seller,
                 address(this),
@@ -179,7 +181,7 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
                 1,
                 new bytes(0)
             );
-        else revert();
+        }
 
         endAt = block.timestamp + _auctionDuration * 1 seconds;
     }
@@ -238,11 +240,23 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
 
         ownerClaimed = true;
         if (highestBidder != address(0)) {
+            uint256 marketplaceCommission = (saleFee * bids[highestBidder]) / 100;
+            address royaltyReceiver;
+            uint256 royaltyAmount;
+            // Marketplace commission
             IERC20Upgradeable(acceptableToken).transfer(saleFeeAddress, (saleFee * bids[highestBidder]) / 100);
-
+            // Royalty
+            if (IERC165Upgradeable(asset.contractAddr).supportsInterface(type(IERC2981Upgradeable).interfaceId)) {
+                (royaltyReceiver, royaltyAmount) = IERC2981Upgradeable(asset.contractAddr).royaltyInfo(
+                    asset.tokenId,
+                    bids[highestBidder]
+                );
+                IERC20Upgradeable(acceptableToken).transfer(royaltyReceiver, royaltyAmount);
+            }
+            // Transfer remainder to seller
             IERC20Upgradeable(acceptableToken).transfer(
                 seller,
-                bids[highestBidder] - (saleFee * bids[highestBidder]) / 100
+                bids[highestBidder] - marketplaceCommission - royaltyAmount
             );
         } else {
             if (asset.token == AuctionLib.TokenType.erc721)
@@ -312,7 +326,7 @@ contract EnglishAuction is OwlBase, ERC721HolderUpgradeable, ERC1155HolderUpgrad
         public
         view
         virtual
-        override(AccessControlUpgradeable, ERC1155ReceiverUpgradeable)
+        override(OwlBase, ERC1155ReceiverUpgradeable)
         returns (bool)
     {
         return interfaceId == ERC165TAG || super.supportsInterface(interfaceId);

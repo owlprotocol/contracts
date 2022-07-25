@@ -1,0 +1,32 @@
+{
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "SS Monke Biz"
+        },
+        {
+            "trait_type": "Fur",
+            "value": "Tan"
+        },
+        {
+            "trait_type": "Back",
+            "value": "Blue Pack"
+        },
+        {
+            "trait_type": "Neck",
+            "value": "Pink Collar"
+        },
+        {
+            "trait_type": "Mouth",
+            "value": "Cigarette"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "Closed"
+        },
+        {
+            "trait_type": "Head",
+            "value": "Shrunken Head"
+        }
+    ]
+}

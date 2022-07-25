@@ -26,7 +26,7 @@ contract ERC721OwlExpiring is ERC721Owl {
 
     bytes32 private constant EXPIRY_ROLE = keccak256('EXPIRY_ROLE');
     bytes4 private constant ERC165TAG =
-        bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlExpiring/', VERSION)));
+        bytes4(keccak256(abi.encodePacked('OWLProtocol://ERC721OwlExpiring/', _version)));
 
     /**********************
            Storage
@@ -46,15 +46,19 @@ contract ERC721OwlExpiring is ERC721Owl {
      * @param _symbol symbol
      * @param baseURI_ uri
      * @param _forwarder trusted forwarder address for openGSN
+     * @param _receiver address of receiver of royalty fees
+     * @param _feeNumerator numerator of fee proportion (numerator / 10000)
      */
     function initialize(
         address _admin,
         string calldata _name,
         string calldata _symbol,
         string calldata baseURI_,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) external override initializer {
-        __ERC721OwlExpiring_init(_admin, _name, _symbol, baseURI_, _forwarder);
+        __ERC721OwlExpiring_init(_admin, _name, _symbol, baseURI_, _forwarder, _receiver, _feeNumerator);
     }
 
     /**
@@ -66,9 +70,11 @@ contract ERC721OwlExpiring is ERC721Owl {
         string calldata _name,
         string calldata _symbol,
         string calldata baseURI_,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) external override onlyInitializing {
-        __ERC721OwlExpiring_init(_admin, _name, _symbol, baseURI_, _forwarder);
+        __ERC721OwlExpiring_init(_admin, _name, _symbol, baseURI_, _forwarder, _receiver, _feeNumerator);
     }
 
     function __ERC721OwlExpiring_init(
@@ -76,9 +82,11 @@ contract ERC721OwlExpiring is ERC721Owl {
         string memory _name,
         string memory _symbol,
         string memory baseURI_,
-        address _forwarder
+        address _forwarder,
+        address _receiver,
+        uint96 _feeNumerator
     ) internal onlyInitializing {
-        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder);
+        __ERC721Owl_init(_admin, _name, _symbol, baseURI_, _forwarder, _receiver, _feeNumerator);
         _grantRole(EXPIRY_ROLE, _admin);
 
         __ERC721OwlExpiring_init_unchained();

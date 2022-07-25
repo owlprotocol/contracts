@@ -14,11 +14,23 @@ import '../../../utils/SourceRandom.sol';
 /**
  * @dev Decentralized NFT Minter contract
  *
+ * Id-randomizing NFT minter contracts. Every time `mint` or `safeMint` is
+ * called, the NFT id is randomly generated and minted on the fly. Great
+ * for end-users to interact with without requiring clients to monitor the
+ * blockchain.
+ *
+ * As all Minter contracts interact with existing NFTs, MinterCore expects two
+ * standard functions exposed by the NFT:
+ * - `mint(address to, uint256 tokenId)`
+ * - `safeMint(address to, uint256 tokenId)`
+ *
+ * Additionally, Minter contracts must have required permissions for minting. In
+ * the case that you're using ERC721Owl, you'll do that with
+ * {ERC721Owl#grantMinter}.
  */
 contract MinterRandom is MinterCore {
     // Specification + ERC165
-    string public constant version = 'v0.1';
-    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterRandom/', version)));
+    bytes4 private constant ERC165TAG = bytes4(keccak256(abi.encodePacked('OWLProtocol://MinterRandom/', _version)));
 
     // Nonce
     uint256 private _numMinted;
@@ -28,7 +40,16 @@ contract MinterRandom is MinterCore {
         _disableInitializers();
     }
 
-    // Constructor
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function initialize(
         address _admin,
         address _mintFeeToken,
@@ -40,6 +61,16 @@ contract MinterRandom is MinterCore {
         __MinterRandom_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function proxyInitialize(
         address _admin,
         address _mintFeeToken,
@@ -51,6 +82,16 @@ contract MinterRandom is MinterCore {
         __MinterRandom_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
     }
 
+    /**
+     * @notice This function is usually called through ERC1167Factory cloning and not directly.
+     * @dev MinterAutoId initialization parameters.
+     * @param _admin user to grant admin privileges
+     * @param _mintFeeToken ERC20 token address to use for minting (ZeroAddress if none)
+     * @param _mintFeeAddress address to transfer minting payments to
+     * @param _mintFeeAmount Number of tokens to charge users (0 if none)
+     * @param _nftContractAddr NFT address to mint
+     * @param _forwarder OpenGSN forwarder address to use
+     */
     function __MinterRandom_init(
         address _admin,
         address _mintFeeToken,
@@ -60,12 +101,17 @@ contract MinterRandom is MinterCore {
         address _forwarder
     ) internal onlyInitializing {
         __MinterCore_init(_admin, _mintFeeToken, _mintFeeAddress, _mintFeeAmount, _nftContractAddr, _forwarder);
+        __MinterRandom_init_unchained();
     }
 
+    /**
+     * @dev To be implemented in the future.
+     */
     function __MinterRandom_init_unchained() internal onlyInitializing {}
 
     /**
-     * @dev Create a new type of species and define attributes.
+     * @dev Mint a new species with random id.
+     * @param buyer address of the buyer
      */
     function mint(address buyer) public {
         // Generate tokenid
@@ -77,7 +123,8 @@ contract MinterRandom is MinterCore {
     }
 
     /**
-     * @dev Create a new type of species and define attributes.
+     * @dev Mint a new species with random id.
+     * @param buyer address of the buyer
      */
     function safeMint(address buyer) public {
         // Generate tokenId

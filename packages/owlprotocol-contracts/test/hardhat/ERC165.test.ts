@@ -30,6 +30,7 @@ describe('ERC165 Testing', async () => {
             'MinterBreeding',
             'MinterRandom',
             'MinterSimple',
+            'MinterSimpleMerkle',
             'Lootbox',
             'Transformer',
         ];

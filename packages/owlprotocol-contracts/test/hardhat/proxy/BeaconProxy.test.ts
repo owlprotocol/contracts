@@ -81,6 +81,8 @@ describe('BeaconProxy and Beacon use and upgrade through EIP1167 Proxy', async (
             'OWL',
             'https://api.istio.owlprotocol.xyz/metadata/getMetadata/QmcunXcWbn2fZ7UyNXC954AVEz1uoPA4MbbgHwg6z52PAM/',
             forwarder.address,
+            owlAdmin.address,
+            0
         ]);
         const { address: beaconProxyAddr } = await deployClone(
             BeaconProxy,
