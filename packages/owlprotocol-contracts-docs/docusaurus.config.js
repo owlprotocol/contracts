@@ -1,20 +1,20 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require("prism-react-renderer/themes/github");
+const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-    title: 'Owl Protocol Contracts Documentation',
-    tagline: 'WEB3.0 Made Easy',
-    url: 'https://owlprotocol.github.io',
-    baseUrl: '/contracts/',
-    deploymentBranch: 'gh-pages',
-    onBrokenLinks: 'warn',
-    onBrokenMarkdownLinks: 'warn',
-    favicon: 'img/solidity.svg',
-    organizationName: 'owlprotocol', // Usually your GitHub org/user name.
+    title: "Owl Protocol Contracts Documentation",
+    tagline: "WEB3.0 Made Easy",
+    url: "https://owlprotocol.github.io",
+    baseUrl: "/contracts/",
+    deploymentBranch: "gh-pages",
+    onBrokenLinks: "warn",
+    onBrokenMarkdownLinks: "warn",
+    favicon: "img/solidity.svg",
+    organizationName: "owlprotocol", // Usually your GitHub org/user name.
     plugins: [
         // //https://github.com/tgreyuk/typedoc-plugin-markdown/tree/master/packages/docusaurus-plugin-typedoc
         /*
@@ -32,22 +32,21 @@ const config = {
             }
         ],
         */
-
     ],
-    projectName: 'contracts', // Usually your repo name.
+    projectName: "contracts", // Usually your repo name.
 
     presets: [
         [
-            'classic',
+            "classic",
             /** @type {import('@docusaurus/preset-classic').Options} */
             ({
                 docs: {
-                    sidebarPath: require.resolve('./sidebars.js'),
+                    sidebarPath: require.resolve("./sidebars.js"),
                     // Please change this to your repo.
-                    editUrl: 'https://github.com/owlprotocol/contracts/',
+                    editUrl: "https://github.com/owlprotocol/contracts/",
                 },
                 theme: {
-                    customCss: require.resolve('./src/css/custom.css'),
+                    customCss: require.resolve("./src/css/custom.css"),
                 },
             }),
         ],
@@ -56,29 +55,29 @@ const config = {
         /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
         ({
             navbar: {
-                title: 'Owl Protocol Contracts',
+                title: "Owl Protocol Contracts",
                 logo: {
-                    alt: 'Web3 Redux Logo 2',
-                    src: 'img/solidity.svg',
+                    alt: "Web3 Redux Logo 2",
+                    src: "img/solidity.svg",
                 },
                 items: [
                     {
-                        type: 'doc',
-                        docId: 'index',
-                        position: 'left',
-                        label: 'Welcome',
+                        type: "doc",
+                        docId: "index",
+                        position: "left",
+                        label: "Welcome",
                     },
                     {
-                        type: 'doc',
-                        docId: 'contracts',
-                        position: 'left',
-                        label: 'Contracts',
+                        type: "doc",
+                        docId: "contracts",
+                        position: "left",
+                        label: "Contracts",
                     },
                     {
-                        type: 'doc',
-                        docId: 'contract-docs/index',
-                        position: 'left',
-                        label: 'Reference',
+                        type: "doc",
+                        docId: "contract-docs/index",
+                        position: "left",
+                        label: "Reference",
                     },
                     /*
                     {
@@ -86,14 +85,14 @@ const config = {
                     },
                     */
                     {
-                        href: 'https://github.com/owlprotocol/contracts/tree/develop/packages/owlprotocol-contracts',
-                        label: 'GitHub',
-                        position: 'right',
+                        href: "https://github.com/owlprotocol/contracts/tree/develop/packages/owlprotocol-contracts",
+                        label: "GitHub",
+                        position: "right",
                     },
                 ],
             },
             footer: {
-                style: 'dark',
+                style: "dark",
                 links: [
                     // {
                     //     title: 'Quickstart',
@@ -114,7 +113,7 @@ const config = {
                     //     ],
                     // },
                     {
-                        title: 'Community',
+                        title: "Community",
                         items: [
                             /*
                             {
@@ -123,17 +122,17 @@ const config = {
                             },
                             */
                             {
-                                label: 'Twitter',
-                                href: 'https://twitter.com/owlprotocol',
+                                label: "Twitter",
+                                href: "https://twitter.com/owlprotocol",
                             },
                         ],
                     },
                     {
-                        title: 'More',
+                        title: "More",
                         items: [
                             {
-                                label: 'GitHub',
-                                href: 'https://github.com/owlprotocol/contracts/tree/develop/packages/owlprotocol-contracts',
+                                label: "GitHub",
+                                href: "https://github.com/owlprotocol/contracts/tree/develop/packages/owlprotocol-contracts",
                             },
                         ],
                     },
