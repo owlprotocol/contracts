@@ -1,4 +1,4 @@
-# Owl Protocol - BETA Public Repo
+# Owl Protocol - BETA Public Repo (Last Updated **2022-07-25**)
 
 https://owlprotocol.xyz
 
